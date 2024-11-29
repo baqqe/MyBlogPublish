@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Predict which #TidyTuesday Scooby Doo monsters are REAL with a tuned decision tree model | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Predict which #TidyTuesday Scooby Doo monsters are REAL with a tuned decision tree model | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/scooby-doo/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/scooby-doo/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/scooby-doo/featured.png" >
+    
+    
+  <meta itemprop="name" content="Predict which #TidyTuesday Scooby Doo monsters are REAL with a tuned decision tree model">
+<meta itemprop="description" content="Which Scooby Doo monsters are REAL?! Walk through how to tune and then choose a decision tree model, as well as how to visualize and evaluate the results."><meta itemprop="datePublished" content="2021-07-13T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-07-13T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1181"><meta itemprop="image" content="https://juliasilge.com/blog/scooby-doo/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Predict which #TidyTuesday Scooby Doo monsters are REAL with a tuned decision tree model</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">July 13, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just getting started to tuning more complex models. Today’s screencast walks through how to train and evalute a random forest model, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Scooby Doo episodes. 👻</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/2g6f-j3sHS4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict which 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-07-13/readme.md" target="_blank" rel="noopener">Scooby Doo monsters</a> are real and which are not, based on other characteristics of the episode.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+scooby_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-13/scoobydoo.csv&#34;</span>)
+
+scooby_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(monster_amount <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(monster_real)
+</code></pre></div><pre><code>## # A tibble: 2 x 2
+##   monster_real     n
+##   &lt;chr&gt;        &lt;int&gt;
+## 1 FALSE          404
+## 2 TRUE           112
+</code></pre>
+<p>Most monsters are not real!</p>
+<p>How did the number of real vs. fake monsters change over the decades?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">scooby_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(monster_amount <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(
+    year_aired <span style="color:#666">=</span> <span style="color:#40a070">10</span> <span style="color:#666">*</span> ((lubridate<span style="color:#666">::</span><span style="color:#06287e">year</span>(date_aired) <span style="color:#666">+</span> <span style="color:#40a070">1</span>) <span style="color:#666">%/%</span> <span style="color:#40a070">10</span>),
+    monster_real
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(year_aired <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(year_aired)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year_aired, n, fill <span style="color:#666">=</span> monster_real)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(position <span style="color:#666">=</span> <span style="color:#06287e">position_dodge</span>(preserve <span style="color:#666">=</span> <span style="color:#4070a0">&#34;single&#34;</span>), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Date aired&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Monsters per decade&#34;</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Real monster?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/scooby-doo/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>How are these different episodes rated on IMDB?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">scooby_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(monster_amount <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(imdb <span style="color:#666">=</span> <span style="color:#06287e">parse_number</span>(imdb)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(imdb, <span style="color:#06287e">after_stat</span>(density), fill <span style="color:#666">=</span> monster_real)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;identity&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IMDB rating&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Density&#34;</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Real monster?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/scooby-doo/index_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>It looks like there are some meaningful relationships there that we can use for modeling, but they are not linear so a decision tree may be a good fit.</p>
+
+
+
+
+<h2 id="build-and-tune-a-model">Build and tune a model
+  <a href="#build-and-tune-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start our modeling by setting up our “data budget.” We’re only going to use the <em>year</em> each episode was aired and the episode <em>rating</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+scooby_split <span style="color:#666">&lt;-</span> scooby_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    imdb <span style="color:#666">=</span> <span style="color:#06287e">parse_number</span>(imdb),
+    year_aired <span style="color:#666">=</span> lubridate<span style="color:#666">::</span><span style="color:#06287e">year</span>(date_aired)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(monster_amount <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>, <span style="color:#666">!</span><span style="color:#06287e">is.na</span>(imdb)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    monster_real <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+      monster_real <span style="color:#666">==</span> <span style="color:#4070a0">&#34;FALSE&#34;</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;fake&#34;</span>,
+      <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;real&#34;</span>
+    ),
+    monster_real <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(monster_real)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(year_aired, imdb, monster_real, title) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> monster_real)
+scooby_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(scooby_split)
+scooby_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(scooby_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+scooby_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(scooby_train, strata <span style="color:#666">=</span> monster_real)
+scooby_folds
+</code></pre></div><pre><code>## # Bootstrap sampling using stratification 
+## # A tibble: 25 x 2
+##    splits            id         
+##    &lt;list&gt;            &lt;chr&gt;      
+##  1 &lt;split [375/133]&gt; Bootstrap01
+##  2 &lt;split [375/144]&gt; Bootstrap02
+##  3 &lt;split [375/140]&gt; Bootstrap03
+##  4 &lt;split [375/132]&gt; Bootstrap04
+##  5 &lt;split [375/139]&gt; Bootstrap05
+##  6 &lt;split [375/134]&gt; Bootstrap06
+##  7 &lt;split [375/146]&gt; Bootstrap07
+##  8 &lt;split [375/132]&gt; Bootstrap08
+##  9 &lt;split [375/143]&gt; Bootstrap09
+## 10 &lt;split [375/143]&gt; Bootstrap10
+## # … with 15 more rows
+</code></pre>
+<p>Next, let’s create our decision tree specification. It is tunable, and we could not fit this right away to data because we haven’t said what the model parameters are yet.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tree_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">decision_tree</span>(
+    cost_complexity <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    tree_depth <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    min_n <span style="color:#666">=</span> <span style="color:#06287e">tune</span>()
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;rpart&#34;</span>)
+
+tree_spec
+</code></pre></div><pre><code>## Decision Tree Model Specification (classification)
+## 
+## Main Arguments:
+##   cost_complexity = tune()
+##   tree_depth = tune()
+##   min_n = tune()
+## 
+## Computational engine: rpart
+</code></pre>
+<p>Let’s set up a grid of possible model parameters to try.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tree_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">grid_regular</span>(<span style="color:#06287e">cost_complexity</span>(), <span style="color:#06287e">tree_depth</span>(), <span style="color:#06287e">min_n</span>(), levels <span style="color:#666">=</span> <span style="color:#40a070">4</span>)
+tree_grid
+</code></pre></div><pre><code>## # A tibble: 64 x 3
+##    cost_complexity tree_depth min_n
+##              &lt;dbl&gt;      &lt;int&gt; &lt;int&gt;
+##  1    0.0000000001          1     2
+##  2    0.0000001             1     2
+##  3    0.0001                1     2
+##  4    0.1                   1     2
+##  5    0.0000000001          5     2
+##  6    0.0000001             5     2
+##  7    0.0001                5     2
+##  8    0.1                   5     2
+##  9    0.0000000001         10     2
+## 10    0.0000001            10     2
+## # … with 54 more rows
+</code></pre>
+<p>Now let’s fit each possible parameter combination to each resample. By putting non-default metrics into <code>metric_set()</code>, we can specify which metrics are computed for each resample.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">345</span>)
+tree_rs <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">tune_grid</span>(
+    tree_spec,
+    monster_real <span style="color:#666">~</span> year_aired <span style="color:#666">+</span> imdb,
+    resamples <span style="color:#666">=</span> scooby_folds,
+    grid <span style="color:#666">=</span> tree_grid,
+    metrics <span style="color:#666">=</span> <span style="color:#06287e">metric_set</span>(accuracy, roc_auc, sensitivity, specificity)
+  )
+
+tree_rs
+</code></pre></div><pre><code>## # Tuning results
+## # Bootstrap sampling using stratification 
+## # A tibble: 25 x 4
+##    splits            id          .metrics           .notes          
+##    &lt;list&gt;            &lt;chr&gt;       &lt;list&gt;             &lt;list&gt;          
+##  1 &lt;split [375/133]&gt; Bootstrap01 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  2 &lt;split [375/144]&gt; Bootstrap02 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  3 &lt;split [375/140]&gt; Bootstrap03 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  4 &lt;split [375/132]&gt; Bootstrap04 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  5 &lt;split [375/139]&gt; Bootstrap05 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  6 &lt;split [375/134]&gt; Bootstrap06 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  7 &lt;split [375/146]&gt; Bootstrap07 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  8 &lt;split [375/132]&gt; Bootstrap08 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  9 &lt;split [375/143]&gt; Bootstrap09 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+## 10 &lt;split [375/143]&gt; Bootstrap10 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+## # … with 15 more rows
+</code></pre>
+<p>All done!</p>
+
+
+
+
+<h2 id="evaluate-and-understand-our-model">Evaluate and understand our model
+  <a href="#evaluate-and-understand-our-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now that we have tuned our decision tree model, we can choose which set of model parameters we want to use. What are some of the best options?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">show_best</span>(tree_rs)
+</code></pre></div><pre><code>## # A tibble: 5 x 9
+##   cost_complexity tree_depth min_n .metric  .estimator  mean     n std_err
+##             &lt;dbl&gt;      &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+## 1    0.0000000001         10     2 accuracy binary     0.872    25 0.00481
+## 2    0.0000001            10     2 accuracy binary     0.872    25 0.00481
+## 3    0.0001               10     2 accuracy binary     0.872    25 0.00481
+## 4    0.0000000001         15     2 accuracy binary     0.871    25 0.00456
+## 5    0.0000001            15     2 accuracy binary     0.871    25 0.00456
+## # … with 1 more variable: .config &lt;chr&gt;
+</code></pre>
+<p>We can visualize all of the combinations we tried.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(tree_rs) <span style="color:#666">+</span> <span style="color:#06287e">theme_light</span>(base_family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IBMPlexSans&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/scooby-doo/index_files/figure-html/unnamed-chunk-10-1.png" width="2400" />
+<p>If we used <code>select_best()</code>, we would pick the numerically best option. However, we might want to choose a different option that is within some criteria of the best performance, like a simpler model that is within one standard error of the optimal results. We finalize our model just like we finalize a workflow, as shown in previous posts.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">simpler_tree <span style="color:#666">&lt;-</span> <span style="color:#06287e">select_by_one_std_err</span>(tree_rs,
+  <span style="color:#666">-</span>cost_complexity,
+  metric <span style="color:#666">=</span> <span style="color:#4070a0">&#34;roc_auc&#34;</span>
+)
+
+final_tree <span style="color:#666">&lt;-</span> <span style="color:#06287e">finalize_model</span>(tree_spec, simpler_tree)
+</code></pre></div><p>Now we can fit <code>final_tree</code> to our training data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(final_tree, monster_real <span style="color:#666">~</span> year_aired <span style="color:#666">+</span> imdb, scooby_train)
+</code></pre></div><p>We also could use <code>last_fit()</code> instead of <code>fit()</code>, by swapping out the <strong>split</strong> for the training data. This will fit one time on the training data and evaluate one time on the testing data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(final_tree, monster_real <span style="color:#666">~</span> year_aired <span style="color:#666">+</span> imdb, scooby_split)
+</code></pre></div><p>This is the first time we have used the testing data through this whole analysis, and let’s us see how our model performs on the testing data. A bit worse, unfortunately!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(final_rs)
+</code></pre></div><pre><code>## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.857 Preprocessor1_Model1
+## 2 roc_auc  binary         0.780 Preprocessor1_Model1
+</code></pre>
+<p>Finally, we can use the 
+<a href="https://github.com/grantmcdermott/parttree" target="_blank" rel="noopener">parttree</a> package to visualize our decision tree results.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(parttree)
+
+scooby_train <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(imdb, year_aired)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_parttree</span>(data <span style="color:#666">=</span> final_fit, <span style="color:#06287e">aes</span>(fill <span style="color:#666">=</span> monster_real), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_jitter</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, width <span style="color:#666">=</span> <span style="color:#40a070">0.05</span>, height <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>, <span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> monster_real))
+</code></pre></div><img src="https://juliasilge.com/blog/scooby-doo/index_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 13, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1181 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/baseball-racing/">&larr; Use racing methods to tune xgboost models and predict home runs</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/nyc-airbnb/">Create a custom metric with tidymodels and NYC Airbnb prices &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

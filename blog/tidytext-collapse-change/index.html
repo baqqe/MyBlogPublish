@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Upcoming changes to tidytext: threat of COLLAPSE | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Upcoming changes to tidytext: threat of COLLAPSE | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tidytext-collapse-change/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/tidytext-collapse-change/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/tidytext-collapse-change/featured.png" >
+    
+    
+  <meta itemprop="name" content="Upcoming changes to tidytext: threat of COLLAPSE">
+<meta itemprop="description" content="The current development version of tidytext has changes that may affect your analyses."><meta itemprop="datePublished" content="2020-12-16T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-12-16T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1494"><meta itemprop="image" content="https://juliasilge.com/blog/tidytext-collapse-change/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Upcoming changes to tidytext: threat of COLLAPSE</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">December 16, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>The 
+<a href="https://juliasilge.github.io/tidytext/" target="_blank" rel="noopener">tidytext</a> package passed one million downloads from CRAN this year! It has been truly amazing to see this project grow 
+<a href="https://twitter.com/juliasilge/status/1314661438040940544" target="_blank" rel="noopener">out of an rOpenSci unconference several years ago</a> to be a piece of software useful to people&rsquo;s real world work.</p>
+<p>There has been some of the infrastructure of the package still around from its very early days, and as more people have continued to use it, some early decisions have needed to be visited. I recently made some updates that fix what most people would consider a bug and make behavior more consistent, but do result in some breaking changes in some situations. If you are a tidytext user comfortable with flexibility and early adoption, I would appreciate you installing this new version and reporting problems you experience before I submit this new version to CRAN.</p>
+
+
+
+
+<h2 id="on-the-verge-of-collapse">On the verge of <code>collapse</code>
+  <a href="#on-the-verge-of-collapse"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>These changes are related to the <code>collapse</code> argument for <code>unnest_tokens()</code>. What does this argument do? Let&rsquo;s say we have some text in a dataframe, with some metadata attached to each row.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+<span style="color:#06287e">library</span>(tidytext)
+
+d <span style="color:#666">&lt;-</span> <span style="color:#06287e">tibble</span>(
+  txt <span style="color:#666">=</span> <span style="color:#06287e">c</span>(
+    <span style="color:#4070a0">&#34;Because I could not stop for Death -&#34;</span>,
+    <span style="color:#4070a0">&#34;He kindly stopped for me -&#34;</span>,
+    <span style="color:#4070a0">&#34;The Carriage held but just Ourselves –&#34;</span>,
+    <span style="color:#4070a0">&#34;And Immortality.&#34;</span>
+  ),
+  meta <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;a&#34;</span>, <span style="color:#4070a0">&#34;a&#34;</span>, <span style="color:#4070a0">&#34;b&#34;</span>, <span style="color:#4070a0">&#34;a&#34;</span>)
+)
+
+d
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 4 x 2
+##   txt                                    meta 
+##   &lt;chr&gt;                                  &lt;chr&gt;
+## 1 Because I could not stop for Death -   a    
+## 2 He kindly stopped for me -             a    
+## 3 The Carriage held but just Ourselves – b    
+## 4 And Immortality.                       a
+</code></pre><p>We can use <code>unnest_tokens()</code> to tokenize to words in a pretty straightforward manner.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">d <span style="color:#666">%&gt;%</span> <span style="color:#06287e">unnest_tokens</span>(token, txt)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 20 x 2
+##    meta  token      
+##    &lt;chr&gt; &lt;chr&gt;      
+##  1 a     because    
+##  2 a     i          
+##  3 a     could      
+##  4 a     not        
+##  5 a     stop       
+##  6 a     for        
+##  7 a     death      
+##  8 a     he         
+##  9 a     kindly     
+## 10 a     stopped    
+## 11 a     for        
+## 12 a     me         
+## 13 b     the        
+## 14 b     carriage   
+## 15 b     held       
+## 16 b     but        
+## 17 b     just       
+## 18 b     ourselves  
+## 19 a     and        
+## 20 a     immortality
+</code></pre><p>What should happen if we want to tokenize to something like bigrams (a set of two words), though? Should we include bigrams that cross row boundaries, such as &ldquo;death he&rdquo;? The <code>collapse</code> argument is intended to control this. Its original implementation was not entirely consistent, though, and sometimes surprised users. The new <code>collapse</code> argument can take two kinds of options:</p>
+<ul>
+<li><code>NULL</code>, which means no collapsing across rows</li>
+<li>A character vector of variables to collapse text across</li>
+</ul>
+<p>The new behavior also never combines rows that are not adjacent to each other, even if they share a <code>collapse</code> variable.</p>
+<p>The default is <code>collapse = NULL</code>. Notice that bigrams are not created that span across rows (no &ldquo;death he&rdquo;).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">d <span style="color:#666">%&gt;%</span> <span style="color:#06287e">unnest_tokens</span>(token, txt, token <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ngrams&#34;</span>, n <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#60a0b0;font-style:italic">## default: collapse = NULL</span>
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 16 x 2
+##    meta  token          
+##    &lt;chr&gt; &lt;chr&gt;          
+##  1 a     because i      
+##  2 a     i could        
+##  3 a     could not      
+##  4 a     not stop       
+##  5 a     stop for       
+##  6 a     for death      
+##  7 a     he kindly      
+##  8 a     kindly stopped 
+##  9 a     stopped for    
+## 10 a     for me         
+## 11 b     the carriage   
+## 12 b     carriage held  
+## 13 b     held but       
+## 14 b     but just       
+## 15 b     just ourselves 
+## 16 a     and immortality
+</code></pre><p>You can specify collapsing variables. This has only one, but you can use multiple. This approach <em>does</em> create a bigram &ldquo;death he&rdquo; but does not collapse together the 2nd &ldquo;a&rdquo; line and the last one, because they are not adjacent.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">d <span style="color:#666">%&gt;%</span> <span style="color:#06287e">unnest_tokens</span>(token, txt, token <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ngrams&#34;</span>, n <span style="color:#666">=</span> <span style="color:#40a070">2</span>, collapse <span style="color:#666">=</span> <span style="color:#4070a0">&#34;meta&#34;</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 17 x 2
+##    meta  token          
+##    &lt;chr&gt; &lt;chr&gt;          
+##  1 a     because i      
+##  2 a     i could        
+##  3 a     could not      
+##  4 a     not stop       
+##  5 a     stop for       
+##  6 a     for death      
+##  7 a     death he       
+##  8 a     he kindly      
+##  9 a     kindly stopped 
+## 10 a     stopped for    
+## 11 a     for me         
+## 12 b     the carriage   
+## 13 b     carriage held  
+## 14 b     held but       
+## 15 b     but just       
+## 16 b     just ourselves 
+## 17 a     and immortality
+</code></pre>
+
+
+
+<h2 id="what-about-grouped-data">What about grouped data?
+  <a href="#what-about-grouped-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Before this recent update, <code>unnest_tokens()</code> did not handle grouped data consistently or well. Now, groups are another way to specify which variables should be used collapsing rows.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">d <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(meta) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(token, txt, token <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ngrams&#34;</span>, n <span style="color:#666">=</span> <span style="color:#40a070">2</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 17 x 2
+## # Groups:   meta [2]
+##    meta  token          
+##    &lt;chr&gt; &lt;chr&gt;          
+##  1 a     because i      
+##  2 a     i could        
+##  3 a     could not      
+##  4 a     not stop       
+##  5 a     stop for       
+##  6 a     for death      
+##  7 a     death he       
+##  8 a     he kindly      
+##  9 a     kindly stopped 
+## 10 a     stopped for    
+## 11 a     for me         
+## 12 b     the carriage   
+## 13 b     carriage held  
+## 14 b     held but       
+## 15 b     but just       
+## 16 b     just ourselves 
+## 17 a     and immortality
+</code></pre><p>But you <em>cannot</em> use both!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">d <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(meta) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(token, txt, token <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ngrams&#34;</span>, n <span style="color:#666">=</span> <span style="color:#40a070">2</span>, collapse <span style="color:#666">=</span> <span style="color:#4070a0">&#34;meta&#34;</span>)
+</code></pre></div><pre tabindex="0"><code>## Error: Use the `collapse` argument or grouped data, but not both.
+</code></pre><p>I&rsquo;ve been reluctant to dig into this, because I know it is disruptive to folks to have a breaking change. However, after seeing the new flexibility, there is a lot in favor of moving forward with this more consistent and correct behavior. For example, take a look at the dataset of Jane Austen&rsquo;s six published, completed novels. We have information about line, chapter, and book.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(janeaustenr)
+
+original_books <span style="color:#666">&lt;-</span> <span style="color:#06287e">austen_books</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(book) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    linenumber <span style="color:#666">=</span> <span style="color:#06287e">row_number</span>(),
+    chapter <span style="color:#666">=</span> <span style="color:#06287e">cumsum</span>(<span style="color:#06287e">str_detect</span>(
+      text,
+      <span style="color:#06287e">regex</span>(<span style="color:#4070a0">&#34;^chapter [\\divxlc]&#34;</span>,
+        ignore_case <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>
+      )
+    ))
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>()
+
+original_books
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 73,422 x 4
+##    text                    book                linenumber chapter
+##    &lt;chr&gt;                   &lt;fct&gt;                    &lt;int&gt;   &lt;int&gt;
+##  1 &quot;SENSE AND SENSIBILITY&quot; Sense &amp; Sensibility          1       0
+##  2 &quot;&quot;                      Sense &amp; Sensibility          2       0
+##  3 &quot;by Jane Austen&quot;        Sense &amp; Sensibility          3       0
+##  4 &quot;&quot;                      Sense &amp; Sensibility          4       0
+##  5 &quot;(1811)&quot;                Sense &amp; Sensibility          5       0
+##  6 &quot;&quot;                      Sense &amp; Sensibility          6       0
+##  7 &quot;&quot;                      Sense &amp; Sensibility          7       0
+##  8 &quot;&quot;                      Sense &amp; Sensibility          8       0
+##  9 &quot;&quot;                      Sense &amp; Sensibility          9       0
+## 10 &quot;CHAPTER 1&quot;             Sense &amp; Sensibility         10       1
+## # … with 73,412 more rows
+</code></pre><p>We can tokenize with <code>collapse = NULL</code>, which will not combine text across rows across lines. This may be appropriate for some text analysis tasks.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">original_books <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(token, text, token <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ngrams&#34;</span>, n <span style="color:#666">=</span> <span style="color:#40a070">2</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 675,025 x 4
+##    book                linenumber chapter token          
+##    &lt;fct&gt;                    &lt;int&gt;   &lt;int&gt; &lt;chr&gt;          
+##  1 Sense &amp; Sensibility          1       0 sense and      
+##  2 Sense &amp; Sensibility          1       0 and sensibility
+##  3 Sense &amp; Sensibility          2       0 &lt;NA&gt;           
+##  4 Sense &amp; Sensibility          3       0 by jane        
+##  5 Sense &amp; Sensibility          3       0 jane austen    
+##  6 Sense &amp; Sensibility          4       0 &lt;NA&gt;           
+##  7 Sense &amp; Sensibility          5       0 &lt;NA&gt;           
+##  8 Sense &amp; Sensibility          6       0 &lt;NA&gt;           
+##  9 Sense &amp; Sensibility          7       0 &lt;NA&gt;           
+## 10 Sense &amp; Sensibility          8       0 &lt;NA&gt;           
+## # … with 675,015 more rows
+</code></pre><p>Alternatively, we can tokenize using <code>collapse = c(&quot;book&quot;, &quot;chapter&quot;)</code>. Notice that we have <strong>more bigrams</strong> this way, because we have combined text across rows to find more bigrams, but only within chapters. We could have used <code>group_by(book, chapter)</code> instead.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">original_books <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(token, text,
+    token <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ngrams&#34;</span>, n <span style="color:#666">=</span> <span style="color:#40a070">2</span>,
+    collapse <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;book&#34;</span>, <span style="color:#4070a0">&#34;chapter&#34;</span>)
+  )
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 724,780 x 3
+##    book                chapter token          
+##    &lt;fct&gt;                 &lt;int&gt; &lt;chr&gt;          
+##  1 Sense &amp; Sensibility       0 sense and      
+##  2 Sense &amp; Sensibility       0 and sensibility
+##  3 Sense &amp; Sensibility       0 sensibility by 
+##  4 Sense &amp; Sensibility       0 by jane        
+##  5 Sense &amp; Sensibility       0 jane austen    
+##  6 Sense &amp; Sensibility       0 austen 1811    
+##  7 Sense &amp; Sensibility       1 chapter 1      
+##  8 Sense &amp; Sensibility       1 1 the          
+##  9 Sense &amp; Sensibility       1 the family     
+## 10 Sense &amp; Sensibility       1 family of      
+## # … with 724,770 more rows
+</code></pre>
+
+
+
+<h2 id="try-it-out-now">Try it out now
+  <a href="#try-it-out-now"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>This is the most significant change to tidytext in quite a while, affecting mostly tokenization beyond the single word. If you are among the more risk tolerant of tidytext users, I would definitely appreciate you installing the current GitHub version and trying out these new changes to see how it impacts your text analyses.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">devtools<span style="color:#666">::</span><span style="color:#06287e">install_github</span>(<span style="color:#4070a0">&#34;juliasilge/tidytext&#34;</span>)
+</code></pre></div><p>Let me know if you have feedback in the next few weeks!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">December 16, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1494 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/chicago-traffic-model/">&larr; Predicting injuries for Chicago traffic crashes</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/ikea-prices/">Tune random forests for #TidyTuesday IKEA prices &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Handle class imbalance in #TidyTuesday climbing expedition data with tidymodels | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Handle class imbalance in #TidyTuesday climbing expedition data with tidymodels | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/himalayan-climbing/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/himalayan-climbing/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/himalayan-climbing/featured.png" >
+    
+    
+  <meta itemprop="name" content="Handle class imbalance in #TidyTuesday climbing expedition data with tidymodels">
+<meta itemprop="description" content="Use tidymodels for feature engineering steps like imputing missing data and subsampling for class imbalance, and build predictive models to predict the probability of survival for Himalayan climbers."><meta itemprop="datePublished" content="2020-09-23T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-09-23T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2938"><meta itemprop="image" content="https://juliasilge.com/blog/himalayan-climbing/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Handle class imbalance in #TidyTuesday climbing expedition data with tidymodels</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">September 23, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Lately I&rsquo;ve been publishing 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> framework, from starting out with first modeling steps to tuning more complex models. Today&rsquo;s screencast walks through a detailed model analysis from beginning to end, with important feature engineering steps and several model types, using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Himalayan climbing expeditions. ⛰</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/9f6t5vaNyEM" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict the probability of an Himalayan expedition member surviving or dying 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-09-22/readme.md" target="_blank" rel="noopener">based on characteristics of the person and climbing expedition from this week&rsquo;s #TidyTuesday dataset</a>. This dataset gives us the opportunity to talk about feature engineering steps like subsampling for class imbalance (many more people survive than die) and imputing missing data (lots of expedition members are missing age, for example).</p>
+<p>Let&rsquo;s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+members <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/members.csv&#34;</span>)
+
+members
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 76,519 x 21
+##    expedition_id member_id peak_id peak_name  year season sex     age
+##    &lt;chr&gt;         &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt; &lt;dbl&gt;
+##  1 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        40
+##  2 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        41
+##  3 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        27
+##  4 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        40
+##  5 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        34
+##  6 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        25
+##  7 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        41
+##  8 AMAD78301     AMAD7830… AMAD    Ama Dabl…  1978 Autumn M        29
+##  9 AMAD79101     AMAD7910… AMAD    Ama Dabl…  1979 Spring M        35
+## 10 AMAD79101     AMAD7910… AMAD    Ama Dabl…  1979 Spring M        37
+## # … with 76,509 more rows, and 13 more variables: citizenship &lt;chr&gt;,
+## #   expedition_role &lt;chr&gt;, hired &lt;lgl&gt;, highpoint_metres &lt;dbl&gt;, success &lt;lgl&gt;,
+## #   solo &lt;lgl&gt;, oxygen_used &lt;lgl&gt;, died &lt;lgl&gt;, death_cause &lt;chr&gt;,
+## #   death_height_metres &lt;dbl&gt;, injured &lt;lgl&gt;, injury_type &lt;chr&gt;,
+## #   injury_height_metres &lt;dbl&gt;
+</code></pre><p>On the video, I walk through the results of <code>skimr::skim()</code>, and notice which variables have missing data, how many unique values there are for variables like citizenship or mountain peak, and so forth.</p>
+<p>How has the rate of expedition success and member death changed over time?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(year <span style="color:#666">=</span> <span style="color:#40a070">10</span> <span style="color:#666">*</span> (year <span style="color:#666">%/%</span> <span style="color:#40a070">10</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(
+    died <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(died),
+    success <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(success)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(died<span style="color:#666">:</span>success, names_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;outcome&#34;</span>, values_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;percent&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year, percent, color <span style="color:#666">=</span> outcome)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">percent_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of expedition members&#34;</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="/blog/himalayan-climbing/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Is there a relationship between the expedition member&rsquo;s age and success of the expedition or death? We can use the same code but just switch out <code>year</code> for <code>age</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(age <span style="color:#666">=</span> <span style="color:#40a070">10</span> <span style="color:#666">*</span> (age <span style="color:#666">%/%</span> <span style="color:#40a070">10</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(
+    died <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(died),
+    success <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(success)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(died<span style="color:#666">:</span>success, names_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;outcome&#34;</span>, values_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;percent&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(age, percent, color <span style="color:#666">=</span> outcome)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">percent_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of expedition members&#34;</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="/blog/himalayan-climbing/index_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>Are people more likely to die on unsuccessful expeditions?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(success, died) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(success) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(percent <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">percent</span>(n <span style="color:#666">/</span> <span style="color:#06287e">sum</span>(n))) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">kable</span>(
+    col.names <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Expedition success&#34;</span>, <span style="color:#4070a0">&#34;Died&#34;</span>, <span style="color:#4070a0">&#34;Number of people&#34;</span>, <span style="color:#4070a0">&#34;% of people&#34;</span>),
+    align <span style="color:#666">=</span> <span style="color:#4070a0">&#34;llrr&#34;</span>
+  )
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">Expedition success</th>
+<th style="text-align:left">Died</th>
+<th style="text-align:right">Number of people</th>
+<th style="text-align:right">% of people</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">46452</td>
+<td style="text-align:right">98%</td>
+</tr>
+<tr>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">868</td>
+<td style="text-align:right">2%</td>
+</tr>
+<tr>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">28961</td>
+<td style="text-align:right">99%</td>
+</tr>
+<tr>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">238</td>
+<td style="text-align:right">1%</td>
+</tr>
+</tbody>
+</table>
+<p>We can use a similar approach to see how different the rates of death are on different peaks in the Himalayas.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(peak_name)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(peak_name <span style="color:#666">=</span> <span style="color:#06287e">fct_lump</span>(peak_name, prop <span style="color:#666">=</span> <span style="color:#40a070">0.05</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(peak_name, died) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(peak_name) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(percent <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">percent</span>(n <span style="color:#666">/</span> <span style="color:#06287e">sum</span>(n))) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">kable</span>(
+    col.names <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Peak&#34;</span>, <span style="color:#4070a0">&#34;Died&#34;</span>, <span style="color:#4070a0">&#34;Number of people&#34;</span>, <span style="color:#4070a0">&#34;% of people&#34;</span>),
+    align <span style="color:#666">=</span> <span style="color:#4070a0">&#34;llrr&#34;</span>
+  )
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">Peak</th>
+<th style="text-align:left">Died</th>
+<th style="text-align:right">Number of people</th>
+<th style="text-align:right">% of people</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Ama Dablam</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">8374</td>
+<td style="text-align:right">100%</td>
+</tr>
+<tr>
+<td style="text-align:left">Ama Dablam</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">32</td>
+<td style="text-align:right">0%</td>
+</tr>
+<tr>
+<td style="text-align:left">Cho Oyu</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">8838</td>
+<td style="text-align:right">99%</td>
+</tr>
+<tr>
+<td style="text-align:left">Cho Oyu</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">52</td>
+<td style="text-align:right">1%</td>
+</tr>
+<tr>
+<td style="text-align:left">Everest</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">21507</td>
+<td style="text-align:right">99%</td>
+</tr>
+<tr>
+<td style="text-align:left">Everest</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">306</td>
+<td style="text-align:right">1%</td>
+</tr>
+<tr>
+<td style="text-align:left">Manaslu</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">4508</td>
+<td style="text-align:right">98%</td>
+</tr>
+<tr>
+<td style="text-align:left">Manaslu</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">85</td>
+<td style="text-align:right">2%</td>
+</tr>
+<tr>
+<td style="text-align:left">Other</td>
+<td style="text-align:left">FALSE</td>
+<td style="text-align:right">32171</td>
+<td style="text-align:right">98%</td>
+</tr>
+<tr>
+<td style="text-align:left">Other</td>
+<td style="text-align:left">TRUE</td>
+<td style="text-align:right">631</td>
+<td style="text-align:right">2%</td>
+</tr>
+</tbody>
+</table>
+<p>Let&rsquo;s make one last exploratory plot and look at seasons. How much difference is there in survival across the four seasons?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(season <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;Unknown&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(season, died) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(season) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    percent <span style="color:#666">=</span> n <span style="color:#666">/</span> <span style="color:#06287e">sum</span>(n),
+    died <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+      died <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Died&#34;</span>,
+      <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Did not die&#34;</span>
+    )
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(season, percent, fill <span style="color:#666">=</span> season)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;dodge&#34;</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">percent_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>died, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of expedition members&#34;</span>)
+</code></pre></div><img src="/blog/himalayan-climbing/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<p>There are lots more great examples of #TidyTuesday EDA out there to explore on 
+<a href="https://twitter.com/hashtag/TidyTuesday" target="_blank" rel="noopener">Twitter</a>! Let&rsquo;s now create the dataset that we&rsquo;ll use for modeling by filtering on some of the variables and transforming some variables to a be factors. There are still lots of <code>NA</code> values for age but we are going to <em>impute</em> those.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members_df <span style="color:#666">&lt;-</span> members <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(season <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;Unknown&#34;</span>, <span style="color:#666">!</span><span style="color:#06287e">is.na</span>(sex), <span style="color:#666">!</span><span style="color:#06287e">is.na</span>(citizenship)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(peak_id, year, season, sex, age, citizenship, hired, success, died) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(died <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    died <span style="color:#666">~</span> <span style="color:#4070a0">&#34;died&#34;</span>,
+    <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;survived&#34;</span>
+  )) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.character, factor) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.logical, as.integer)
+
+members_df
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 76,507 x 9
+##    peak_id  year season sex     age citizenship hired success died    
+##    &lt;fct&gt;   &lt;dbl&gt; &lt;fct&gt;  &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;       &lt;int&gt;   &lt;int&gt; &lt;fct&gt;   
+##  1 AMAD     1978 Autumn M        40 France          0       0 survived
+##  2 AMAD     1978 Autumn M        41 France          0       0 survived
+##  3 AMAD     1978 Autumn M        27 France          0       0 survived
+##  4 AMAD     1978 Autumn M        40 France          0       0 survived
+##  5 AMAD     1978 Autumn M        34 France          0       0 survived
+##  6 AMAD     1978 Autumn M        25 France          0       0 survived
+##  7 AMAD     1978 Autumn M        41 France          0       0 survived
+##  8 AMAD     1978 Autumn M        29 France          0       0 survived
+##  9 AMAD     1979 Spring M        35 USA             0       0 survived
+## 10 AMAD     1979 Spring M        37 W Germany       0       1 survived
+## # … with 76,497 more rows
+</code></pre>
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, and splitting our data into training and testing sets.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+members_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(members_df, strata <span style="color:#666">=</span> died)
+members_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(members_split)
+members_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(members_split)
+</code></pre></div><p>We are going to use 
+<a href="https://www.tmwr.org/resampling.html" target="_blank" rel="noopener">resampling</a> to evaluate model performance, so let&rsquo;s get those resampled sets ready.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+members_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(members_train, strata <span style="color:#666">=</span> died)
+members_folds
+</code></pre></div><pre tabindex="0"><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 x 2
+##    splits               id    
+##    &lt;list&gt;               &lt;chr&gt; 
+##  1 &lt;split [51.6K/5.7K]&gt; Fold01
+##  2 &lt;split [51.6K/5.7K]&gt; Fold02
+##  3 &lt;split [51.6K/5.7K]&gt; Fold03
+##  4 &lt;split [51.6K/5.7K]&gt; Fold04
+##  5 &lt;split [51.6K/5.7K]&gt; Fold05
+##  6 &lt;split [51.6K/5.7K]&gt; Fold06
+##  7 &lt;split [51.6K/5.7K]&gt; Fold07
+##  8 &lt;split [51.6K/5.7K]&gt; Fold08
+##  9 &lt;split [51.6K/5.7K]&gt; Fold09
+## 10 &lt;split [51.6K/5.7K]&gt; Fold10
+</code></pre><p>Next we build a recipe for data preprocessing.</p>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what our model is going to be (using a formula here) and what our training data is.</li>
+<li>Next, we impute the missing values for <code>age</code> using the median age in the training data set. There are more complex 
+<a href="https://recipes.tidymodels.org/reference/index.html#section-step-functions-imputation" target="_blank" rel="noopener">steps available for imputation</a>, but we&rsquo;ll stick with a straightforward option here.</li>
+<li>Next, we use <code>step_other()</code> to collapse categorical levels for peak and citizenship. Before this step, there were hundreds of values in each variable.</li>
+<li>After this, we can create indicator variables for the non-numeric, categorical values, except for the outcome <code>died</code> which we need to keep as a factor.</li>
+<li>Finally, there are many more people who survived their expedition than who died (thankfully) so 
+<a href="https://themis.tidymodels.org/reference/step_smote.html" target="_blank" rel="noopener">we will use <code>step_smote()</code> to balance the classes</a>.</li>
+</ul>
+<p>The object <code>members_rec</code> is a recipe that has <strong>not</strong> been trained on data yet (for example, which categorical levels should be collapsed has not been calculated).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(themis)
+
+members_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(died <span style="color:#666">~</span> ., data <span style="color:#666">=</span> members_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_medianimpute</span>(age) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_other</span>(peak_id, citizenship) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_dummy</span>(<span style="color:#06287e">all_nominal</span>(), <span style="color:#666">-</span>died) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_smote</span>(died)
+
+members_rec
+</code></pre></div><pre tabindex="0"><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##    outcome          1
+##  predictor          8
+## 
+## Operations:
+## 
+## Median Imputation for age
+## Collapsing factor levels for peak_id, citizenship
+## Dummy variables from all_nominal(), -died
+## SMOTE based on died
+</code></pre><p>We&rsquo;re going to use this recipe in a <code>workflow()</code> so we don&rsquo;t need to stress a lot about whether to <code>prep()</code> or not. If you want to explore the what the recipe is doing to your data, you can first <code>prep()</code> the recipe to estimate the parameters needed for each step and then <code>bake(new_data = NULL)</code> to pull out the training data with those steps applied.</p>
+<p>Let&rsquo;s compare <em>two</em> different models, a logistic regression model and a random forest model; these are the same two models I used 
+<a href="https://juliasilge.com/blog/palmer-penguins/" target="_blank" rel="noopener">in the post on the Palmer penguins</a>. We start by creating the model specifications.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">glm_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">logistic_reg</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;glm&#34;</span>)
+
+glm_spec
+</code></pre></div><pre tabindex="0"><code>## Logistic Regression Model Specification (classification)
+## 
+## Computational engine: glm
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rf_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1000</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>)
+
+rf_spec
+</code></pre></div><pre tabindex="0"><code>## Random Forest Model Specification (classification)
+## 
+## Main Arguments:
+##   trees = 1000
+## 
+## Computational engine: ranger
+</code></pre><p>Next let&rsquo;s start putting together a tidymodels <code>workflow()</code>, a helper object to help manage modeling pipelines with pieces that fit together like Lego blocks. Notice that there is no model yet: <code>Model: None</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(members_rec)
+
+members_wf
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow ═══════════════════════════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: None
+## 
+## ── Preprocessor ───────────────────────────────────────────────────────────────────────────────────────
+## 4 Recipe Steps
+## 
+## ● step_medianimpute()
+## ● step_other()
+## ● step_dummy()
+## ● step_smote()
+</code></pre><p>Now we can add a model, and the fit to each of the resamples. First, we can fit the logistic regression model. Let&rsquo;s set a non-default metric set so we can add sensitivity and specificity.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members_metrics <span style="color:#666">&lt;-</span> <span style="color:#06287e">metric_set</span>(roc_auc, accuracy, sensitivity, specificity)
+
+doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+glm_rs <span style="color:#666">&lt;-</span> members_wf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(glm_spec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit_resamples</span>(
+    resamples <span style="color:#666">=</span> members_folds,
+    metrics <span style="color:#666">=</span> members_metrics,
+    control <span style="color:#666">=</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+  )
+
+glm_rs
+</code></pre></div><pre tabindex="0"><code>## # Resampling results
+## # 10-fold cross-validation using stratification 
+## # A tibble: 10 x 5
+##    splits              id     .metrics        .notes         .predictions       
+##    &lt;list&gt;              &lt;chr&gt;  &lt;list&gt;          &lt;list&gt;         &lt;list&gt;             
+##  1 &lt;split [51.6K/5.7K… Fold01 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,739 × 5…
+##  2 &lt;split [51.6K/5.7K… Fold02 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  3 &lt;split [51.6K/5.7K… Fold03 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  4 &lt;split [51.6K/5.7K… Fold04 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  5 &lt;split [51.6K/5.7K… Fold05 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  6 &lt;split [51.6K/5.7K… Fold06 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  7 &lt;split [51.6K/5.7K… Fold07 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  8 &lt;split [51.6K/5.7K… Fold08 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  9 &lt;split [51.6K/5.7K… Fold09 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+## 10 &lt;split [51.6K/5.7K… Fold10 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+</code></pre><p>Second, we can fit the random forest model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rf_rs <span style="color:#666">&lt;-</span> members_wf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(rf_spec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit_resamples</span>(
+    resamples <span style="color:#666">=</span> members_folds,
+    metrics <span style="color:#666">=</span> members_metrics,
+    control <span style="color:#666">=</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+  )
+
+rf_rs
+</code></pre></div><pre tabindex="0"><code>## # Resampling results
+## # 10-fold cross-validation using stratification 
+## # A tibble: 10 x 5
+##    splits              id     .metrics        .notes         .predictions       
+##    &lt;list&gt;              &lt;chr&gt;  &lt;list&gt;          &lt;list&gt;         &lt;list&gt;             
+##  1 &lt;split [51.6K/5.7K… Fold01 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,739 × 5…
+##  2 &lt;split [51.6K/5.7K… Fold02 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  3 &lt;split [51.6K/5.7K… Fold03 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  4 &lt;split [51.6K/5.7K… Fold04 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  5 &lt;split [51.6K/5.7K… Fold05 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  6 &lt;split [51.6K/5.7K… Fold06 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  7 &lt;split [51.6K/5.7K… Fold07 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  8 &lt;split [51.6K/5.7K… Fold08 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+##  9 &lt;split [51.6K/5.7K… Fold09 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+## 10 &lt;split [51.6K/5.7K… Fold10 &lt;tibble [4 × 3… &lt;tibble [0 × … &lt;tibble [5,738 × 5…
+</code></pre><p>We have fit each of our candidate models to our resampled training set!</p>
+
+
+
+
+<h2 id="evaluate-model">Evaluate model
+  <a href="#evaluate-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let&rsquo;s check out how we did.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(glm_rs)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 4 x 5
+##   .metric  .estimator  mean     n std_err
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+## 1 accuracy binary     0.619    10 0.00230
+## 2 roc_auc  binary     0.705    10 0.00721
+## 3 sens     binary     0.678    10 0.0139 
+## 4 spec     binary     0.619    10 0.00243
+</code></pre><p>Well, this is middling but at least mostly consistent for the positive and negative classes. The function <code>collect_metrics()</code> extracts and formats the <code>.metrics</code> column from resampling results like the ones we have here.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(rf_rs)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 4 x 5
+##   .metric  .estimator  mean     n  std_err
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt;
+## 1 accuracy binary     0.972    10 0.000514
+## 2 roc_auc  binary     0.746    10 0.00936 
+## 3 sens     binary     0.164    10 0.0125  
+## 4 spec     binary     0.984    10 0.000499
+</code></pre><p>The accuracy is great but that sensitivity&hellip; YIKES! The random forest model has not done a great job of learning how to recognize <em>both</em> classes, even with our oversampling strategy. Let&rsquo;s dig deeper into how these models are doing to see this more. For example, how are they predicting the two classes?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">glm_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat_resampled</span>()
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 4 x 3
+##   Prediction Truth      Freq
+##   &lt;fct&gt;      &lt;fct&gt;     &lt;dbl&gt;
+## 1 died       died       55.5
+## 2 died       survived 2157. 
+## 3 survived   died       26.5
+## 4 survived   survived 3499.
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rf_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat_resampled</span>()
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 4 x 3
+##   Prediction Truth      Freq
+##   &lt;fct&gt;      &lt;fct&gt;     &lt;dbl&gt;
+## 1 died       died       13.5
+## 2 died       survived   89.9
+## 3 survived   died       68.5
+## 4 survived   survived 5566.
+</code></pre><p>The random forest model is quite bad at identifying which expedition members died, while the logistic regression model does about the same for both classes.</p>
+<p>We can also make an ROC curve.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">glm_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(id) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">roc_curve</span>(died, .pred_died) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#40a070">1</span> <span style="color:#666">-</span> specificity, sensitivity, color <span style="color:#666">=</span> id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_abline</span>(lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray80&#34;</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_path</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_equal</span>()
+</code></pre></div><img src="/blog/himalayan-climbing/index_files/figure-html/unnamed-chunk-19-1.png" width="2400" />
+<p>It is finally time for us to return to the testing set. Notice that we have not used the testing set yet during this whole analysis; to compare and assess models we used resamples of the training set. Let&rsquo;s <em>fit</em> one more time to the training data and <em>evaluate</em> on the testing data using the function <code>last_fit()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members_final <span style="color:#666">&lt;-</span> members_wf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(glm_spec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">last_fit</span>(members_split)
+
+members_final
+</code></pre></div><pre tabindex="0"><code>## # Resampling results
+## # Manual resampling 
+## # A tibble: 1 x 6
+##   splits         id          .metrics     .notes      .predictions     .workflow
+##   &lt;list&gt;         &lt;chr&gt;       &lt;list&gt;       &lt;list&gt;      &lt;list&gt;           &lt;list&gt;   
+## 1 &lt;split [57.4K… train/test… &lt;tibble [2 … &lt;tibble [0… &lt;tibble [19,126… &lt;workflo…
+</code></pre><p>The metrics and predictions here are on the <em>testing</em> data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(members_final)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2 x 3
+##   .metric  .estimator .estimate
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 accuracy binary         0.619
+## 2 roc_auc  binary         0.689
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(members_final) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat</span>(died, .pred_class)
+</code></pre></div><pre tabindex="0"><code>##           Truth
+## Prediction  died survived
+##   died       196     7204
+##   survived    90    11636
+</code></pre><p>The coefficients (which we can get out using <code>tidy()</code>) have been estimated using the <em>training</em> data. If we use <code>exponentiate = TRUE</code>, we have odds ratios.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members_final <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull</span>(.workflow) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pluck</span>(<span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">tidy</span>(exponentiate <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(estimate) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">kable</span>(digits <span style="color:#666">=</span> <span style="color:#40a070">3</span>)
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">term</th>
+<th style="text-align:right">estimate</th>
+<th style="text-align:right">std.error</th>
+<th style="text-align:right">statistic</th>
+<th style="text-align:right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">(Intercept)</td>
+<td style="text-align:right">0.000</td>
+<td style="text-align:right">0.944</td>
+<td style="text-align:right">-57.309</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">peak_id_MANA</td>
+<td style="text-align:right">0.220</td>
+<td style="text-align:right">0.042</td>
+<td style="text-align:right">-35.769</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">peak_id_other</td>
+<td style="text-align:right">0.223</td>
+<td style="text-align:right">0.034</td>
+<td style="text-align:right">-43.635</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">peak_id_EVER</td>
+<td style="text-align:right">0.294</td>
+<td style="text-align:right">0.036</td>
+<td style="text-align:right">-33.641</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">hired</td>
+<td style="text-align:right">0.497</td>
+<td style="text-align:right">0.054</td>
+<td style="text-align:right">-12.928</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">sex_M</td>
+<td style="text-align:right">0.536</td>
+<td style="text-align:right">0.029</td>
+<td style="text-align:right">-21.230</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">citizenship_other</td>
+<td style="text-align:right">0.612</td>
+<td style="text-align:right">0.032</td>
+<td style="text-align:right">-15.299</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">citizenship_Japan</td>
+<td style="text-align:right">0.739</td>
+<td style="text-align:right">0.038</td>
+<td style="text-align:right">-7.995</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">season_Winter</td>
+<td style="text-align:right">0.747</td>
+<td style="text-align:right">0.041</td>
+<td style="text-align:right">-7.180</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">citizenship_Nepal</td>
+<td style="text-align:right">0.776</td>
+<td style="text-align:right">0.062</td>
+<td style="text-align:right">-4.128</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">peak_id_CHOY</td>
+<td style="text-align:right">0.865</td>
+<td style="text-align:right">0.043</td>
+<td style="text-align:right">-3.404</td>
+<td style="text-align:right">0.001</td>
+</tr>
+<tr>
+<td style="text-align:left">season_Spring</td>
+<td style="text-align:right">0.905</td>
+<td style="text-align:right">0.016</td>
+<td style="text-align:right">-6.335</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">age</td>
+<td style="text-align:right">0.991</td>
+<td style="text-align:right">0.001</td>
+<td style="text-align:right">-12.129</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">year</td>
+<td style="text-align:right">1.029</td>
+<td style="text-align:right">0.000</td>
+<td style="text-align:right">59.745</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">citizenship_USA</td>
+<td style="text-align:right">1.334</td>
+<td style="text-align:right">0.043</td>
+<td style="text-align:right">6.759</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">citizenship_UK</td>
+<td style="text-align:right">1.419</td>
+<td style="text-align:right">0.045</td>
+<td style="text-align:right">7.858</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">success</td>
+<td style="text-align:right">2.099</td>
+<td style="text-align:right">0.016</td>
+<td style="text-align:right">46.404</td>
+<td style="text-align:right">0.000</td>
+</tr>
+<tr>
+<td style="text-align:left">season_Summer</td>
+<td style="text-align:right">7.142</td>
+<td style="text-align:right">0.092</td>
+<td style="text-align:right">21.433</td>
+<td style="text-align:right">0.000</td>
+</tr>
+</tbody>
+</table>
+<p>We can also visualize these results.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">members_final <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull</span>(.workflow) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pluck</span>(<span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">tidy</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate, <span style="color:#06287e">fct_reorder</span>(term, estimate))) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbar</span>(<span style="color:#06287e">aes</span>(
+    xmin <span style="color:#666">=</span> estimate <span style="color:#666">-</span> std.error,
+    xmax <span style="color:#666">=</span> estimate <span style="color:#666">+</span> std.error
+  ),
+  width <span style="color:#666">=</span> <span style="color:#40a070">.2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;#85144B&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Coefficent from logistic regression&#34;</span>)
+</code></pre></div><img src="/blog/himalayan-climbing/index_files/figure-html/unnamed-chunk-23-1.png" width="2400" />
+<ul>
+<li>The features with coefficients on the positive side (like climbing in summer, being on a successful expedition, or being from the UK or US) are associated with surviving.</li>
+<li>The features with coefficients on the negative side (like climbing specific peaks including Everest, being one of the hired members of a expedition, or being a man) are associated with dying.</li>
+</ul>
+<p>Remember that we have to interpret model coefficients like this in light of the predictive accuracy of our model, which was somewhat middling; there are more factors at play in who survives these expeditions than what we have accounted for in the model directly. Also note that we see evidence in this model for how dangerous it is to be a native Sherpa climber in Nepal, hired as an expedition member, as 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-09-22/readme.md" target="_blank" rel="noopener">pointed out in this week&rsquo;s #TidyTuesday <code>README</code></a>.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">September 23, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">14 minute read, 2938 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/ncaa-tuning/">&larr; Modeling #TidyTuesday NCAA women&#39;s basketball tournament seeds</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/tidymodels-book/">Introducing our new book, Tidy Modeling with R &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

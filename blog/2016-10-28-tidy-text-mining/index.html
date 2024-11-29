@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Tidy Text Mining with R | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Introducing a new release of tidytext, and a new book!">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Tidy Text Mining with R | Julia Silge">
+<meta property="og:description" content="Introducing a new release of tidytext, and a new book!" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/2016-10-28-tidy-text-mining/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Tidy Text Mining with R">
+<meta itemprop="description" content="I am so pleased to announce that tidytext 0.1.2 is now available on CRAN. This release of tidytext, a package for text mining using tidy data principles by Dave Robinson and me, includes some bug fixes and performance improvements, as well as some new functionality.
+There is now a handy function for accessing the various lexicons in the sentiments dataset without the columns that are not used in that particular dataset; this makes these datasets even easier to use with pipes and joins from dplyr."><meta itemprop="datePublished" content="2016-10-28T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-10-28T00:00:00+00:00" />
+<meta itemprop="wordCount" content="792">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Tidy Text Mining with R</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">October 28, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+
+
+<p>I am so pleased to announce that <a href="https://cran.r-project.org/package=tidytext">tidytext 0.1.2</a> is now available on CRAN. This release of tidytext, a package for text mining using tidy data principles by <a href="http://varianceexplained.org/">Dave Robinson</a> and me, includes some bug fixes and performance improvements, as well as some new functionality.</p>
+<p>There is now a handy function for accessing the various lexicons in the <code>sentiments</code> dataset without the columns that are not used in that particular dataset; this makes these datasets even easier to use with pipes and joins from dplyr.</p>
+<pre class="r"><code>library(tidytext)
+library(dplyr)
+
+get_sentiments(&quot;afinn&quot;)</code></pre>
+<pre><code>## # A tibble: 2,476 x 2
+##          word score
+##         &lt;chr&gt; &lt;int&gt;
+##  1    abandon    -2
+##  2  abandoned    -2
+##  3   abandons    -2
+##  4   abducted    -2
+##  5  abduction    -2
+##  6 abductions    -2
+##  7      abhor    -3
+##  8   abhorred    -3
+##  9  abhorrent    -3
+## 10     abhors    -3
+## # ... with 2,466 more rows</code></pre>
+<pre class="r"><code>get_sentiments(&quot;nrc&quot;) %&gt;%
+    filter(sentiment == &quot;joy&quot;)</code></pre>
+<pre><code>## # A tibble: 689 x 2
+##             word sentiment
+##            &lt;chr&gt;     &lt;chr&gt;
+##  1    absolution       joy
+##  2     abundance       joy
+##  3      abundant       joy
+##  4      accolade       joy
+##  5 accompaniment       joy
+##  6    accomplish       joy
+##  7  accomplished       joy
+##  8       achieve       joy
+##  9   achievement       joy
+## 10       acrobat       joy
+## # ... with 679 more rows</code></pre>
+<p>The <code>unnest_tokens</code> package can now process html, xml, latex or man pages (using the <a href="https://cran.r-project.org/package=hunspell">hunspell</a> package).</p>
+<pre class="r"><code>library(readr)
+
+data_frame(text = read_lines(&quot;https://en.wikipedia.org/wiki/Pride_and_Prejudice_and_Zombies&quot;)) %&gt;%
+  unnest_tokens(word, text, format = &quot;html&quot;)</code></pre>
+<pre><code>## # A tibble: 2,804 x 1
+##         word
+##        &lt;chr&gt;
+##  1     pride
+##  2       and
+##  3 prejudice
+##  4       and
+##  5   zombies
+##  6 wikipedia
+##  7     pride
+##  8       and
+##  9 prejudice
+## 10       and
+## # ... with 2,794 more rows</code></pre>
+<p>This only works for tokenizing by single words.</p>
+<p>Since the last release of this package, we published a <a href="http://joss.theoj.org/papers/89fd1099620268fe0342ffdcdf66776f">short paper on tidytext</a> in the Journal of Open Source Software. Our experience with JOSS was great, and you can find the citation within R by typing <code>citation(&quot;tidytext&quot;)</code>.</p>
+<div id="but-wait-theres-more" class="section level2">
+<h2>BUT WAIT THERE’S MORE</h2>
+<p>I am even <em>more</em> excited to <a href="http://tidytextmining.com/">publicly announce the book</a> that Dave and I have been working on.</p>
+<p><a href="http://tidytextmining.com/"><img src="/figs/2016-10-28-Tidy-Text-Mining/screenshot.png" alt="center" /></a></p>
+<p>Dave and I have used the <a href="https://github.com/rstudio/bookdown">bookdown</a> package by Yihui Xie to write and build our book on text mining using tidy data principles. Our goal in writing this book is to provide resources and examples for people who want to use tidy tools to approach natural language processing tasks. The intended audience for this book includes people (like us!) who don’t have extensive backgrounds in computational linguistics but who need or want to analyze unstructured, text-heavy data. Using tidy data principles can make text mining easier, more effective, and consistent with tools that are already being used widely by many data scientists and analysts.</p>
+<p>The book is partly composed of material from blog posts by both of us, the package’s vignettes, and various tutorials we have put together. We think it will be helpful to have all this material in one place, organized in a cohesive way for both newcomers to using this package and other users who need to look something up.</p>
+<p>The book also includes new material that we haven’t published elsewhere. <a href="http://tidytextmining.com/twitter.html">One chapter</a> is about analyzing our own Twitter archives. How have Dave and I used our Twitter accounts?</p>
+<p><a href="http://tidytextmining.com/twitter.html"><img src="/figs/2016-10-28-Tidy-Text-Mining/spread-1.png" alt="center" /></a></p>
+<p>QUITE DIFFERENTLY, IT TURNS OUT.</p>
+<p><a href="http://tidytextmining.com/nasa.html">Another chapter</a> that I am really excited about focuses on exploring NASA metadata. I am part of the <a href="https://open.nasa.gov/explore/datanauts/">NASA Datanauts</a> class of 2016; it has been a great experience with lots of opportunities to meet interesting people and learn. The program is mostly oriented toward underrepresented groups in tech and is open to a variety of skill levels, including those who are true newcomers. I highly recommend applying for next year’s program if it might be a good fit for you! One of the projects I’ve worked on through this program is exploring NASA metadata. There are 32,000+ datasets at NASA, and we can use the metadata for these datasets to understand the connections between them. For just a sneak peek, here is a network of the most commonly co-occurring words in the titles of NASA datasets.</p>
+<p><a href="http://tidytextmining.com/nasa.html"><img src="/figs/2016-10-28-Tidy-Text-Mining/plot_title-1.png" alt="center" /></a></p>
+</div>
+<div id="the-end" class="section level2">
+<h2>The End</h2>
+<p>Some of the later chapters are less developed currently than the earlier ones; Dave and I are still in the writing process and will be actively developing and honing the book in the near future. We are eager to share our work with the world at large, though, so go ahead and take a look! We plan to finish writing this book in the open, and we are open to suggestions and edits via <a href="https://github.com/dgrtwo/tidy-text-mining/issues">the book’s GitHub repository</a>. The R Markdown file used to make this blog post is available <a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-10-28-Tidy-Text-Mining.Rmd">here</a>. I am very happy to hear feedback or questions!</p>
+</div>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 28, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">4 minute read, 792 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/election-mapping/">&larr; Mapping Election Results in Utah</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/non-academic-careers/">Non-Academic Careers for Astronomers and Physicists &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Health Care Indicators in Utah Counties | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Correlation Coefficients, a Shiny App, Principal Component Analysis, and Clustering">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Health Care Indicators in Utah Counties | Julia Silge">
+<meta property="og:description" content="Correlation Coefficients, a Shiny App, Principal Component Analysis, and Clustering" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/health-care-indicators/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Health Care Indicators in Utah Counties">
+<meta itemprop="description" content="The state of Utah (my adopted home) has an Open Data Catalog with lots of interesting data sets, including a collection of health care indicators from 2014 for the 29 counties in Utah. The observations for each county include measurements such as the infant mortality rate, the percent of people who don&rsquo;t have insurance, what percent of people have diabetes, and so forth. Let&rsquo;s see how these health care indicators are related to each other and if we can use these data to cluster Utah counties into similar groups."><meta itemprop="datePublished" content="2016-01-11T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-01-11T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2745">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Health Care Indicators in Utah Counties</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">January 11, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>The state of Utah (my adopted home) has an 
+<a href="https://opendata.utah.gov/" target="_blank" rel="noopener">Open Data Catalog</a> with lots of interesting data sets, including a collection of 
+<a href="https://opendata.utah.gov/Health/Health-Care-Indicators-By-Counties-In-Utah-2014/qmsu-gki4" target="_blank" rel="noopener">health care indicators from 2014 for the 29 counties in Utah</a>. The observations for each county include measurements such as the infant mortality rate, the percent of people who don&rsquo;t have insurance, what percent of people have diabetes, and so forth. Let&rsquo;s see how these health care indicators are related to each other and if we can use these data to cluster Utah counties into similar groups.</p>
+
+
+
+
+<h2 id="something-to-keep-in-mind">Something to Keep in Mind
+  <a href="#something-to-keep-in-mind"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Before we start, let&rsquo;s look at one demographic map of Utah that is important to remember.</p>
+<p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-2-1.png" alt="center"></p>
+<p>The population in Utah is not evenly distributed among counties. Salt Lake County, where I live, has a population over 1 million people and the rest of the counties have much lower populations. Utah County, just to the south of Salt Lake, has a population that is about half of Salt Lake&rsquo;s, and the numbers go down very quickly after that; there are a number of counties with populations only in the 1000s. This will effect both the actual health care indicators (rural populations can have different healthcare issues than more urban ones) and the measurements of the health care indicators.</p>
+
+
+
+
+<h2 id="getting-started">Getting Started
+  <a href="#getting-started"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The data sets at Utah&rsquo;s Open Data Catalog can be downloaded via Socrata Open API. Let&rsquo;s load the data, fix the data types, and remove the row that contains numbers for the state as a whole.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(RSocrata)
+allHealth &lt;- read.socrata(&quot;https://opendata.utah.gov/resource/qmsu-gki4.csv&quot;)
+allHealth[,3:67] &lt;- lapply(allHealth[,3:67], as.numeric)
+allHealth &lt;- allHealth[c(-1),]
+</code></pre><p>Now let&rsquo;s explore how some of these health care indicators are related to each other. Some of the indicators are correlated with each other in ways that make sense.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = allHealth, 
+       aes(x = Median.Household.Income, y = Children.Eligible.Free.Lunch...Free.Lunch)) +
+        geom_point(alpha = 0.6, size = 3) +
+        stat_smooth(method = &quot;lm&quot;) +
+        geom_point(data = subset(allHealth, County == &quot;Salt Lake&quot;), size = 5, colour = &quot;maroon&quot;) +
+        xlab(&quot;Median household income (dollars)&quot;) +
+        ylab(&quot;Children eligible for free lunch (percent)&quot;)
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-4-1.png" alt="center"></p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">myCor &lt;- cor.test(allHealth$Median.Household.Income, allHealth$Children.Eligible.Free.Lunch...Free.Lunch)
+</code></pre><p>I&rsquo;ve highlighted Salt Lake County in this plot and the following ones, just to give some context. The correlation coefficient between these two economic/health indicators is -0.652 with a 95% confidence interval from -0.822 to -0.374. Counties with higher incomes have fewer children eligible for free lunch.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = allHealth, 
+       aes(x = X65.and.over, y = X..Diabetic)) +
+        geom_point(alpha = 0.6, size = 3) +
+        stat_smooth(method = &quot;lm&quot;) +
+        geom_point(data = subset(allHealth, County == &quot;Salt Lake&quot;), size = 5, colour = &quot;maroon&quot;) +
+        xlab(&quot;Population over 65 (percent)&quot;) +
+        ylab(&quot;Diabetic population (percent)&quot;)
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-5-1.png" alt="center"></p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">myCor &lt;- cor.test(allHealth$X65.and.over, allHealth$X..Diabetic)
+</code></pre><p>The correlation coefficient between the population percentage over 65 and the percentage of the population with diabetes is 0.667 with a 95% confidence interval from 0.398 to 0.831. Counties with more older people in them have more people with diabetes in them. Notice that Salt Lake County has less than 10% of its population 65 or older; we are very young here in Utah, 
+<a href="https://twitter.com/juliasilge/status/630122552212324352" target="_blank" rel="noopener">the youngest in the nation, in fact</a>.</p>
+<p>Then there are lots of health care indicators that are not correlated with each other.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = allHealth, 
+       aes(x = Premature.Age.adjusted.Mortality, y = X..Uninsured.Children.1)) +
+        geom_point(alpha = 0.6, size = 3) +
+        stat_smooth(method = &quot;lm&quot;) +
+        geom_point(data = subset(allHealth, County == &quot;Salt Lake&quot;), size = 5, colour = &quot;maroon&quot;) +
+        xlab(&quot;Premature mortality rate (per 100,000 population)&quot;) +
+        ylab(&quot;Uninsured children (percent)&quot;)
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-6-1.png" alt="center"></p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">myCor &lt;- cor.test(allHealth$Premature.Age.adjusted.Mortality, allHealth$X..Uninsured.Children.1)
+</code></pre><p>The correlation coefficient between the percentage of uninsured children and premature age adjusted mortality is 0.221 with a 95% confidence interval from -0.173 to 0.555.</p>
+<p>To facilitate exploring all of the health care indicators in the data set, I made a 
+<a href="https://juliasilge.shinyapps.io/CountyHealthApp" target="_blank" rel="noopener">Shiny app</a> where the user can plot any two indicators from the data set, add a linear regression line, calculate a correlation coefficient, and highlight any county of choice. 
+<a href="https://juliasilge.shinyapps.io/CountyHealthApp" target="_blank" rel="noopener">Use the app</a> to explore the data, and check out the code for the app 
+<a href="https://github.com/juliasilge/CountyHealthApp" target="_blank" rel="noopener">on Github</a>.</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/CountyHealthApp" target="_blank" rel="noopener"><img src="/figs/2016-1-11-Health-Care-Indicators/CountyHealthAppScreenShot.jpg" alt="Shiny App Screen Shot"></a></p>
+
+
+
+
+<h2 id="woe-is-me-na-values">Woe Is Me, <code>NA</code> Values&hellip;
+  <a href="#woe-is-me-na-values"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The clustering analysis we would like to do requires that each county has complete information for all columns, i.e. no missing values. The populations of some Utah counties are so low that some of these health care indicators cannot be measured or are zero. Let&rsquo;s look at how this plays out.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">health &lt;- allHealth[,c(4:5,18,22,24,27,31,34,36,38,42,44,48,51,55,60,63,64)]
+rownames(health) &lt;- allHealth$County
+colnames(health) &lt;- c(&quot;PercentUnder18&quot;,
+              &quot;PercentOver65&quot;,
+              &quot;DiabeticRate&quot;, 
+              &quot;HIVRate&quot;,
+              &quot;PrematureMortalityRate&quot;,
+              &quot;InfantMortalityRate&quot;,
+              &quot;ChildMortalityRate&quot;,
+              &quot;LimitedAccessToFood&quot;,
+              &quot;FoodInsecure&quot;, 
+              &quot;MotorDeathRate&quot;,
+              &quot;DrugDeathRate&quot;,
+              &quot;Uninsured&quot;, 
+              &quot;UninsuredChildren&quot;,
+              &quot;HealthCareCosts&quot;, 
+              &quot;CouldNotSeeDr&quot;,
+              &quot;MedianIncome&quot;,
+              &quot;ChildrenFreeLunch&quot;,
+              &quot;HomicideRate&quot;)
+scaledhealth &lt;- scale(health)
+library(viridis)
+heatmap(scaledhealth, Colv = NA, Rowv = NA, margins = c(10,4), 
+        main = &quot;Heatmap of Data Set Values&quot;, col = viridis(32, 1))
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-7-1.png" alt="center"></p>
+<p>The values for the health indicators have been scaled for this heat map (otherwise, for example, the numbers for the median income would swamp out the numbers for the HIV rate because of the units they are measured with). The blank spaces in the heat map show where we have <code>NA</code> values to deal with. HIV/AIDs is not a very common disease and there are no reported cases of HIV in many of the sparsely populated counties in Utah. It probably makes sense to just put a zero in those spots because more urban areas have more HIV cases. Having an infant die is also quite uncommon in the United States and there are many counties in Utah where no infants died in 2014. Does it make sense to just put a zero in those spots?</p>
+<p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-8-1.png" alt="center"></p>
+<p>Probably not, right? Outcomes for newborn babies appear to be worse in more rural counties. While plugging in a zero for the infant mortality rate in a county where zero newborns died does make sense on one level, it is a problematic thing to do.</p>
+<p>One option is to impute the missing values based on the values for other, similar counties. One possible method for this is the random forest, an ensemble decision tree algorithm.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(missForest)
+healthimputed &lt;- missForest(health)
+</code></pre><pre tabindex="0"><code>##   missForest iteration 1 in progress...done!
+##   missForest iteration 2 in progress...done!
+##   missForest iteration 3 in progress...done!
+##   missForest iteration 4 in progress...done!
+##   missForest iteration 5 in progress...done!
+</code></pre><p>We can access the new matrix with the imputed values via <code>healthimputed$ximp</code>. Unfortunately, this was not a screaming success because some of the columns have so few real measured values; the mean squared error was not good and this approach doesn&rsquo;t seem like a good idea. The good news is that I tested the rest of this analysis both with the random forest imputed data and just replacing <code>NA</code> values with 0, and the results were pretty much the same. There were some minor differences in exactly how the counties clustered, but no major differences in the main results. Given that, let&rsquo;s just replace all the <code>NA</code> values with zeroes, scale and center the data, and move forward.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">health[is.na(health)] &lt;- 0
+health &lt;- scale(health)
+</code></pre>
+
+
+
+<h2 id="principal-component-wonderfulness">Principal Component Wonderfulness
+  <a href="#principal-component-wonderfulness"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can think of a data set like this as a high-dimensional space where each county is at a certain spot in that space. At this point in the analysis we are working with 18 columns of observations. We removed the columns that directly measure how many people live in each county such as population number, percentage of population who are rural dwellers, etc. and kept the columns on health care indicators such as child mortality rate, homicide rate, and percentage of population who is uninsured. Thus we have an 18-dimensional space and each county is located at its own spot in that space. Principal component analysis is a way to project these data points onto a new, special coordinate system. In our new coordinate system, each coordinate, or principal component, is a weighted sum of the original coordinates. The first principal component has the most variance in the data in its direction, the second principal component has the second most variance in the data in its direction, and so forth. Let&rsquo;s do it!</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">myPCA &lt;- prcomp(health)
+</code></pre><p>Welp, that was easy.</p>
+<p><img src="https://i.imgflip.com/x1goe.jpg" alt="Success Kid Does PCA"></p>
+<p>I just love PCA; it&rsquo;s one of my very favorite algorithmic-y things. Let&rsquo;s see what the first few of the principal components actually look like.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(reshape2)
+melted &lt;- melt(myPCA$rotation[,1:9])
+ggplot(data = melted) +
+        theme(legend.position = &quot;none&quot;, axis.text.x = element_blank(), 
+              axis.ticks.x = element_blank()) + 
+        xlab(&quot;Health care indicator measurements&quot;) +
+        ylab(&quot;Relative importance in each principle component&quot;) +
+        ggtitle(&quot;Variables in Principal Component Analysis&quot;) +
+        geom_bar(aes(x=Var1, y=value, fill=Var1), stat=&quot;identity&quot;) +
+        facet_wrap(~Var2)
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-12-1.png" alt="center"></p>
+<p>So each of these components are orthogonal to each other, and the colored bars show the contribution of each original health care indicator to that principal component. Each principal component is uncorrelated to the others and together, the principal components contain the information in the data set. Let&rsquo;s zoom in on the first principal component, the one that has the largest variance and accounts for the most variability between the counties.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = melted[melted$Var2 == &quot;PC1&quot;,]) +
+         theme(legend.position = &quot;none&quot;, 
+               axis.text.x= element_text(angle=45, hjust = 1), 
+               axis.ticks.x = element_blank()) + 
+         xlab(&quot;Health care indicator measurements&quot;) +
+         ylab(&quot;Relative importance in principle component&quot;) +
+         ggtitle(&quot;Variables in PC1&quot;) +
+         geom_bar(aes(x=Var1, y=value, fill=Var1), stat=&quot;identity&quot;)
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-13-1.png" alt="center"></p>
+<p>We can see here that counties with higher positive values for PC1 (the component that accounts for the most variability among the counties) have fewer children, more older people, low HIV and homicide rates, are more poor, and have more uninsured people. These sound like more rural counties.</p>
+
+
+
+
+<h2 id="its-clustering-time">It&rsquo;s Clustering Time
+  <a href="#its-clustering-time"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let&rsquo;s see if this data set of health care indicators can be used to cluster similar counties together. Clustering is an example of unsupervised machine learning, where we want to use an algorithm to find structure in unlabeled data. Let&rsquo;s begin with hierarchical clustering. This method of clustering begins with all the individual items (counties, in our case) alone by themselves and then starts merging them into clusters with the items that are closest to them within the space we are considering. First, the algorithm merges them into two-item clusters, then it will merge another nearby item into each cluster, and so forth, until all the items are merged together into one big cluster. We can examine the tree structure the algorithm used to do the clustering to see what kind of clustering makes sense for the data, given the context, etc. Hierarchical clustering can be done with different methods of computing the distance (or similarity) of the items.</p>
+<p>Let&rsquo;s use the <code>fpc</code> package, a package with lots of resources for clustering algorithms, to do some hierarchical clustering of this county health data. Let&rsquo;s do the hierarchical clustering algorithm, but let&rsquo;s do it with bootstrap resampling of the county sample to assess how stable the clusters are to individual counties within the sample and what the best method for computing the distance/similarity is.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(fpc)
+myClusterBoot &lt;- clusterboot(health,clustermethod=hclustCBI, method=&quot;ward.D&quot;, k=3, seed = 6789)
+</code></pre><p>I tested different methods for computing the distance and found Ward clustering to be the most stable. The bootstrap results also indicate that 3 clusters is a stable, sensible choice. Let&rsquo;s look at the results for these parameters for the hierarchical clustering.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">myClusterBoot$bootmean
+</code></pre><pre tabindex="0"><code>## [1] 0.8090913 0.7216360 0.6972370
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">myClusterBoot$bootbrd
+</code></pre><pre tabindex="0"><code>## [1] 10 26 21
+</code></pre><p>The <code>bootmean</code> value measures the cluster stability, where a value close to 1 indicates a stable cluster. The <code>bootbrd</code> value measures how many times (out of the 100 resampling runs) that cluster dissolved. These three clusters look pretty stable, so let&rsquo;s take a look at how the hierarchical clustering algorithm has grouped the counties here.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(dendextend)
+myDend &lt;- health %&gt;% dist %&gt;% hclust(method = &quot;ward.D&quot;) %&gt;% 
+    as.dendrogram %&gt;%
+    set(&quot;branches_k_color&quot;, k = 3) %&gt;% 
+    set(&quot;labels_col&quot;, k=3) %&gt;%
+    hang.dendrogram(hang_height=0.8)
+par(mar = c(3,3,3,7))
+plot(myDend, horiz = TRUE, 
+     main = &quot;Clustering in Utah County Health Care Indicators&quot;)
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-16-1.png" alt="center"></p>
+<p>The scale along the bottom shows a measure of how separated the branches of the tree structure are. As a resident of Utah, these county names look like they may be in a certain order to me; let&rsquo;s check it out. What if I looked at county names ordered from lowest population to highest? (This is from the original data frame, not the data used to do the clustering.)</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">allHealth$County[order(allHealth$Population)]
+</code></pre><pre tabindex="0"><code>##  [1] &quot;Daggett&quot;    &quot;Piute&quot;      &quot;Rich&quot;       &quot;Wayne&quot;      &quot;Garfield&quot;  
+##  [6] &quot;Beaver&quot;     &quot;Kane&quot;       &quot;Grand&quot;      &quot;Morgan&quot;     &quot;Juab&quot;      
+## [11] &quot;Emery&quot;      &quot;Millard&quot;    &quot;San Juan&quot;   &quot;Duchesne&quot;   &quot;Sevier&quot;    
+## [16] &quot;Carbon&quot;     &quot;Wasatch&quot;    &quot;Sanpete&quot;    &quot;Uintah&quot;     &quot;Summit&quot;    
+## [21] &quot;Iron&quot;       &quot;Box Elder&quot;  &quot;Tooele&quot;     &quot;Cache&quot;      &quot;Washington&quot;
+## [26] &quot;Weber&quot;      &quot;Davis&quot;      &quot;Utah&quot;       &quot;Salt Lake&quot;
+</code></pre><p>Yes indeed! The pink counties are the lowest population counties, the green ones are intermediate in population, and the blue counties are the most populous. The hierarchical clustering algorithm groups the counties by population based on their health care indicators.</p>
+<p>Another algorithm for grouping similar objects is k-means clustering. K-means clustering works a bit differently than hierarchical clustering. You decide ahead of time how many clusters you are going to have (the number k) and randomly pick centers for each cluster (perhaps by picking data points at random to be the centers of each cluster). Then, the algorithm assigns each data point (county, in our case) to the closest cluster. After the clusters have their new members, the algorithm calculates new centers for each cluster. These steps of calculating the centers and assigning points to the clusters are repeated until the assignment of points to clusters converges (hopefully to a real minimum). Then you have your final cluster assignments!</p>
+<p>The <code>kmeansruns</code> function in the <code>fpc</code> library will run k-means clustering many times to find the best clustering.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">myKmeans &lt;- kmeansruns(health, krange=1:5)
+</code></pre><p>Helpfully, this function estimates the number of clusters in the data; it can use two different methods for this estimate but both give the same answer for our county health data here. If we include 1 in the range for <code>krange</code>, this function also tests whether there should even be more than one cluster at all. For the county health data, the best k is 2. Let&rsquo;s plot what this k-means clustering looks like.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(ggfortify)
+library(ggrepel)
+set.seed(2346)
+autoplot(kmeans(health, 2), data = health, size = 3, aes = 0.8) + 
+        ggtitle(&quot;K-Means Clustering of Utah Counties&quot;) +
+        theme(legend.position=&quot;none&quot;) + 
+        geom_label_repel(aes(PC1, PC2, 
+                             fill = factor(kmeans(health, 2)$cluster), 
+                             label = rownames(health)),
+                         fontface = 'bold', color = 'white', 
+                         box.padding = unit(0.5, &quot;lines&quot;))
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-19-1.png" alt="center"></p>
+<p>This plot puts the counties on a plane where the x-axis is the first principal component and the y-axis is the second principal component; this kind of plotting can be helpful to show how data points are different from each other. Like with hierarchical clustering, k-means clustering has grouped counties by population. The cluster on the right is a low-population cluster while the cluster on the left is a high population cluster.</p>
+<p>Remember that when we looked in detail at PC1, lower negative values of PC1 correspond to higher homicide rate, higher HIV rate, more children and fewer older poeple, higher income, lower rates of being food insecure and children eligible for free lunch, etc. Notice which counties have the lowest negatives values for PC1: the three most populous counties in Utah. That is heartening to see.</p>
+<p>The methods for estimating numbers of clusters in the k-means algorithm indicated that 2 was the best number, but we can do a 3-cluster k-means clustering to compare to the groups found by hierarchical clustering.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">set.seed(2350)
+autoplot(kmeans(health, 3), data = health, size = 3, aes = 0.8) + 
+        ggtitle(&quot;K-Means Clustering of Utah Counties&quot;) + 
+        theme(legend.position=&quot;none&quot;) + 
+        geom_label_repel(aes(PC1, PC2, 
+                             fill = factor(kmeans(health, 3)$cluster), 
+                             label = rownames(health)), 
+                         fontface = 'bold', color = 'white', 
+                         box.padding = unit(0.5, &quot;lines&quot;))
+</code></pre><p><img src="/figs/2016-1-11-Health-Care-Indicators/unnamed-chunk-20-1.png" alt="center"></p>
+<p>These groups are very similar to those found by hierarchical clustering.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you have a skeptical turn of mind (as I tend to do), you might suggest that what the clustering algorithms are actually finding is just how many <code>NA</code> values each county had. The least populous counties have the most <code>NA</code> values, counties with more intermediate populations have just a few <code>NA</code> values, and the most populous counties have none. There are a couple of things to consider about this perspective. One is that the pattern of <code>NA</code> values is not random; it could be considered informative in itself so perhaps it is not a problem if that affected the clustering results. Another is that I tested this clustering analysis with a subset of the data that excluded the columns that had many missing values (HIV rate, homicide rate, infant mortality rate, and child mortality rate). The clustering results still showed groups of low and high population counties, although the results were messier since there was less data and the excluded columns were highly predictive. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-1-11-Health-Care-Indicators.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback and other perspectives!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">January 11, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">13 minute read, 2745 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/2016-01-19-water-world/">&larr; Water World</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/this-is-the-place/">This Is the Place, Apparently &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Lucas Bagge</title>
+    <link>https://juliasilge.com/</link>
+    <description>Recent content on Lucas Bagge</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Thu, 29 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://juliasilge.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Manifesto: Introducing the Analytical Engineer</title>
+      <link>https://juliasilge.com/blog/dbt/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/blog/dbt/</guid>
+      <description>.</description>
+    </item>
+    
+    <item>
+      <title>Tune and interpret decision trees for #TidyTuesday wind turbines</title>
+      <link>https://juliasilge.com/blog/wind-turbine/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/blog/wind-turbine/</guid>
+      <description>Use tidymodels to predict capacity for Canadian wind turbines with decision trees.</description>
+    </item>
+    
+    <item>
+      <title>License</title>
+      <link>https://juliasilge.com/license/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/license/</guid>
+      <description>My blog posts are released under a Creative Commons Attribution-ShareAlike 4.0 International License.
+</description>
+    </item>
+    
+  </channel>
+</rss>

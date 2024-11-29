@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Predict the magnitude of #TidyTuesday tornadoes with effect encoding and xgboost | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Predict the magnitude of #TidyTuesday tornadoes with effect encoding and xgboost | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tornadoes/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/tornadoes/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/tornadoes/featured.png" >
+    
+    
+  <meta itemprop="name" content="Predict the magnitude of #TidyTuesday tornadoes with effect encoding and xgboost">
+<meta itemprop="description" content="How well can we predict the magnitude of tornadoes in the US? Let&rsquo;s use xgboost along with effect encoding to fit our model."><meta itemprop="datePublished" content="2023-05-20T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-05-20T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2356"><meta itemprop="image" content="https://juliasilge.com/blog/tornadoes/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Predict the magnitude of #TidyTuesday tornadoes with effect encoding and xgboost</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">May 20, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to use tidymodels for feature engineering such as dealing with dates and effect encoding, using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on tornadoes in the United States. 🌪️</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/S3QBlcNFKAI" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal in this case is to predict the 
+<a href="https://en.wikipedia.org/wiki/Tornado_intensity" target="_blank" rel="noopener">magnitude of tornadoes</a> based on 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-05-16/" target="_blank" rel="noopener">tornado characteristics</a> like when and where it occurred. Let&rsquo;s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+tornadoes <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-16/tornados.csv&#39;</span>)
+
+<span style="color:#06287e">glimpse</span>(tornadoes)
+</code></pre></div><pre><code>Rows: 68,693
+Columns: 27
+$ om           &lt;dbl&gt; 192, 193, 195, 196, 197, 194, 198, 199, 200, 201, 4, 5, 6…
+$ yr           &lt;dbl&gt; 1950, 1950, 1950, 1950, 1950, 1950, 1950, 1950, 1950, 195…
+$ mo           &lt;dbl&gt; 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 1, 1, 1, 1, 1, 1,…
+$ dy           &lt;dbl&gt; 1, 9, 20, 20, 20, 4, 2, 2, 2, 2, 13, 25, 25, 26, 3, 3, 3,…
+$ date         &lt;date&gt; 1950-10-01, 1950-10-09, 1950-11-20, 1950-11-20, 1950-11-…
+$ time         &lt;time&gt; 21:00:00, 02:15:00, 02:20:00, 04:00:00, 07:30:00, 17:00:…
+$ tz           &lt;chr&gt; &quot;America/Chicago&quot;, &quot;America/Chicago&quot;, &quot;America/Chicago&quot;, …
+$ datetime_utc &lt;dttm&gt; 1950-10-02 03:00:00, 1950-10-09 08:15:00, 1950-11-20 08:…
+$ st           &lt;chr&gt; &quot;OK&quot;, &quot;NC&quot;, &quot;KY&quot;, &quot;KY&quot;, &quot;MS&quot;, &quot;PA&quot;, &quot;IL&quot;, &quot;IL&quot;, &quot;AR&quot;, &quot;IL…
+$ stf          &lt;dbl&gt; 40, 37, 21, 21, 28, 42, 17, 17, 5, 17, 5, 29, 17, 48, 29,…
+$ mag          &lt;dbl&gt; 1, 3, 2, 1, 1, 3, 2, 3, 3, 1, 3, 2, 2, 2, 3, 3, 1, 2, 3, …
+$ inj          &lt;dbl&gt; 0, 3, 0, 0, 3, 1, 3, 25, 0, 0, 1, 5, 0, 2, 3, 3, 1, 0, 12…
+$ fat          &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, …
+$ loss         &lt;dbl&gt; 5e+04, 5e+05, 5e+05, 5e+05, 5e+04, 5e+05, 5e+04, 5e+06, 5…
+$ slat         &lt;dbl&gt; 36.73, 34.17, 37.37, 38.20, 32.42, 40.20, 38.97, 38.75, 3…
+$ slon         &lt;dbl&gt; -102.52, -78.60, -87.20, -84.50, -89.13, -76.12, -90.05, …
+$ elat         &lt;dbl&gt; 36.88, 0.00, 0.00, 0.00, 0.00, 40.40, 39.07, 38.90, 36.18…
+$ elon         &lt;dbl&gt; -102.30, 0.00, 0.00, 0.00, 0.00, -75.93, -89.72, -89.38, …
+$ len          &lt;dbl&gt; 15.8, 2.0, 0.1, 0.1, 2.0, 15.9, 18.8, 18.0, 7.8, 9.6, 0.6…
+$ wid          &lt;dbl&gt; 10, 880, 10, 10, 37, 100, 50, 200, 10, 50, 17, 300, 100, …
+$ ns           &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, …
+$ sn           &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, …
+$ f1           &lt;dbl&gt; 25, 47, 177, 209, 101, 71, 119, 119, 65, 157, 113, 93, 91…
+$ f2           &lt;dbl&gt; 0, 0, 0, 0, 0, 11, 117, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ f3           &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ f4           &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ fc           &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
+</code></pre>
+<p>Before we can build a model, we&rsquo;ll have to decide how to try to formulate our prediction question. How is the outcome <code>mag</code> distributed?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tornadoes <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(mag, fill <span style="color:#666">=</span> fc)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bar</span>(position <span style="color:#666">=</span> <span style="color:#06287e">position_dodge</span>(preserve <span style="color:#666">=</span> <span style="color:#4070a0">&#34;single&#34;</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Estimated?&#34;</span>)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-3-1.png" width="1260" />
+<p>We could try out excluding the tornadoes with estimated magnitudes, but a larger challenge is that the outcome we want to model is sort of like a count or integer, has just a ton of zeroes, can&rsquo;t be negative, and doesn&rsquo;t extend to very high values. I tend to consider these kinds of options in a situation like this:</p>
+<ul>
+<li><strong>Classification with multiple classes</strong>: This isn&rsquo;t great because the &ldquo;classes&rdquo; are in a sequence, and classification metrics can&rsquo;t really tell us how wrong we are in a useful way.</li>
+<li><strong>Ordered outcome model, like <code>MASS::polr()</code></strong>: This is definitely a good fit for our outcome, but this kind of model is linear and when we have a big dataset like this including complex interactions, a linear model often leaves a lot of possible model performance on the table.</li>
+<li><strong>Zero-inflated Poisson regression</strong>: We could treat the outcome as a count with lots of extra zeroes, but again, the implementations I am familiar with are linear.</li>
+<li><strong>Just pretend it is continuous</strong>: What happens if we just treat this outcome as if it were a continuous numeric value? Much like with 
+<a href="https://juliasilge.com/blog/childcare-costs/" target="_blank" rel="noopener">my screencast last week</a>, this dataset has lots of variables in a big rectangular dataset, many of which are highly correlated with each other, so it&rsquo;s at the sweet spot for xgboost. What happens if we treat this as a regression problem and use xgboost?</li>
+</ul>
+<p>Do different states in the US have more or less extreme tornadoes?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tornadoes <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(st) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">summarise</span>(mag <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(mag, na.rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>), n <span style="color:#666">=</span> <span style="color:#06287e">n</span>()) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>mag)
+</code></pre></div><pre><code># A tibble: 53 × 3
+   st      mag     n
+   &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;
+ 1 AR    1.13   1952
+ 2 KY    1.09   1099
+ 3 TN    1.06   1335
+ 4 MS    1.04   2594
+ 5 VT    1.04     48
+ 6 MA    1.03    177
+ 7 IN    1.03   1556
+ 8 AL    1.02   2456
+ 9 NH    1        96
+10 CT    0.992   121
+# ℹ 43 more rows
+</code></pre>
+<p>If we want to use this as a predictor, we likely want to think about how to handle the high cardinality of this feature. If we create dummy or indicator variables, we&rsquo;ll have ~50 new columns. Instead, we can use effect or likelihood encodings and keep this as <em>one</em> column.</p>
+<p>How is the magnitude of the tornado related to the number of injuries?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tornadoes <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(mag)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(mag <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(mag)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(mag, inj, fill <span style="color:#666">=</span> mag)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.4</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(trans <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">pseudo_log_trans</span>(base <span style="color:#666">=</span> <span style="color:#40a070">10</span>))
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-5-1.png" width="1260" />
+<p>This looks like another power law; there are dramatic increases in the number of people injured as magnitude increases.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, splitting our data into training and testing sets, and creating cross-validation resamples. Think about this stage as <em>spending your data budget</em>. Let&rsquo;s also remove tornadoes without a <code>mag</code> measurement (we could also remove the estimated magnitudes here, if we wanted).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+tornado_split <span style="color:#666">&lt;-</span> tornadoes <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(mag)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> mag)
+
+tornado_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(tornado_split)
+tornado_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(tornado_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+tornado_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(tornado_train, strata <span style="color:#666">=</span> mag)
+tornado_folds
+</code></pre></div><pre><code>#  10-fold cross-validation using stratification 
+# A tibble: 10 × 2
+   splits               id    
+   &lt;list&gt;               &lt;chr&gt; 
+ 1 &lt;split [45856/5096]&gt; Fold01
+ 2 &lt;split [45856/5096]&gt; Fold02
+ 3 &lt;split [45856/5096]&gt; Fold03
+ 4 &lt;split [45856/5096]&gt; Fold04
+ 5 &lt;split [45856/5096]&gt; Fold05
+ 6 &lt;split [45857/5095]&gt; Fold06
+ 7 &lt;split [45857/5095]&gt; Fold07
+ 8 &lt;split [45858/5094]&gt; Fold08
+ 9 &lt;split [45858/5094]&gt; Fold09
+10 &lt;split [45858/5094]&gt; Fold10
+</code></pre>
+<p>Next, let&rsquo;s create our feature engineering recipe, handling the high cardinality <code>st</code> variable using a likelihood or effect encoding. The way that this works is that we train a little mini model with only <code>st</code> and our outcome <code>mag</code>, and replace the original categorical variable with a single numeric column that measures its effect; the coefficients from the mini model are used to compute this new numeric column. Let&rsquo;s also use <code>date</code> to create indicator or dummy variables for month, and a numeric predictor for year.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(embed)
+
+tornado_rec <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">recipe</span>(mag <span style="color:#666">~</span> date <span style="color:#666">+</span> st <span style="color:#666">+</span> inj <span style="color:#666">+</span> fat <span style="color:#666">+</span> len <span style="color:#666">+</span> wid, data <span style="color:#666">=</span> tornado_train) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">step_lencode_glm</span>(st, outcome <span style="color:#666">=</span> <span style="color:#06287e">vars</span>(mag)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">step_date</span>(date, features <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;month&#34;</span>, <span style="color:#4070a0">&#34;year&#34;</span>), keep_original_cols <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">step_dummy</span>(<span style="color:#06287e">all_nominal_predictors</span>())
+
+tornado_rec
+</code></pre></div><p>How does this feature engineering recipe transform our training data?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">prep</span>(tornado_rec) <span style="color:#666">|&gt;</span> <span style="color:#06287e">bake</span>(new_data <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>) <span style="color:#666">|&gt;</span> <span style="color:#06287e">glimpse</span>()
+</code></pre></div><pre><code>Rows: 50,952
+Columns: 18
+$ st             &lt;dbl&gt; 1.1086691, 1.0325918, 0.9395901, 0.6959252, 0.6959252, …
+$ inj            &lt;dbl&gt; 0, 3, 1, 0, 32, 0, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ fat            &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ len            &lt;dbl&gt; 0.1, 2.0, 0.1, 2.3, 7.7, 2.0, 0.2, 2.0, 18.1, 0.2, 0.1,…
+$ wid            &lt;dbl&gt; 10, 37, 10, 233, 100, 10, 10, 33, 27, 10, 10, 100, 37, …
+$ mag            &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…
+$ date_year      &lt;int&gt; 1950, 1950, 1950, 1950, 1950, 1950, 1950, 1950, 1950, 1…
+$ date_month_Feb &lt;dbl&gt; 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Mar &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Apr &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0…
+$ date_month_May &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1…
+$ date_month_Jun &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Jul &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Aug &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Sep &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Oct &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Nov &lt;dbl&gt; 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ date_month_Dec &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+</code></pre>
+<p>We don&rsquo;t need to use <code>prep()</code> and <code>bake()</code> for our actual training or tuning, but they are useful for debugging feature engineering recipes.</p>
+<p>Now let&rsquo;s create a tunable xgboost model specification and put it together with our feature engineering recipe in a <code>workflow()</code>. Notice that we have <code>set_mode(&quot;regression&quot;)</code>, even given the not-quite-continuous characteristics of our outcome.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">xgb_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">boost_tree</span>(
+    trees <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    min_n <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    mtry <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    learn_rate <span style="color:#666">=</span> <span style="color:#40a070">0.01</span>
+  ) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;xgboost&#34;</span>) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>)
+
+xgb_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(tornado_rec, xgb_spec)
+</code></pre></div><p>I really like using racing methods with xgboost (so efficient!) so let&rsquo;s use the 
+<a href="https://finetune.tidymodels.org/" target="_blank" rel="noopener">finetune</a> package for tuning. Check out 
+<a href="https://juliasilge.com/blog/uk-museums/" target="_blank" rel="noopener">this blog post</a> for another racing example.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(finetune)
+doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">345</span>)
+xgb_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">tune_race_anova</span>(
+  xgb_wf,
+  resamples <span style="color:#666">=</span> tornado_folds,
+  grid <span style="color:#666">=</span> <span style="color:#40a070">15</span>,
+  control <span style="color:#666">=</span> <span style="color:#06287e">control_race</span>(verbose_elim <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+)
+
+xgb_rs
+</code></pre></div><pre><code># Tuning results
+# 10-fold cross-validation using stratification 
+# A tibble: 10 × 5
+   splits               id     .order .metrics          .notes          
+   &lt;list&gt;               &lt;chr&gt;   &lt;int&gt; &lt;list&gt;            &lt;list&gt;          
+ 1 &lt;split [45856/5096]&gt; Fold01      2 &lt;tibble [30 × 7]&gt; &lt;tibble [0 × 3]&gt;
+ 2 &lt;split [45856/5096]&gt; Fold02      3 &lt;tibble [30 × 7]&gt; &lt;tibble [0 × 3]&gt;
+ 3 &lt;split [45858/5094]&gt; Fold10      1 &lt;tibble [30 × 7]&gt; &lt;tibble [0 × 3]&gt;
+ 4 &lt;split [45857/5095]&gt; Fold07      4 &lt;tibble [16 × 7]&gt; &lt;tibble [0 × 3]&gt;
+ 5 &lt;split [45856/5096]&gt; Fold03      5 &lt;tibble [4 × 7]&gt;  &lt;tibble [0 × 3]&gt;
+ 6 &lt;split [45856/5096]&gt; Fold05      6 &lt;tibble [4 × 7]&gt;  &lt;tibble [0 × 3]&gt;
+ 7 &lt;split [45858/5094]&gt; Fold09      7 &lt;tibble [4 × 7]&gt;  &lt;tibble [0 × 3]&gt;
+ 8 &lt;split [45856/5096]&gt; Fold04      8 &lt;tibble [2 × 7]&gt;  &lt;tibble [0 × 3]&gt;
+ 9 &lt;split [45857/5095]&gt; Fold06      9 &lt;tibble [2 × 7]&gt;  &lt;tibble [0 × 3]&gt;
+10 &lt;split [45858/5094]&gt; Fold08     10 &lt;tibble [2 × 7]&gt;  &lt;tibble [0 × 3]&gt;
+</code></pre>
+
+
+
+
+<h2 id="evaluate-and-finalize-model">Evaluate and finalize model
+  <a href="#evaluate-and-finalize-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>How did our tuning with racing go?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(xgb_rs)
+</code></pre></div><pre><code># A tibble: 2 × 9
+   mtry trees min_n .metric .estimator  mean     n std_err .config              
+  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;                
+1    15  1877    37 rmse    standard   0.583    10 0.00250 Preprocessor1_Model14
+2    15  1877    37 rsq     standard   0.578    10 0.00360 Preprocessor1_Model14
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">plot_race</span>(xgb_rs)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-11-1.png" width="1260" />
+<p>The racing method allowed us to drop the model hyperparameter configurations that weren&rsquo;t performing very well. Let&rsquo;s use <code>last_fit()</code> to fit one final time to the training data and evaluate one final time on the testing data, with the numerically optimal result from <code>xgb_rs</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tornado_fit <span style="color:#666">&lt;-</span> xgb_wf <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">finalize_workflow</span>(<span style="color:#06287e">select_best</span>(xgb_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>)) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">last_fit</span>(tornado_split)
+
+tornado_fit
+</code></pre></div><pre><code># Resampling results
+# Manual resampling 
+# A tibble: 1 × 6
+  splits                id             .metrics .notes   .predictions .workflow 
+  &lt;list&gt;                &lt;chr&gt;          &lt;list&gt;   &lt;list&gt;   &lt;list&gt;       &lt;list&gt;    
+1 &lt;split [50952/16985]&gt; train/test sp… &lt;tibble&gt; &lt;tibble&gt; &lt;tibble&gt;     &lt;workflow&gt;
+</code></pre>
+<p>How did these predictions turn out? (Remember that these are predictions on the <em>testing</em> data.)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(tornado_fit) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.pred)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>()
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-13-1.png" width="1260" />
+<p>This is not too bad, actually.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(tornado_fit) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(mag <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(mag)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(mag, .pred, fill <span style="color:#666">=</span> mag)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.4</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-14-1.png" width="1260" />
+<p>We are still predicting too few minor, low-magnitude tornadoes with this model but the range of predictions is about right (no <code>mag = 40</code> tornadoes) and other than a lack of enough zeroes, the distribution looks pretty good. The lesson here is that sometimes a powerful model like xgboost that can learn complex interactions from large-ish, rectangular data does quite well, even when there are reasons it&rsquo;s not a perfect application.</p>
+<p>What features are most important for this xgboost model?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+<span style="color:#06287e">extract_workflow</span>(tornado_fit) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">extract_fit_parsnip</span>() <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">vip</span>(num_features <span style="color:#666">=</span> <span style="color:#40a070">10</span>)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-15-1.png" width="1260" />
+<p>The number of injured people is an important predictor of magnitude (makes sense!), as are tornado length and width. The state predictor <code>st</code> ended up in the top 10, so I think it was worth it to use the effect encoding. Also, even accounting for characteristics like injuries/fatalities and tornado size, the month of the year still made it in there.</p>
+
+
+
+
+<h2 id="create-a-deployable-model-object">Create a deployable model object
+  <a href="#create-a-deployable-model-object"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you wanted to deploy this model, the next step is to create a deployable model object with 
+<a href="https://vetiver.rstudio.com/" target="_blank" rel="noopener">vetiver</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vetiver)
+v <span style="color:#666">&lt;-</span> <span style="color:#06287e">extract_workflow</span>(tornado_fit) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">vetiver_model</span>(<span style="color:#4070a0">&#34;tornado-xgb&#34;</span>)
+v
+</code></pre></div><pre><code>── tornado-xgb ─ &lt;bundled_workflow&gt; model for deployment 
+A xgboost regression modeling workflow using 6 features
+</code></pre>
+<p>Like I mentioned in my last post, I am teaching a workshop at 
+<a href="https://pos.it/conf" target="_blank" rel="noopener">posit::conf()</a> this coming September in Chicago on how to deploy and maintain models with vetiver. Join me if you are interested in learning more about this part of the modeling process, or 
+<a href="https://www.youtube.com/playlist?list=PL9HYL-VRX0oROlETlHRDAt0FzqnfkoG84" target="_blank" rel="noopener">check out all the workshops</a> being organized for one that&rsquo;s a good fit for you!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 20, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">12 minute read, 2356 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/place-names/">&larr; What tokens are used more vs. less in #TidyTuesday place names?</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/childcare-costs/">Tune an xgboost model with early stopping and #TidyTuesday childcare costs &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

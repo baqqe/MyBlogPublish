@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>LASSO regression using tidymodels and #TidyTuesday data for The Office | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="LASSO regression using tidymodels and #TidyTuesday data for The Office | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/lasso-the-office/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/lasso-the-office/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/lasso-the-office/featured.png" >
+    
+    
+  <meta itemprop="name" content="LASSO regression using tidymodels and #TidyTuesday data for The Office">
+<meta itemprop="description" content="I&rsquo;ve been publishing screencasts demonstrating how to use the tidymodels framework, from first steps in modeling to how to tune more complex models. Today, I&rsquo;m using this week&rsquo;s #TidyTuesday dataset on The Office to show how to build a lasso regression model and choose regularization parameters!
+   Here is the code I used in the video, for those who prefer reading instead of or in addition to video."><meta itemprop="datePublished" content="2020-03-17T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-03-17T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2141"><meta itemprop="image" content="https://juliasilge.com/blog/lasso-the-office/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">LASSO regression using tidymodels and #TidyTuesday data for The Office</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">March 17, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I&rsquo;ve been publishing 
+<a href="https://juliasilge.com/tags/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the tidymodels framework, from first steps in modeling to how to tune more complex models. Today, I&rsquo;m using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on <em>The Office</em> to show how to build a lasso regression model and choose regularization parameters!</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/R32AsuKICAY" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal here is to predict the IMDB ratings for episodes of <em>The Office</em> based on the other characteristics of the episodes in the 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-03-17/readme.md" target="_blank" rel="noopener">#TidyTuesday dataset</a>. There are two datasets, one with the ratings and one with information like director, writer, and which character spoke which line. The episode numbers and titles are not consistent between them, so we can use regular expressions to do a better job of matching the datasets up for joining.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+ratings_raw <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-17/office_ratings.csv&#34;</span>)
+
+remove_regex <span style="color:#666">&lt;-</span> <span style="color:#4070a0">&#34;[:punct:]|[:digit:]|parts |part |the |and&#34;</span>
+
+office_ratings <span style="color:#666">&lt;-</span> ratings_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">transmute</span>(
+    episode_name <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(title),
+    episode_name <span style="color:#666">=</span> <span style="color:#06287e">str_remove_all</span>(episode_name, remove_regex),
+    episode_name <span style="color:#666">=</span> <span style="color:#06287e">str_trim</span>(episode_name),
+    imdb_rating
+  )
+
+office_info <span style="color:#666">&lt;-</span> schrute<span style="color:#666">::</span>theoffice <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    season <span style="color:#666">=</span> <span style="color:#06287e">as.numeric</span>(season),
+    episode <span style="color:#666">=</span> <span style="color:#06287e">as.numeric</span>(episode),
+    episode_name <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(episode_name),
+    episode_name <span style="color:#666">=</span> <span style="color:#06287e">str_remove_all</span>(episode_name, remove_regex),
+    episode_name <span style="color:#666">=</span> <span style="color:#06287e">str_trim</span>(episode_name)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(season, episode, episode_name, director, writer, character)
+
+office_info
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 55,130 x 6
+##    season episode episode_name director   writer                       character
+##     &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;        &lt;chr&gt;      &lt;chr&gt;                        &lt;chr&gt;
+##  1      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Michael
+##  2      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Jim
+##  3      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Michael
+##  4      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Jim
+##  5      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Michael
+##  6      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Michael
+##  7      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Michael
+##  8      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Pam
+##  9      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Michael
+## 10      1       1 pilot        Ken Kwapis Ricky Gervais;Stephen Merch… Pam
+## # … with 55,120 more rows
+</code></pre><p>We are going to use several different kinds of features for modeling. First, let&rsquo;s find out how many times characters speak per episode.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">characters <span style="color:#666">&lt;-</span> office_info <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(episode_name, character) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_count</span>(character, wt <span style="color:#666">=</span> n, name <span style="color:#666">=</span> <span style="color:#4070a0">&#34;character_count&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(character_count <span style="color:#666">&gt;</span> <span style="color:#40a070">800</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>character_count) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> character,
+    values_from <span style="color:#666">=</span> n,
+    values_fill <span style="color:#666">=</span> <span style="color:#06287e">list</span>(n <span style="color:#666">=</span> <span style="color:#40a070">0</span>)
+  )
+
+characters
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 185 x 16
+##    episode_name  Andy Angela Darryl Dwight   Jim Kelly Kevin Michael Oscar   Pam
+##    &lt;chr&gt;        &lt;int&gt;  &lt;int&gt;  &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;   &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1 a benihana …    28     37      3     61    44     5    14     108     1    57
+##  2 aarm            44     39     30     87    89     0    30       0    28    34
+##  3 after hours     20     11     14     60    55     8     4       0    10    15
+##  4 alliance         0      7      0     47    49     0     3      68    14    22
+##  5 angry y         53      7      5     16    19    13     9       0     7    29
+##  6 baby shower     13     13      9     35    27     2     4      79     3    25
+##  7 back from v…     3      4      6     22    25     0     5      70     0    33
+##  8 banker           1      2      0     17     0     0     2      44     0     5
+##  9 basketball       0      3     15     25    21     0     1     104     2    14
+## 10 beach games     18      8      0     38    22     9     5     105     5    23
+## # … with 175 more rows, and 5 more variables: Phyllis &lt;int&gt;, Ryan &lt;int&gt;,
+## #   Toby &lt;int&gt;, Erin &lt;int&gt;, Jan &lt;int&gt;
+</code></pre><p>Next, let&rsquo;s find which directors and writers are involved in each episode. I&rsquo;m choosing here to combine this into one category in modeling, for a simpler model, since these are often the same individuals.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">creators <span style="color:#666">&lt;-</span> office_info <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">distinct</span>(episode_name, director, writer) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(director<span style="color:#666">:</span>writer, names_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;role&#34;</span>, values_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;person&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">separate_rows</span>(person, sep <span style="color:#666">=</span> <span style="color:#4070a0">&#34;;&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_count</span>(person) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">distinct</span>(episode_name, person) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(person_value <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> person,
+    values_from <span style="color:#666">=</span> person_value,
+    values_fill <span style="color:#666">=</span> <span style="color:#06287e">list</span>(person_value <span style="color:#666">=</span> <span style="color:#40a070">0</span>)
+  )
+
+creators
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 135 x 14
+##    episode_name `Ken Kwapis` `Greg Daniels` `B.J. Novak` `Paul Lieberste…
+##    &lt;chr&gt;               &lt;dbl&gt;          &lt;dbl&gt;        &lt;dbl&gt;            &lt;dbl&gt;
+##  1 pilot                   1              1            0                0
+##  2 diversity d…            1              0            1                0
+##  3 health care             0              0            0                1
+##  4 basketball              0              1            0                0
+##  5 hot girl                0              0            0                0
+##  6 dundies                 0              1            0                0
+##  7 sexual hara…            1              0            1                0
+##  8 office olym…            0              0            0                0
+##  9 fire                    1              0            1                0
+## 10 halloween               0              1            0                0
+## # … with 125 more rows, and 9 more variables: `Mindy Kaling` &lt;dbl&gt;, `Paul
+## #   Feig` &lt;dbl&gt;, `Gene Stupnitsky` &lt;dbl&gt;, `Lee Eisenberg` &lt;dbl&gt;, `Jennifer
+## #   Celotta` &lt;dbl&gt;, `Randall Einhorn` &lt;dbl&gt;, `Brent Forrester` &lt;dbl&gt;, `Jeffrey
+## #   Blitz` &lt;dbl&gt;, `Justin Spitzer` &lt;dbl&gt;
+</code></pre><p>Next, let&rsquo;s find the season and episode number for each episode, and then finally let&rsquo;s put it all together into one dataset for modeling.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">office <span style="color:#666">&lt;-</span> office_info <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">distinct</span>(season, episode, episode_name) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">inner_join</span>(characters) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">inner_join</span>(creators) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">inner_join</span>(office_ratings <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">select</span>(episode_name, imdb_rating)) <span style="color:#666">%&gt;%</span>
+  janitor<span style="color:#666">::</span><span style="color:#06287e">clean_names</span>()
+
+office
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 136 x 32
+##    season episode episode_name  andy angela darryl dwight   jim kelly kevin
+##     &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;        &lt;int&gt;  &lt;int&gt;  &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1      1       1 pilot            0      1      0     29    36     0     1
+##  2      1       2 diversity d…     0      4      0     17    25     2     8
+##  3      1       3 health care      0      5      0     62    42     0     6
+##  4      1       5 basketball       0      3     15     25    21     0     1
+##  5      1       6 hot girl         0      3      0     28    55     0     5
+##  6      2       1 dundies          0      1      1     32    32     7     1
+##  7      2       2 sexual hara…     0      2      9     11    16     0     6
+##  8      2       3 office olym…     0      6      0     55    55     0     9
+##  9      2       4 fire             0     17      0     65    51     4     5
+## 10      2       5 halloween        0     13      0     33    30     3     2
+## # … with 126 more rows, and 22 more variables: michael &lt;int&gt;, oscar &lt;int&gt;,
+## #   pam &lt;int&gt;, phyllis &lt;int&gt;, ryan &lt;int&gt;, toby &lt;int&gt;, erin &lt;int&gt;, jan &lt;int&gt;,
+## #   ken_kwapis &lt;dbl&gt;, greg_daniels &lt;dbl&gt;, b_j_novak &lt;dbl&gt;,
+## #   paul_lieberstein &lt;dbl&gt;, mindy_kaling &lt;dbl&gt;, paul_feig &lt;dbl&gt;,
+## #   gene_stupnitsky &lt;dbl&gt;, lee_eisenberg &lt;dbl&gt;, jennifer_celotta &lt;dbl&gt;,
+## #   randall_einhorn &lt;dbl&gt;, brent_forrester &lt;dbl&gt;, jeffrey_blitz &lt;dbl&gt;,
+## #   justin_spitzer &lt;dbl&gt;, imdb_rating &lt;dbl&gt;
+</code></pre><p>There are lots of 
+<a href="https://twitter.com/search?q=%23TidyTuesday" target="_blank" rel="noopener">great examples of EDA on Twitter</a>; I especially encourage you to check out 
+<a href="https://youtu.be/_IvAubTDQME" target="_blank" rel="noopener">the screencast of my coauthor Dave</a>, which is similar in spirit to the modeling I am showing here and includes more EDA. Just for kicks, let&rsquo;s show one graph.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">office <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(episode, imdb_rating, fill <span style="color:#666">=</span> <span style="color:#06287e">as.factor</span>(episode))) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+</code></pre></div><img src="/blog/2020/2020-03-17-lasso-office_files/figure-html/unnamed-chunk-6-1.png" width="2400" />
+<p>Ratings are higher for episodes later in the season. What else is associated with higher ratings? Let&rsquo;s use lasso regression to find out! 🚀</p>
+
+
+
+
+<h2 id="train-a-model">Train a model
+  <a href="#train-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, and splitting our data into training and testing sets.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+office_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(office, strata <span style="color:#666">=</span> season)
+office_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(office_split)
+office_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(office_split)
+</code></pre></div><p>Then, we build a recipe for data preprocessing.</p>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what our model is going to be (using a formula here) and what our training data is.</li>
+<li>Next, we update the role for <code>episode_name</code>, since this is a variable we might like to keep around for convenience as an identifier for rows but is not a predictor or outcome.</li>
+<li>Next, we remove any numeric variables that have zero variance.</li>
+<li>As a last step, we normalize (center and scale) the numeric variables. We need to do this because it&rsquo;s important for lasso regularization.</li>
+</ul>
+<p>The object <code>office_rec</code> is a recipe that has <strong>not</strong> been trained on data yet (for example, the centered and scaling has not been calculated) and <code>office_prep</code> is an object that <strong>has</strong> been trained on data. The reason I use <code>strings_as_factors = FALSE</code> here is that my ID column <code>episode_name</code> is of type character (as opposed to, say, integers).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">office_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(imdb_rating <span style="color:#666">~</span> ., data <span style="color:#666">=</span> office_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">update_role</span>(episode_name, new_role <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ID&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_zv</span>(<span style="color:#06287e">all_numeric</span>(), <span style="color:#666">-</span><span style="color:#06287e">all_outcomes</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_normalize</span>(<span style="color:#06287e">all_numeric</span>(), <span style="color:#666">-</span><span style="color:#06287e">all_outcomes</span>())
+
+office_prep <span style="color:#666">&lt;-</span> office_rec <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">prep</span>(strings_as_factors <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+</code></pre></div><p>Now it&rsquo;s time to <strong>specify</strong> and then <strong>fit</strong> our models. Here I set up one model specification for lasso regression; I picked a value for <code>penalty</code> (sort of randomly) and I set <code>mixture = 1</code> for lasso. I am using a 
+<a href="https://tidymodels.github.io/workflows/" target="_blank" rel="noopener"><code>workflow()</code></a> in this example for convenience; these are objects that can help you manage modeling pipelines more easily, with pieces that fit together like Lego blocks. You can <code>fit()</code> a workflow, much like you can fit a model, and then you can pull out the fit object and <code>tidy()</code> it!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lasso_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">linear_reg</span>(penalty <span style="color:#666">=</span> <span style="color:#40a070">0.1</span>, mixture <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;glmnet&#34;</span>)
+
+wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(office_rec)
+
+lasso_fit <span style="color:#666">&lt;-</span> wf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(lasso_spec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit</span>(data <span style="color:#666">=</span> office_train)
+
+lasso_fit <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull_workflow_fit</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">tidy</span>()
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1,576 x 5
+##    term         step estimate lambda dev.ratio
+##    &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;
+##  1 (Intercept)     1  8.36     0.195    0
+##  2 (Intercept)     2  8.36     0.177    0.0244
+##  3 jim             2  0.0174   0.177    0.0244
+##  4 (Intercept)     3  8.36     0.162    0.0549
+##  5 dwight          3  0.00254  0.162    0.0549
+##  6 jim             3  0.0309   0.162    0.0549
+##  7 michael         3  0.00800  0.162    0.0549
+##  8 (Intercept)     4  8.36     0.147    0.0893
+##  9 dwight          4  0.0116   0.147    0.0893
+## 10 jim             4  0.0395   0.147    0.0893
+## # … with 1,566 more rows
+</code></pre><p>If you have used glmnet before, this is the familiar output where we can see (here, for the most regularized examples) what contributes to higher IMDB ratings.</p>
+
+
+
+
+<h2 id="tune-lasso-parameters">Tune lasso parameters
+  <a href="#tune-lasso-parameters"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>So we fit one lasso model, but how do we know the right regularization parameter <code>penalty</code>? We can figure that out using resampling and tuning the model. Let&rsquo;s build a set of bootstrap resamples, and set <code>penalty = tune()</code> instead of to a single value. We can use a function <code>penalty()</code> to set up an appropriate grid for this kind of regularization model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">1234</span>)
+office_boot <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(office_train, strata <span style="color:#666">=</span> season)
+
+tune_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">linear_reg</span>(penalty <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(), mixture <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;glmnet&#34;</span>)
+
+lambda_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">grid_regular</span>(<span style="color:#06287e">penalty</span>(), levels <span style="color:#666">=</span> <span style="color:#40a070">50</span>)
+</code></pre></div><p>Now it&rsquo;s time to tune the grid, using our workflow object.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">2020</span>)
+lasso_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">tune_grid</span>(
+  wf <span style="color:#666">%&gt;%</span> <span style="color:#06287e">add_model</span>(tune_spec),
+  resamples <span style="color:#666">=</span> office_boot,
+  grid <span style="color:#666">=</span> lambda_grid
+)
+</code></pre></div><p>What results did we get?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lasso_grid <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_metrics</span>()
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 100 x 6
+##     penalty .metric .estimator  mean     n std_err
+##       &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+##  1 1.00e-10 rmse    standard   0.588    25  0.0169
+##  2 1.00e-10 rsq     standard   0.132    25  0.0212
+##  3 1.60e-10 rmse    standard   0.588    25  0.0169
+##  4 1.60e-10 rsq     standard   0.132    25  0.0212
+##  5 2.56e-10 rmse    standard   0.588    25  0.0169
+##  6 2.56e-10 rsq     standard   0.132    25  0.0212
+##  7 4.09e-10 rmse    standard   0.588    25  0.0169
+##  8 4.09e-10 rsq     standard   0.132    25  0.0212
+##  9 6.55e-10 rmse    standard   0.588    25  0.0169
+## 10 6.55e-10 rsq     standard   0.132    25  0.0212
+## # … with 90 more rows
+</code></pre><p>That&rsquo;s nice, but I would rather see a visualization of performance with the regularization parameter.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lasso_grid <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_metrics</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(penalty, mean, color <span style="color:#666">=</span> .metric)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbar</span>(<span style="color:#06287e">aes</span>(
+    ymin <span style="color:#666">=</span> mean <span style="color:#666">-</span> std_err,
+    ymax <span style="color:#666">=</span> mean <span style="color:#666">+</span> std_err
+  ),
+  alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>.metric, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>, nrow <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;none&#34;</span>)
+</code></pre></div><img src="/blog/2020/2020-03-17-lasso-office_files/figure-html/unnamed-chunk-13-1.png" width="2400" />
+<p>This is a great way to see that regularization helps this modeling a lot. We have a couple of options for choosing our final parameter, such as <code>select_by_pct_loss()</code> or <code>select_by_one_std_err()</code>, but for now let&rsquo;s stick with just picking the lowest RMSE. After we have that parameter, we can finalize our workflow, i.e. update it with this value.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lowest_rmse <span style="color:#666">&lt;-</span> lasso_grid <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select_best</span>(<span style="color:#4070a0">&#34;rmse&#34;</span>, maximize <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+
+final_lasso <span style="color:#666">&lt;-</span> <span style="color:#06287e">finalize_workflow</span>(
+  wf <span style="color:#666">%&gt;%</span> <span style="color:#06287e">add_model</span>(tune_spec),
+  lowest_rmse
+)
+</code></pre></div><p>We can then fit this finalized workflow on our training data. While we&rsquo;re at it, let&rsquo;s see what the most important variables are using the 
+<a href="https://koalaverse.github.io/vip/" target="_blank" rel="noopener">vip</a> package.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+final_lasso <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit</span>(office_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull_workflow_fit</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">vi</span>(lambda <span style="color:#666">=</span> lowest_rmse<span style="color:#666">$</span>penalty) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    Importance <span style="color:#666">=</span> <span style="color:#06287e">abs</span>(Importance),
+    Variable <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(Variable, Importance)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(x <span style="color:#666">=</span> Importance, y <span style="color:#666">=</span> Variable, fill <span style="color:#666">=</span> Sign)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(expand <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="/blog/2020/2020-03-17-lasso-office_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+<p>And then, finally, let&rsquo;s return to our test data. The tune package has a function <code>last_fit()</code> which is nice for situations when you have tuned and finalized a model or workflow and want to fit it one last time on your training data and evaluate it on your testing data. You only have to pass this function your finalized model/workflow and your split.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">last_fit</span>(
+  final_lasso,
+  office_split
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_metrics</span>()
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2 x 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 rmse    standard       0.436
+## 2 rsq     standard       0.174
+</code></pre>
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">March 17, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">11 minute read, 2141 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/sf-trees-random-tuning/">&larr; Tuning random forest hyperparameters with #TidyTuesday trees data</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/tuition-resampling/">Preprocessing and resampling using #TidyTuesday college data &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Reddit Responds to the Election | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Text mining of one day&#39;s submissions on Reddit">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Reddit Responds to the Election | Julia Silge">
+<meta property="og:description" content="Text mining of one day&#39;s submissions on Reddit" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/reddit-responds/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Reddit Responds to the Election">
+<meta itemprop="description" content="It&rsquo;s been about a month since the U.S. presidential election, with Donald Trump&rsquo;s victory over Hillary Clinton coming as a surprise to most. Reddit user Jason Baumgartner collected and published every submission and comment posted to Reddit on the day of (and a bit surrounding) the U.S. election; let&rsquo;s explore this data set and see what kinds of things we can learn.
+Data wranglingThis first bit was the hardest part of this analysis for me, probably because I am not the most experienced JSON person out there."><meta itemprop="datePublished" content="2016-12-06T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-12-06T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2446">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Reddit Responds to the Election</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">December 6, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>It&rsquo;s been about a month since the U.S. presidential election, with Donald Trump&rsquo;s victory over Hillary Clinton coming as a surprise to most. Reddit user Jason Baumgartner collected and published 
+<a href="https://www.reddit.com/r/datasets/comments/5ch2bq/reddit_raw_election_data_comments_and_submissions/" target="_blank" rel="noopener">every submission and comment posted to Reddit</a> on the day of (and a bit surrounding) the U.S. election; let&rsquo;s explore this data set and see what kinds of things we can learn.</p>
+
+
+
+
+<h2 id="data-wrangling">Data wrangling
+  <a href="#data-wrangling"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>This first bit was the hardest part of this analysis for me, probably because I am not the most experienced JSON person out there. At first, I took an approach of reading in the lines of each text file and parsing each JSON object separately. I 
+<a href="https://twitter.com/juliasilge/status/805915916961718272" target="_blank" rel="noopener">complained about this on Twitter</a> and got several excellent recommendations of much better approaches, including using <code>stream_in</code> from the 
+<a href="https://github.com/jeroenooms/jsonlite" target="_blank" rel="noopener">jsonlite</a> package. This works way better and faster than what I was doing before, and now it is easy!</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(jsonlite)
+library(dplyr)
+
+nov8_posts &lt;- stream_in(file(&quot;RS_2016-11-08&quot;),
+                        verbose = FALSE) %&gt;%
+    select(-preview, -secure_media_embed, 
+           -media, -secure_media, -media_embed)
+
+nov9_posts &lt;- stream_in(file(&quot;RS_2016-11-09&quot;),
+                        verbose = FALSE) %&gt;%
+    select(-preview, -secure_media_embed, 
+           -media, -secure_media, -media_embed)
+
+posts &lt;- bind_rows(nov8_posts, nov9_posts) %&gt;%
+    mutate(created_utc = as.POSIXct(created_utc, 
+                                    origin = &quot;1970-01-01&quot;, 
+                                    tz = &quot;UTC&quot;)) %&gt;%
+    filter(created_utc &gt; as.POSIXct(&quot;2016-11-08 18:00:00&quot;, tz = &quot;UTC&quot;))
+</code></pre><p>Notice here that I am using files from November 8 and 9 in UTC time and I&rsquo;m filtering out some of the earlier posts. This will end up leaving me with 30 hours of Reddit posts starting at noon on Election Day in the Central Time Zone. Also notice that I am not using the files that include Reddit comments, only the parent submissions. I tried most of the following analysis with both submissions and comments, but the comments dominated the results and included lots of repeated words/phrases that obscured what we would like to see. For the approach I am taking here, it worked better to just use submissions.</p>
+
+
+
+
+<h2 id="finding-the-words">Finding the words
+  <a href="#finding-the-words"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The submissions include a title and sometimes also some text; sometimes Reddit posts are just the title. Let&rsquo;s use <code>unnest_tokens</code> from the 
+<a href="https://github.com/juliasilge/tidytext" target="_blank" rel="noopener">tidytext</a> package to identify all the words in the title and text fields of the submissions and organize them into a tidy data structure.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidytext)
+
+posts &lt;- bind_rows(
+    posts %&gt;% 
+        unnest_tokens(word, title),
+    posts %&gt;% 
+        unnest_tokens(word, selftext)) %&gt;%
+    select(created_utc, subreddit, url, word)
+
+head(posts)
+</code></pre><pre tabindex="0"><code>##           created_utc  subreddit
+## 1 2016-11-08 18:00:01 Ebay_deals
+## 2 2016-11-08 18:00:01 Ebay_deals
+## 3 2016-11-08 18:00:01 Ebay_deals
+## 4 2016-11-08 18:00:01 Ebay_deals
+## 5 2016-11-08 18:00:01 Ebay_deals
+## 6 2016-11-08 18:00:01 Ebay_deals
+##                                                 url   word
+## 1 https://www.pinterest.com/pin/724587027517110980/ marble
+## 2 https://www.pinterest.com/pin/724587027517110980/   grey
+## 3 https://www.pinterest.com/pin/724587027517110980/ single
+## 4 https://www.pinterest.com/pin/724587027517110980/ double
+## 5 https://www.pinterest.com/pin/724587027517110980/  queen
+## 6 https://www.pinterest.com/pin/724587027517110980/   king
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">dim(posts)
+</code></pre><pre tabindex="0"><code>## [1] 17652591        4
+</code></pre><p>That&rsquo;s&hellip; almost 18 million rows. People on Reddit are busy.</p>
+
+
+
+
+<h2 id="which-words-changed-in-frequency-the-fastest">Which words changed in frequency the fastest?
+  <a href="#which-words-changed-in-frequency-the-fastest"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Right now we have a data frame that has each word on its own row, with an id (url), the time when it was posted, and the subreddit it came from. Let&rsquo;s use dplyr operations to calculate how many times each word was mentioned in a particular unit of time, so we can model the change with time. We will calculate <code>minute_total</code>, the total words posted in that time unit so we can compare across times of day when people post different amounts, and <code>word_total</code>, the number of times that word was posted so we can filter out words that are not used much.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(lubridate)
+library(stringr)
+
+words_by_minute &lt;- posts %&gt;%
+    filter(str_detect(word, &quot;[a-z]&quot;)) %&gt;%
+    anti_join(data_frame(word = c(&quot;ref&quot;))) %&gt;%
+    mutate(created = floor_date(created_utc, unit = &quot;30 minutes&quot;)) %&gt;%
+    distinct(url, word, .keep_all = TRUE) %&gt;%
+    count(created, word) %&gt;%
+    ungroup() %&gt;%
+    group_by(created) %&gt;%
+    mutate(minute_total = sum(n)) %&gt;%
+    group_by(word) %&gt;%
+    mutate(word_total = sum(n)) %&gt;%
+    ungroup() %&gt;%
+    rename(count = n) %&gt;%
+    filter(word_total &gt; 500)
+
+head(words_by_minute)
+</code></pre><pre tabindex="0"><code>## # A tibble: 6 × 5
+##               created  word count minute_total word_total
+##                &lt;dttm&gt; &lt;chr&gt; &lt;int&gt;        &lt;int&gt;      &lt;int&gt;
+## 1 2016-11-08 18:00:00 1080p    20       231072        652
+## 2 2016-11-08 18:00:00  16gb    11       231072        559
+## 3 2016-11-08 18:00:00   1st    20       231072        758
+## 4 2016-11-08 18:00:00   2nd    21       231072        893
+## 5 2016-11-08 18:00:00    2x    14       231072        722
+## 6 2016-11-08 18:00:00    3d    12       231072        546
+</code></pre><p>This is the data frame we can use for modeling. We can use <code>nest</code> from tidyr to make a data frame with a list column that contains the little miniature data frames for each word and then <code>map</code> from purrr to apply our modeling procedure to each of those little data frames inside our big data frame. Jenny Bryan has put together 
+<a href="https://jennybc.github.io/purrr-tutorial/" target="_blank" rel="noopener">some resources</a> on using purrr with list columns this way. This is count data (how many words were posted?) so let&rsquo;s use <code>glm</code> for modeling.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidyr)
+library(purrr)
+
+nested_models &lt;- words_by_minute %&gt;%
+    nest(-word) %&gt;%
+    mutate(models = map(data, ~ glm(cbind(count, minute_total) ~ created, ., 
+                                    family = &quot;binomial&quot;)))
+</code></pre><p>Now we can use <code>tidy</code> from broom to pull out the slopes for each of these models and find the important ones.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(broom)
+
+slopes &lt;- nested_models %&gt;%
+  unnest(map(models, tidy)) %&gt;%
+  filter(term == &quot;created&quot;)
+</code></pre><p>Which words decreased in frequency of use the fastest during Election Day? Which words increased in use the fastest?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">slopes %&gt;% 
+    arrange(estimate)
+</code></pre><pre tabindex="0"><code>## # A tibble: 891 × 6
+##        word    term      estimate    std.error statistic       p.value
+##       &lt;chr&gt;   &lt;chr&gt;         &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;
+## 1   polling created -2.195136e-05 1.059199e-06 -20.72449  2.083382e-95
+## 2     fraud created -2.022229e-05 1.335022e-06 -15.14753  7.866753e-52
+## 3    voting created -1.788212e-05 5.644046e-07 -31.68316 2.651017e-220
+## 4    ballot created -1.745250e-05 1.114699e-06 -15.65670  2.990299e-55
+## 5        fl created -1.743009e-05 1.211878e-06 -14.38271  6.644389e-47
+## 6   florida created -1.712721e-05 6.055286e-07 -28.28472 5.327752e-176
+## 7      poll created -1.688132e-05 1.039083e-06 -16.24637  2.369894e-59
+## 8     voter created -1.675932e-05 9.359359e-07 -17.90649  1.049562e-71
+## 9     polls created -1.615500e-05 7.058145e-07 -22.88845 6.054992e-116
+## 10 virginia created -1.493344e-05 1.435504e-06 -10.40293  2.404218e-25
+## # ... with 881 more rows
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">slopes %&gt;% 
+    arrange(desc(estimate))
+</code></pre><pre tabindex="0"><code>## # A tibble: 891 × 6
+##        word    term     estimate    std.error statistic       p.value
+##       &lt;chr&gt;   &lt;chr&gt;        &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;
+## 1   trump’s created 1.758326e-05 1.430901e-06 12.288244  1.047563e-34
+## 2      flex created 1.416875e-05 1.290926e-06 10.975647  5.004609e-28
+## 3     elect created 1.390813e-05 8.378822e-07 16.599146  7.068929e-62
+## 4        da created 1.281702e-05 1.037396e-06 12.354986  4.578350e-35
+## 5  congress created 1.225188e-05 1.280413e-06  9.568696  1.082627e-21
+## 6   trump's created 1.200055e-05 5.499216e-07 21.822297 1.425196e-105
+## 7  policies created 1.156944e-05 1.276465e-06  9.063655  1.261512e-19
+## 8  liberals created 1.151984e-05 1.151751e-06 10.002020  1.493199e-23
+## 9   climate created 1.092999e-05 1.269681e-06  8.608452  7.405384e-18
+## 10   policy created 9.879997e-06 1.038524e-06  9.513494  1.843631e-21
+## # ... with 881 more rows
+</code></pre><p>Let&rsquo;s plot these words.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">top_slopes &lt;- slopes %&gt;%
+    top_n(10, estimate)
+
+words_by_minute %&gt;%
+    inner_join(top_slopes, by = &quot;word&quot;) %&gt;%
+    mutate(created = with_tz(created, tz = &quot;America/Chicago&quot;)) %&gt;%
+    ggplot(aes(created, count/minute_total, color = word)) +
+    geom_line(alpha = 0.8, size = 1.3) +
+    labs(x = &quot;Time (Central Time Zone)&quot;, y = &quot;Word frequency&quot;,
+         subtitle = &quot;Words associated with Trump and policies increased in frequency&quot;,
+         title = &quot;Trending words on Reddit on Election Day&quot;)
+</code></pre><p><img src="/figs/2016-12-06-Reddit-Responds/unnamed-chunk-8-1.png" alt="center"></p>
+<p>There are lots of election-related words here, like &ldquo;elect&rdquo;, &ldquo;liberals&rdquo;, and &ldquo;policies&rdquo;. In fact, I think all of these words are conceivably related to the election with the exception of &ldquo;flex&rdquo;. I looked at some of the posts with &ldquo;flex&rdquo; in them and they were in fact not election-related. I had a hard time deciphering what they <em>were</em> about, but my best guess is either a) fantasy football or b) some kind of gaming. Why do we see &ldquo;Trump&rsquo;s&rdquo; on this plot twice? It is because there is more than one way of encoding an apostrophe. You can see it on the legend if you look closely.</p>
+<p>We don&rsquo;t see Trump&rsquo;s name by itself on this plot. How far off from being a top word, by my definition here, was it?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">slopes %&gt;%
+    filter(word == &quot;trump&quot;)
+</code></pre><pre tabindex="0"><code>## # A tibble: 1 × 6
+##    word    term     estimate    std.error statistic      p.value
+##   &lt;chr&gt;   &lt;chr&gt;        &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;        &lt;dbl&gt;
+## 1 trump created 2.328675e-06 1.512196e-07   15.3993 1.654546e-53
+</code></pre><p>Trump must have been being discussed at a high level already, so the change was not as big as for the word &ldquo;Trump&rsquo;s&rdquo;.</p>
+<p>What about the words that dropped in use the most during this day?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">low_slopes &lt;- slopes %&gt;%
+    top_n(-10, estimate)
+
+words_by_minute %&gt;%
+    inner_join(low_slopes, by = &quot;word&quot;) %&gt;%
+    mutate(created = with_tz(created, tz = &quot;America/Chicago&quot;)) %&gt;%
+    ggplot(aes(created, count/minute_total, color = word)) +
+    geom_line(alpha = 0.8, size = 1.3) +
+    labs(x = &quot;Time (Central Time Zone)&quot;, y = &quot;Word frequency&quot;,
+         subtitle = &quot;Word associated with voting and polls decreased in frequency&quot;,
+         title = &quot;Trending words on Reddit on Election Day&quot;)
+</code></pre><p><img src="/figs/2016-12-06-Reddit-Responds/unnamed-chunk-10-1.png" alt="center"></p>
+<p>These are maybe even <em>more</em> interesting to me. Look at that spike for Florida the night of November 8 when it seemed like there might be flashbacks to 2000 or something. And people&rsquo;s interest in discussing voters/voting, polls/polling, and fraud dropped off precipitously as Trump&rsquo;s victory became obvious.</p>
+
+
+
+
+<h2 id="which-subreddits-demonstrated-the-most-change-in-sentiment">Which subreddits demonstrated the most change in sentiment?
+  <a href="#which-subreddits-demonstrated-the-most-change-in-sentiment"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We have looked at which words changed most quickly in use on Election Day; now let&rsquo;s take a look at changes in sentiment. Are there subreddits that exhibited changes in sentiment over the course of this time period? To look at this, we&rsquo;ll take a bigger time period (2 hours instead of 30 minutes) since the words with measured sentiment are only a subset of all words. Much of the rest of these dplyr operations are similar. We can use <code>inner_join</code> to do the sentiment analysis, and then calculate the sentiment content of each board in each time period.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">sentiment_by_minute &lt;- posts %&gt;%
+    mutate(created = floor_date(created_utc, unit = &quot;2 hours&quot;)) %&gt;%
+    distinct(url, word, .keep_all = TRUE) %&gt;%
+    ungroup() %&gt;%
+    count(subreddit, created, word) %&gt;%
+    group_by(created, subreddit) %&gt;%
+    mutate(minute_total = sum(n)) %&gt;%
+    group_by(subreddit) %&gt;%
+    mutate(subreddit_total = sum(n)) %&gt;%
+    ungroup() %&gt;%
+    filter(subreddit_total &gt; 1000) %&gt;%
+    inner_join(get_sentiments(&quot;afinn&quot;)) %&gt;%
+    group_by(subreddit, created, minute_total) %&gt;%
+    summarize(score = sum(n * score)) %&gt;%
+    ungroup()
+
+head(sentiment_by_minute)
+</code></pre><pre tabindex="0"><code>## # A tibble: 6 × 4
+##   subreddit             created minute_total score
+##       &lt;chr&gt;              &lt;dttm&gt;        &lt;int&gt; &lt;int&gt;
+## 1     1liga 2016-11-08 20:00:00           20     2
+## 2     1liga 2016-11-09 02:00:00          135    -7
+## 3     1liga 2016-11-09 06:00:00          187    -9
+## 4     1liga 2016-11-09 08:00:00          233    -8
+## 5     1liga 2016-11-09 10:00:00          155    -2
+## 6     1liga 2016-11-09 12:00:00          110    -6
+</code></pre><p>Let&rsquo;s again use <code>nest</code>, but this time we&rsquo;ll <code>nest</code> by subreddit instead of word. This sentiment score is not really count data (since it can be negative) so we&rsquo;ll use regular old <code>lm</code> here.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">nested_models &lt;- sentiment_by_minute %&gt;%
+    nest(-subreddit) %&gt;%
+    mutate(models = map(data, ~ lm(score/minute_total ~ created, .)))
+</code></pre><p>Let&rsquo;s again use <code>unnest</code>, <code>map</code>, and <code>tidy</code> to extract out the slopes from the linear models.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">slopes &lt;- nested_models %&gt;%
+  unnest(map(models, tidy)) %&gt;%
+  filter(term == &quot;created&quot;)
+</code></pre><p>Which subreddits exhibited the biggest changes in sentiment, in either direction?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">slopes %&gt;% 
+    arrange(estimate)
+</code></pre><pre tabindex="0"><code>## # A tibble: 64 × 6
+##            subreddit    term      estimate    std.error statistic     p.value
+##                &lt;chr&gt;   &lt;chr&gt;         &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;
+## 1        aznidentity created -2.941746e-06 1.129234e-06 -2.605081 0.040386018
+## 2             ainbow created -2.576480e-06 8.841939e-07 -2.913932 0.017200835
+## 3        TheBluePill created -2.233135e-06 6.868578e-07 -3.251233 0.009977663
+## 4    muacjdiscussion created -2.165141e-06 4.838494e-07 -4.474823 0.020801581
+## 5            parrots created -2.105393e-06 7.592753e-07 -2.772898 0.024188248
+## 6         needadvice created -1.610350e-06 5.277117e-07 -3.051572 0.018542125
+## 7        sweepstakes created -1.458346e-06 5.576759e-07 -2.615042 0.022590562
+## 8  RandomActsofCards created -1.421334e-06 5.556567e-07 -2.557935 0.026616327
+## 9       csgogambling created -1.397576e-06 5.619925e-07 -2.486823 0.027257440
+## 10             1liga created -1.305359e-06 4.842398e-07 -2.695688 0.027255456
+## # ... with 54 more rows
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">slopes %&gt;% 
+    arrange(desc(estimate))
+</code></pre><pre tabindex="0"><code>## # A tibble: 64 × 6
+##            subreddit    term     estimate    std.error statistic     p.value
+##                &lt;chr&gt;   &lt;chr&gt;        &lt;dbl&gt;        &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;
+## 1  shoudvebeenbernie created 2.792205e-06 7.339321e-07  3.804446 0.008921294
+## 2        TheDickShow created 2.189643e-06 7.900087e-07  2.771670 0.019730686
+## 3            orlando created 1.860757e-06 7.313366e-07  2.544324 0.034477936
+## 4    DoesAnybodyElse created 1.846480e-06 5.773406e-07  3.198251 0.007657351
+## 5    playrustservers created 1.553049e-06 5.623340e-07  2.761791 0.032776294
+## 6    GoogleCardboard created 1.449634e-06 5.215326e-07  2.779565 0.032015397
+## 7    morbidquestions created 1.423202e-06 4.865300e-07  2.925208 0.019138028
+## 8          TrueDoTA2 created 1.388537e-06 3.592288e-07  3.865329 0.011816017
+## 9        JapanTravel created 1.365982e-06 3.702370e-07  3.689479 0.005001422
+## 10           editors created 1.253335e-06 4.080638e-07  3.071420 0.011812188
+## # ... with 54 more rows
+</code></pre><p>Let&rsquo;s plot these!</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">top_slopes &lt;- slopes %&gt;%
+    top_n(10, estimate)
+
+sentiment_by_minute %&gt;%
+    inner_join(top_slopes, by = &quot;subreddit&quot;) %&gt;%
+    mutate(created = with_tz(created, tz = &quot;America/Chicago&quot;)) %&gt;%
+    ggplot(aes(created, score/minute_total, color = subreddit)) +
+    geom_line(alpha = 0.8, size = 1.3) +
+    labs(x = &quot;Time (Central Time Zone)&quot;, y = &quot;Sentiment score&quot;,
+         subtitle = &quot;These subreddits increased in sentiment the most&quot;,
+         title = &quot;Sentiment on Subreddits on Election Day&quot;)
+</code></pre><p><img src="/figs/2016-12-06-Reddit-Responds/unnamed-chunk-15-1.png" alt="center"></p>
+<p>These relationships are much noisier than the relationships with words were, and you might notice that some p-values are getting kind of high (no adjustment for multiple comparisons has been performed). Also, these subreddits are less related to the election than the quickly changing words were. Really only the shouldvebeenbernie subreddit is that political here.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">low_slopes &lt;- slopes %&gt;%
+    top_n(-10, estimate)
+
+sentiment_by_minute %&gt;%
+    inner_join(low_slopes, by = &quot;subreddit&quot;) %&gt;%
+    mutate(created = with_tz(created, tz = &quot;America/Chicago&quot;)) %&gt;%
+    ggplot(aes(created, score/minute_total, color = subreddit)) +
+    geom_line(alpha = 0.8, size = 1.3) +
+    labs(x = &quot;Time (Central Time Zone)&quot;, y = &quot;Sentiment score&quot;,
+         subtitle = &quot;These subreddits decreased in sentiment the most&quot;,
+         title = &quot;Sentiment on Subreddits on Election Day&quot;)
+</code></pre><p><img src="/figs/2016-12-06-Reddit-Responds/unnamed-chunk-16-1.png" alt="center"></p>
+<p>Again, we see that not really any of these are specifically political, although I coudld image that the aznidentity subreddit (Asian identity board) and the ainbow subreddit (LGBT board) could have been feeling down after Trump&rsquo;s election. The 1liga board is a German language board and ended up here because it used the word &ldquo;die&rdquo; a lot. In case you are wondering, the parrots subreddit is, in fact, about parrots; hopefully nothing too terrible was happening to the parrots on Election Day.</p>
+
+
+
+
+<h2 id="which-subreddits-have-the-most-dramatic-word-use">Which subreddits have the most dramatic word use?
+  <a href="#which-subreddits-have-the-most-dramatic-word-use"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Those last plots demonstrated with subreddits were changing in sentiment the fastest around the time of the election, but perhaps we would like to know which subreddits used the largest proportion of high or low sentiment words overall during this time period. To do that, we don&rsquo;t need to keep track of the timestamp of the posts. Instead, we just need to <code>count</code> by subreddit and word, then use <code>inner_join</code> to find a sentiment score.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">sentiment_by_subreddit &lt;- posts %&gt;%
+    distinct(url, word, .keep_all = TRUE) %&gt;%
+    count(subreddit, word) %&gt;%
+    ungroup() %&gt;%
+    inner_join(get_sentiments(&quot;afinn&quot;)) %&gt;%
+    group_by(subreddit) %&gt;%
+    summarize(score = sum(score * n) / sum(n))
+</code></pre><p>I would print some out for you, or plot them or something, but they are almost all extremely NSFW, both the positive and negative sentiment subreddits. I&rsquo;m sure you can use your imagination.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>This is just one approach to take with this extremely extensive data set. There is still lots and lots more that could be done with it. I first saw this data set via Jeremy Singer-Vine&rsquo;s 
+<a href="https://tinyletter.com/data-is-plural" target="_blank" rel="noopener">Data Is Plural newsletter</a>; this newsletter is an excellent resource and I highly recommend it. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-12-06-Reddit-Responds.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">December 6, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">12 minute read, 2446 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/rstudio-conf/">&larr; Text Mining in R: A Tidy Approach</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/gobbledygook/">Measuring Gobbledygook &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

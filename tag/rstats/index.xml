@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rstats on Lucas Bagge</title>
+    <link>https://juliasilge.com/tag/rstats/</link>
+    <description>Recent content in rstats on Lucas Bagge</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Thu, 29 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://juliasilge.com/tag/rstats/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Tune and interpret decision trees for #TidyTuesday wind turbines</title>
+      <link>https://juliasilge.com/blog/wind-turbine/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/blog/wind-turbine/</guid>
+      <description>Use tidymodels to predict capacity for Canadian wind turbines with decision trees.</description>
+    </item>
+    
+  </channel>
+</rss>

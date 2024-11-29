@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Poisson regression for #TidyTuesday counts of R package vignettes | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Poisson regression for #TidyTuesday counts of R package vignettes | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/rstats-vignettes/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/rstats-vignettes/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/rstats-vignettes/featured.png" >
+    
+    
+  <meta itemprop="name" content="Poisson regression for #TidyTuesday counts of R package vignettes">
+<meta itemprop="description" content="The tidymodels framework provides extension packages for specialized tasks such as Poisson regression. Learn how to fit a zero-inflated model for understanding how R package releases are related to number of vignettes."><meta itemprop="datePublished" content="2022-03-16T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-03-16T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1439"><meta itemprop="image" content="https://juliasilge.com/blog/rstats-vignettes/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Poisson regression for #TidyTuesday counts of R package vignettes</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">March 16, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages. Our team recently released new versions of 
+<a href="https://parsnip.tidymodels.org/" target="_blank" rel="noopener">parsnip</a> and the 
+<a href="https://www.tmwr.org/models.html#parsnip-adjacent-packages" target="_blank" rel="noopener">parsnip-adjacent packages</a> for specialized models to CRAN, and this screencast shows how to use some of these models with the 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on R package vignettes. 📄</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/NEPEgfryId8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to understand how the number of releases and number of vignettes are related for 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2022/2022-03-15/readme.md" target="_blank" rel="noopener">R packages</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+cran <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-15/cran.csv&#34;</span>)
+</code></pre></div><p>What does this data look like, for a few packages that I maintain?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">cran <span style="color:#666">%&gt;%</span> <span style="color:#06287e">filter</span>(package <span style="color:#666">==</span> <span style="color:#4070a0">&#34;tidytext&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 8 × 5
+##   package  version date                      rnw   rmd
+##   &lt;chr&gt;    &lt;chr&gt;   &lt;chr&gt;                   &lt;dbl&gt; &lt;dbl&gt;
+## 1 tidytext 0.2.1   2019-06-13 23:16:09 UTC     0     4
+## 2 tidytext 0.2.2   2019-07-27 18:53:23 UTC     0     4
+## 3 tidytext 0.2.3   2020-03-04 03:57:15 UTC     0     4
+## 4 tidytext 0.2.4   2020-04-17 15:48:56 UTC     0     4
+## 5 tidytext 0.2.5   2020-07-11 19:37:44 UTC     0     4
+## 6 tidytext 0.2.6   2020-09-20 17:33:49 UTC     0     3
+## 7 tidytext 0.3.0   2021-01-05 17:36:28 UTC     0     3
+## 8 tidytext 0.3.1   2021-04-10 17:45:23 UTC     0     3
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">cran <span style="color:#666">%&gt;%</span> <span style="color:#06287e">filter</span>(package <span style="color:#666">==</span> <span style="color:#4070a0">&#34;rsample&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 9 × 5
+##   package version date                      rnw   rmd
+##   &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;                   &lt;dbl&gt; &lt;dbl&gt;
+## 1 rsample 0.0.1   2017-07-07 20:15:16 UTC     0     2
+## 2 rsample 0.0.2   2017-11-12 00:07:22 UTC     0     3
+## 3 rsample 0.0.3   2018-11-20 12:14:16 UTC     0     7
+## 4 rsample 0.0.4   2019-01-07 01:49:42 UTC     0     7
+## 5 rsample 0.0.5   2019-07-12 21:46:43 UTC     0     8
+## 6 rsample 0.0.6   2020-03-31 18:46:21 UTC     0     8
+## 7 rsample 0.0.7   2020-06-04 02:44:05 UTC     0     8
+## 8 rsample 0.0.8   2020-09-23 16:08:48 UTC     0     8
+## 9 rsample 0.0.9   2021-02-17 03:46:08 UTC     0     6
+</code></pre>
+<p>Let’s create a summarized dataset that computes, for each package, the first release data, the number of releases, and the number of vignettes as of the most recent release.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">vignette_counts <span style="color:#666">&lt;-</span>
+  cran <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(package) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(
+    release_date <span style="color:#666">=</span> <span style="color:#06287e">first</span>(date),
+    releases <span style="color:#666">=</span> <span style="color:#06287e">n</span>(),
+    vignettes <span style="color:#666">=</span> <span style="color:#06287e">last</span>(rnw) <span style="color:#666">+</span> <span style="color:#06287e">last</span>(rmd)
+  )
+</code></pre></div><p>What proportion of packages have no vignettes?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">mean</span>(vignette_counts<span style="color:#666">$</span>vignettes <span style="color:#666">&lt;</span> <span style="color:#40a070">1</span>)
+</code></pre></div><pre><code>## [1] 0.6611048
+</code></pre>
+<p>A lot!! We can see this in a histogram as well:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">vignette_counts <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(vignettes)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">12</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(trans <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">pseudo_log_trans</span>(base <span style="color:#666">=</span> <span style="color:#40a070">10</span>))
+</code></pre></div><img src="https://juliasilge.com/blog/rstats-vignettes/index_files/figure-html/unnamed-chunk-6-1.png" width="2400" />
+<p>Just a few packages have a ton of vignettes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">vignette_counts <span style="color:#666">%&gt;%</span> <span style="color:#06287e">filter</span>(vignettes <span style="color:#666">&gt;</span> <span style="color:#40a070">20</span>)
+</code></pre></div><pre><code>## # A tibble: 4 × 4
+##   package release_date        releases vignettes
+##   &lt;chr&gt;   &lt;dttm&gt;                 &lt;int&gt;     &lt;dbl&gt;
+## 1 catdata 2012-02-03 10:29:32        4        45
+## 2 fastai  2020-11-05 18:26:03        9        24
+## 3 HSAUR3  2014-04-17 10:31:57       11        23
+## 4 pla     2015-08-18 21:58:53        2        61
+</code></pre>
+<p>Let’s make one more exploratory plot before creating models.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">vignette_counts <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(has_vignette <span style="color:#666">=</span> vignettes <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(has_vignette, releases, color <span style="color:#666">=</span> has_vignette, fill <span style="color:#666">=</span> has_vignette)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_flip</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Has a vignette?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/rstats-vignettes/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>Looks like packages with more releases are more likely to have a vignette.</p>
+
+
+
+
+<h2 id="using-poisson-regression">Using Poisson regression
+  <a href="#using-poisson-regression"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We have a number of 
+<a href="https://www.tidymodels.org/packages/#specialized-packages" target="_blank" rel="noopener">specialized packages</a>, outside the core tidymodels packages, for less general, more specialized data analysis and modeling tasks. One of these is 
+<a href="https://poissonreg.tidymodels.org/" target="_blank" rel="noopener">poissonreg</a>, for Poisson regression models such as those we can use with this count data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+<span style="color:#06287e">library</span>(poissonreg)
+
+poisson_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(vignettes <span style="color:#666">~</span> releases, <span style="color:#06287e">poisson_reg</span>())
+<span style="color:#06287e">fit</span>(poisson_wf, data <span style="color:#666">=</span> vignette_counts)
+</code></pre></div><pre><code>## ══ Workflow [trained] ══════════════════════════════════════════════════════════
+## Preprocessor: Formula
+## Model: poisson_reg()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## vignettes ~ releases
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## 
+## Call:  stats::glm(formula = ..y ~ ., family = stats::poisson, data = data)
+## 
+## Coefficients:
+## (Intercept)     releases  
+##    -0.58265      0.03047  
+## 
+## Degrees of Freedom: 15793 Total (i.e. Null);  15792 Residual
+## Null Deviance:       28880 
+## Residual Deviance: 27820     AIC: 41110
+</code></pre>
+<p>This model says that packages with more releases have more vignettes. Since poissonreg is not a core tidymodels package, we need to load it separately via <code>library(poissonreg)</code>.</p>
+
+
+
+
+<h2 id="zero-inflated-poisson-zip">Zero-inflated Poisson: ZIP!!!
+  <a href="#zero-inflated-poisson-zip"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>A better model for this dataset on R package vignettes might be 
+<a href="https://en.wikipedia.org/wiki/Zero-inflated_model" target="_blank" rel="noopener">zero-inflated Poisson</a>, since there are <strong>so</strong> many zeroes. A ZIP model like this mixes two models, one that generates zeroes and one that models counts with the Poisson distribution. There are two sets of covariates for these two models, that can be different:</p>
+<ul>
+<li>one for the count data</li>
+<li>one for the probability of zeroes</li>
+</ul>
+<p>How can we create this kind of model in tidymodels?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">zip_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">poisson_reg</span>() <span style="color:#666">%&gt;%</span> <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;zeroinfl&#34;</span>)
+zip_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_variables</span>(outcomes <span style="color:#666">=</span> vignettes, predictors <span style="color:#666">=</span> releases) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(zip_spec, formula <span style="color:#666">=</span> vignettes <span style="color:#666">~</span> releases <span style="color:#666">|</span> releases)
+
+<span style="color:#06287e">fit</span>(zip_wf, data <span style="color:#666">=</span> vignette_counts)
+</code></pre></div><pre><code>## ══ Workflow [trained] ══════════════════════════════════════════════════════════
+## Preprocessor: Variables
+## Model: poisson_reg()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## Outcomes: vignettes
+## Predictors: releases
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## 
+## Call:
+## pscl::zeroinfl(formula = vignettes ~ releases | releases, data = data)
+## 
+## Count model coefficients (poisson with log link):
+## (Intercept)     releases  
+##      0.1679       0.0247  
+## 
+## Zero-inflation model coefficients (binomial with logit link):
+## (Intercept)     releases  
+##      0.2019      -0.0271
+</code></pre>
+<p>The coefficients here are different than when we didn’t use a ZIP model, but we still see that packages with more releases have more vignettes (and packages with fewer releases are more likely to have zero vignettes).</p>
+<p>Notice the <code>formula</code> argument we used in <code>add_model()</code>; this kind of 
+<a href="https://www.tmwr.org/workflows.html#workflow-encoding" target="_blank" rel="noopener">special model formula</a> can be used with a lot of the parsnip-adjacent packages. The formula <code>vignettes ~ releases | releases</code> specifies which columns affect the counts and which affect the model for the probability of zero counts. Here these are the same, but 
+<a href="https://parsnip.tidymodels.org/reference/details_poisson_reg_zeroinfl.html" target="_blank" rel="noopener">they don’t have to be</a>.</p>
+
+
+
+
+<h2 id="bootstrap-intervals-for-the-coefficients">Bootstrap intervals for the coefficients
+  <a href="#bootstrap-intervals-for-the-coefficients"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>You can do all the normal things with these models, depending on the purpose of your model. Often these kinds of models are trained 
+<a href="https://www.tmwr.org/software-modeling.html#model-types" target="_blank" rel="noopener">to be used in inference</a>, so let’s show how you might determine bootstrap intervals for model coefficients.</p>
+<p>First let’s create a set of bootstrap resamples:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(vignette_counts, times <span style="color:#666">=</span> <span style="color:#40a070">1000</span>, apparent <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+folds
+</code></pre></div><pre><code>## # Bootstrap sampling with apparent sample 
+## # A tibble: 1,001 × 2
+##    splits               id           
+##    &lt;list&gt;               &lt;chr&gt;        
+##  1 &lt;split [15794/5840]&gt; Bootstrap0001
+##  2 &lt;split [15794/5819]&gt; Bootstrap0002
+##  3 &lt;split [15794/5830]&gt; Bootstrap0003
+##  4 &lt;split [15794/5858]&gt; Bootstrap0004
+##  5 &lt;split [15794/5860]&gt; Bootstrap0005
+##  6 &lt;split [15794/5805]&gt; Bootstrap0006
+##  7 &lt;split [15794/5875]&gt; Bootstrap0007
+##  8 &lt;split [15794/5777]&gt; Bootstrap0008
+##  9 &lt;split [15794/5845]&gt; Bootstrap0009
+## 10 &lt;split [15794/5752]&gt; Bootstrap0010
+## # … with 991 more rows
+</code></pre>
+<p>Now let’s create a little function to get out the coefficients for the probability-of-zero-counts part of our ZIP model. (We could instead or in addition get out the Poisson/count part of the ZIP model.)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">get_coefs <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(x) {
+  x <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">extract_fit_engine</span>() <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">tidy</span>(type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;zero&#34;</span>)
+}
+
+<span style="color:#06287e">fit</span>(zip_wf, data <span style="color:#666">=</span> vignette_counts) <span style="color:#666">%&gt;%</span> <span style="color:#06287e">get_coefs</span>()
+</code></pre></div><pre><code>## # A tibble: 2 × 6
+##   term        type  estimate std.error statistic  p.value
+##   &lt;chr&gt;       &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept) zero    0.202    0.0310       6.51 7.63e-11
+## 2 releases    zero   -0.0271   0.00322     -8.41 3.94e-17
+</code></pre>
+<p>We can now take this function and use it for all of our bootstrap resamples with our ZIP model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">ctrl <span style="color:#666">&lt;-</span> <span style="color:#06287e">control_resamples</span>(extract <span style="color:#666">=</span> get_coefs)
+
+doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+zip_res <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(zip_wf, folds, control <span style="color:#666">=</span> ctrl)
+zip_res
+</code></pre></div><pre><code>## # Resampling results
+## # Bootstrap sampling with apparent sample 
+## # A tibble: 1,001 × 5
+##    splits                id            .metrics         .notes   .extracts
+##    &lt;list&gt;                &lt;chr&gt;         &lt;list&gt;           &lt;list&gt;   &lt;list&gt;   
+##  1 &lt;split [15794/15794]&gt; Apparent      &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  2 &lt;split [15794/5840]&gt;  Bootstrap0001 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  3 &lt;split [15794/5819]&gt;  Bootstrap0002 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  4 &lt;split [15794/5830]&gt;  Bootstrap0003 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  5 &lt;split [15794/5858]&gt;  Bootstrap0004 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  6 &lt;split [15794/5860]&gt;  Bootstrap0005 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  7 &lt;split [15794/5805]&gt;  Bootstrap0006 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  8 &lt;split [15794/5875]&gt;  Bootstrap0007 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+##  9 &lt;split [15794/5777]&gt;  Bootstrap0008 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+## 10 &lt;split [15794/5845]&gt;  Bootstrap0009 &lt;tibble [2 × 4]&gt; &lt;tibble&gt; &lt;tibble&gt; 
+## # … with 991 more rows
+</code></pre>
+<p>What is in that <code>.extracts</code> column?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">zip_res<span style="color:#666">$</span>.extracts[[33]]
+</code></pre></div><pre><code>## # A tibble: 1 × 2
+##   .extracts        .config             
+##   &lt;list&gt;           &lt;chr&gt;               
+## 1 &lt;tibble [2 × 6]&gt; Preprocessor1_Model1
+</code></pre>
+<p>We can use 
+<a href="https://tidyr.tidyverse.org/" target="_blank" rel="noopener">tidyr</a> to get those out, and then we can visualize the bootstrap intervals.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">zip_res <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(id, .extracts) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(.extracts) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(.extracts) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(x <span style="color:#666">=</span> estimate, fill <span style="color:#666">=</span> term)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;white&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>term, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_x&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray70&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/rstats-vignettes/index_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">March 16, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1439 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/college-sports/">&larr; Handling model coefficients for #TidyTuesday collegiate sports</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/tuskegee-airmen/">Inference for #TidyTuesday aircraft and rank of Tuskegee airmen &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

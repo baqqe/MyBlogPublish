@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Topic modeling for #TidyTuesday Spice Girls lyrics | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Topic modeling for #TidyTuesday Spice Girls lyrics | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/spice-girls/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/spice-girls/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/spice-girls/featured.png" >
+    
+    
+  <meta itemprop="name" content="Topic modeling for #TidyTuesday Spice Girls lyrics">
+<meta itemprop="description" content="Learn how to train, explore, and understand an unsupervised topic model for text data."><meta itemprop="datePublished" content="2021-12-15T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-12-15T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1667"><meta itemprop="image" content="https://juliasilge.com/blog/spice-girls/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Topic modeling for #TidyTuesday Spice Girls lyrics</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">December 15, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>, but instead of being about 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a>, this screencast focuses on unsupervised modeling for text, specifically topic modeling. Today’s screencast walks through how to build a 
+<a href="https://www.structuraltopicmodel.com/" target="_blank" rel="noopener">structural topic model</a> and then how to explore and understand it, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Spice Girls lyrics. 👯</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/2i0Cu8MMGRc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to “discover” topics in the 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-12-14/readme.md" target="_blank" rel="noopener">lyrics of Spice Girls songs</a>. Instead of a supervised or predictive model where our observations have labels, this is an unsupervised approach.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+lyrics <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-12-14/lyrics.csv&#34;</span>)
+</code></pre></div><p>How many albums and songs are there in this dataset?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lyrics <span style="color:#666">%&gt;%</span> <span style="color:#06287e">distinct</span>(album_name)
+</code></pre></div><pre><code>## # A tibble: 3 × 1
+##   album_name
+##   &lt;chr&gt;     
+## 1 Spice     
+## 2 Spiceworld
+## 3 Forever
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lyrics <span style="color:#666">%&gt;%</span> <span style="color:#06287e">distinct</span>(album_name, song_name)
+</code></pre></div><pre><code>## # A tibble: 31 × 2
+##    album_name song_name                 
+##    &lt;chr&gt;      &lt;chr&gt;                     
+##  1 Spice      &quot;Wannabe&quot;                 
+##  2 Spice      &quot;Say You\x92ll Be There&quot;  
+##  3 Spice      &quot;2 Become 1&quot;              
+##  4 Spice      &quot;Love Thing&quot;              
+##  5 Spice      &quot;Last Time Lover&quot;         
+##  6 Spice      &quot;Mama&quot;                    
+##  7 Spice      &quot;Who Do You Think You Are&quot;
+##  8 Spice      &quot;Something Kinda Funny&quot;   
+##  9 Spice      &quot;Naked&quot;                   
+## 10 Spice      &quot;If U Can\x92t Dance&quot;     
+## # … with 21 more rows
+</code></pre>
+<p>Let’s start by tokenizing this text and removing a small set of stop words (as well as fixing that punctuation).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+tidy_lyrics <span style="color:#666">&lt;-</span>
+  lyrics <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(song_name <span style="color:#666">=</span> <span style="color:#06287e">str_replace_all</span>(song_name, <span style="color:#4070a0">&#34;\x92&#34;</span>, <span style="color:#4070a0">&#34;&#39;&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(word, line) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">anti_join</span>(<span style="color:#06287e">get_stopwords</span>())
+</code></pre></div><p>What are the most common words in these songs after removing stop words?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tidy_lyrics <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code>## # A tibble: 979 × 2
+##    word      n
+##    &lt;chr&gt; &lt;int&gt;
+##  1 get     153
+##  2 love    137
+##  3 know    124
+##  4 time    106
+##  5 wanna   102
+##  6 never   101
+##  7 oh       88
+##  8 yeah     88
+##  9 la       85
+## 10 got      82
+## # … with 969 more rows
+</code></pre>
+<p>How about per song?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tidy_lyrics <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(song_name, word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code>## # A tibble: 2,206 × 3
+##    song_name                       word           n
+##    &lt;chr&gt;                           &lt;chr&gt;      &lt;int&gt;
+##  1 Saturday Night Divas            get           91
+##  2 Spice Up Your Life              la            64
+##  3 If U Can't Dance                dance         60
+##  4 Holler                          holler        48
+##  5 Never Give Up on the Good Times never         47
+##  6 Move Over                       generation    41
+##  7 Saturday Night Divas            deeper        41
+##  8 Move Over                       yeah          39
+##  9 Something Kinda Funny           got           39
+## 10 Never Give Up on the Good Times give          38
+## # … with 2,196 more rows
+</code></pre>
+<p>This gives us an idea of how many counts per words we have per song, for our modeling.</p>
+
+
+
+
+<h2 id="train-a-topic-model">Train a topic model
+  <a href="#train-a-topic-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To train a topic model with the stm package, we need to create a sparse matrix from our tidy dataframe of tokens.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lyrics_sparse <span style="color:#666">&lt;-</span>
+  tidy_lyrics <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(song_name, word) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">cast_sparse</span>(song_name, word, n)
+
+<span style="color:#06287e">dim</span>(lyrics_sparse)
+</code></pre></div><pre><code>## [1]  31 979
+</code></pre>
+<p>This means there are 31 songs (i.e. documents) and different tokens (i.e. terms or words) in our dataset for modeling.</p>
+<p>A topic model like this one models:</p>
+<ul>
+<li>each <strong>document</strong> as a mixture of topics</li>
+<li>each <strong>topic</strong> as a mixture of words</li>
+</ul>
+<p>The most important parameter when training a topic modeling is <code>K</code>, the number of topics. This is like <code>k</code> in k-means in that it is a hyperparamter of the model and we must choose this value ahead of time. We could 
+<a href="https://juliasilge.com/blog/evaluating-stm/" target="_blank" rel="noopener">try multiple different values</a> to find the best value for <code>K</code>, but this is a very small dataset so let’s just stick with <code>K = 4</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(stm)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+topic_model <span style="color:#666">&lt;-</span> <span style="color:#06287e">stm</span>(lyrics_sparse, K <span style="color:#666">=</span> <span style="color:#40a070">4</span>, verbose <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+</code></pre></div><p>To get a quick view of the results, we can use <code>summary()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(topic_model)
+</code></pre></div><pre><code>## A topic model with 4 topics, 31 documents and a 979 word dictionary.
+
+## Topic 1 Top Words:
+##       Highest Prob: get, wanna, time, night, right, deeper, come 
+##       FREX: deeper, saturday, comin, get, lover, night, last 
+##       Lift: achieve, saying, tonight, another, anyway, blameless, breaking 
+##       Score: deeper, saturday, lover, get, wanna, night, comin 
+## Topic 2 Top Words:
+##       Highest Prob: dance, yeah, generation, know, next, love, naked 
+##       FREX: next, naked, denying, foolin, nobody, wants, meant 
+##       Lift: admit, bein, check, d'ya, defeat, else, foolin 
+##       Score: next, naked, dance, generation, denying, foolin, nobody 
+## Topic 3 Top Words:
+##       Highest Prob: got, holler, make, love, oh, something, play 
+##       FREX: holler, kinda, swing, funny, yay, use, trust 
+##       Lift: anyone, bottom, driving, fantasy, follow, hoo, long 
+##       Score: holler, swing, kinda, funny, yay, driving, loving 
+## Topic 4 Top Words:
+##       Highest Prob: la, never, love, give, time, know, way 
+##       FREX: times, tried, swear, la, bring, promise, viva 
+##       Lift: able, certain, love's, rely, affection, shy, replace 
+##       Score: la, times, swear, shake, viva, chicas, front
+</code></pre>
+
+
+
+
+<h2 id="explore-topic-model-results">Explore topic model results
+  <a href="#explore-topic-model-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To explore more deeply, we can <code>tidy()</code> the topic model results to get a dataframe that we can compute on. There are two possible outputs for this topic model, the <code>&quot;beta&quot;</code> matrix of topic-word probabilities and the <code>&quot;gamma&quot;</code> matrix of document-topic probabilities. Let’s start with the first.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">word_topics <span style="color:#666">&lt;-</span> <span style="color:#06287e">tidy</span>(topic_model, matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;beta&#34;</span>)
+word_topics
+</code></pre></div><pre><code>## # A tibble: 3,916 × 3
+##    topic term        beta
+##    &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;
+##  1     1 achieve 1.66e- 3
+##  2     2 achieve 2.14e-21
+##  3     3 achieve 1.75e-49
+##  4     4 achieve 5.18e-36
+##  5     1 baby    1.20e- 2
+##  6     2 baby    1.44e- 2
+##  7     3 baby    1.29e-15
+##  8     4 baby    5.04e- 3
+##  9     1 back    1.94e- 2
+## 10     2 back    5.49e- 4
+## # … with 3,906 more rows
+</code></pre>
+<p>Since this is a tidy dataframe, we can manipulate it how we like, include making a visualization showing the highest probability words from each topic.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">word_topics <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(topic) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(beta, n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(topic <span style="color:#666">=</span> <span style="color:#06287e">paste</span>(<span style="color:#4070a0">&#34;Topic&#34;</span>, topic)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(beta, <span style="color:#06287e">reorder_within</span>(term, beta, topic), fill <span style="color:#666">=</span> topic)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(topic), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(expand <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_reordered</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#06287e">expression</span>(beta), y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/spice-girls/index_files/figure-html/unnamed-chunk-11-1.png" width="1800" />
+<p>What about the other matrix? We also need to pass in the <code>document_names</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">song_topics <span style="color:#666">&lt;-</span> <span style="color:#06287e">tidy</span>(topic_model,
+  matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gamma&#34;</span>,
+  document_names <span style="color:#666">=</span> <span style="color:#06287e">rownames</span>(lyrics_sparse)
+)
+song_topics
+</code></pre></div><pre><code>## # A tibble: 124 × 3
+##    document                   topic    gamma
+##    &lt;chr&gt;                      &lt;int&gt;    &lt;dbl&gt;
+##  1 2 Become 1                     1 0.714   
+##  2 Denying                        1 0.00163 
+##  3 Do It                          1 0.996   
+##  4 Get Down With Me               1 0.947   
+##  5 Goodbye                        1 0.00106 
+##  6 Holler                         1 0.00103 
+##  7 If U Can't Dance               1 0.000942
+##  8 If You Wanna Have Some Fun     1 0.00722 
+##  9 Last Time Lover                1 0.998   
+## 10 Let Love Lead the Way          1 0.00175 
+## # … with 114 more rows
+</code></pre>
+<p>Remember that each document (song) was modeled as a mixture of topics. How did that turn out?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">song_topics <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    song_name <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(document, gamma),
+    topic <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(topic)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(gamma, topic, fill <span style="color:#666">=</span> topic)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(song_name), ncol <span style="color:#666">=</span> <span style="color:#40a070">4</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(expand <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#06287e">expression</span>(gamma), y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Topic&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/spice-girls/index_files/figure-html/unnamed-chunk-13-1.png" width="3300" />
+<p>The songs near the top of this plot are mostly one topic, while the songs near the bottom are more a mix.</p>
+<p>There is a TON more you can do with topic models. For example, we can take the trained topic model and, using some supplementary metadata on our documents, estimate regressions for the <em>proportion</em> of each document about a topic with the metadata as the predictors. For example, let’s estimate regressions for our four topics with the album name as the predictor. This asks the question, “Do the topics in Spice Girls songs change across albums?”</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">effects <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">estimateEffect</span>(
+    <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">4</span> <span style="color:#666">~</span> album_name,
+    topic_model,
+    tidy_lyrics <span style="color:#666">%&gt;%</span> <span style="color:#06287e">distinct</span>(song_name, album_name) <span style="color:#666">%&gt;%</span> <span style="color:#06287e">arrange</span>(song_name)
+  )
+</code></pre></div><p>Again, to get a quick view of the results, we can use <code>summary()</code>, but to dive deeper, we will want to use <code>tidy()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(effects)
+</code></pre></div><pre><code>## 
+## Call:
+## estimateEffect(formula = 1:4 ~ album_name, stmobj = topic_model, 
+##     metadata = tidy_lyrics %&gt;% distinct(song_name, album_name) %&gt;% 
+##         arrange(song_name))
+## 
+## 
+## Topic 1:
+## 
+## Coefficients:
+##                      Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)            0.1787     0.1312   1.362    0.184
+## album_nameSpice        0.1199     0.1892   0.634    0.531
+## album_nameSpiceworld   0.1139     0.1862   0.612    0.546
+## 
+## 
+## Topic 2:
+## 
+## Coefficients:
+##                      Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)            0.1444     0.1325   1.090    0.285
+## album_nameSpice        0.1357     0.1879   0.722    0.476
+## album_nameSpiceworld   0.1486     0.1846   0.805    0.427
+## 
+## 
+## Topic 3:
+## 
+## Coefficients:
+##                      Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)           0.27150    0.12085   2.247   0.0327 *
+## album_nameSpice       0.01954    0.16752   0.117   0.9080  
+## album_nameSpiceworld -0.25776    0.16700  -1.543   0.1339  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## 
+## Topic 4:
+## 
+## Coefficients:
+##                       Estimate Std. Error t value Pr(&gt;|t|)   
+## (Intercept)           0.405559   0.140820   2.880  0.00754 **
+## album_nameSpice      -0.273207   0.202200  -1.351  0.18746   
+## album_nameSpiceworld -0.007134   0.194246  -0.037  0.97096   
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(effects)
+</code></pre></div><pre><code>## # A tibble: 12 × 6
+##    topic term                 estimate std.error statistic p.value
+##    &lt;int&gt; &lt;chr&gt;                   &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+##  1     1 (Intercept)           0.177       0.132    1.34   0.190  
+##  2     1 album_nameSpice       0.120       0.189    0.633  0.532  
+##  3     1 album_nameSpiceworld  0.115       0.188    0.608  0.548  
+##  4     2 (Intercept)           0.145       0.133    1.09   0.283  
+##  5     2 album_nameSpice       0.135       0.187    0.722  0.476  
+##  6     2 album_nameSpiceworld  0.150       0.185    0.813  0.423  
+##  7     3 (Intercept)           0.272       0.120    2.26   0.0316 
+##  8     3 album_nameSpice       0.0167      0.167    0.100  0.921  
+##  9     3 album_nameSpiceworld -0.259       0.166   -1.57   0.129  
+## 10     4 (Intercept)           0.404       0.140    2.89   0.00739
+## 11     4 album_nameSpice      -0.273       0.196   -1.39   0.175  
+## 12     4 album_nameSpiceworld -0.00502     0.193   -0.0260 0.979
+</code></pre>
+<p>Looks like there is no statistical evidence of change in the lyrical content of the Spice Girls songs across these three albums!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">December 15, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1667 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/chocolate-ratings/">&larr; Text predictors for #TidyTuesday chocolate ratings</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/doctor-who/">Predicting viewership for #TidyTuesday Doctor Who episodes &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

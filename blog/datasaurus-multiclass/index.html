@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Predicting class membership for the #TidyTuesday Datasaurus Dozen  | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Predicting class membership for the #TidyTuesday Datasaurus Dozen  | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/datasaurus-multiclass/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/datasaurus-multiclass/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/datasaurus-multiclass/featured.png" >
+    
+    
+  <meta itemprop="name" content="Predicting class membership for the #TidyTuesday Datasaurus Dozen ">
+<meta itemprop="description" content="Which of the Datasaurus Dozen are easier or harder for a random forest model to identify? Learn how to use multiclass evaluation metrics to find out."><meta itemprop="datePublished" content="2020-10-14T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-10-14T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1625"><meta itemprop="image" content="https://juliasilge.com/blog/datasaurus-multiclass/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Predicting class membership for the #TidyTuesday Datasaurus Dozen </h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">October 14, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from starting out with first modeling steps to tuning more complex models. Today&rsquo;s screencast uses a smaller dataset but lets us try out some important skills in modeling, using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on the 
+<a href="http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html" target="_blank" rel="noopener">Datasaurus Dozen</a>.</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/QhAPA_X-ilA" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-10-13/readme.md" target="_blank" rel="noopener">Datasaurus Dozen dataset</a> is a collection of 13 sets of <code>x</code>/<code>y</code> data that have very similar summary statistics but look very different when plotted. Our modeling goal is to predict which member of the &ldquo;dozen&rdquo; each point belongs to.</p>
+<p>Let&rsquo;s start by reading in the data from the 
+<a href="https://cran.r-project.org/package=datasauRus" target="_blank" rel="noopener">datasauRus</a> package.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+<span style="color:#06287e">library</span>(datasauRus)
+
+datasaurus_dozen
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1,846 x 3
+##    dataset     x     y
+##    &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;
+##  1 dino     55.4  97.2
+##  2 dino     51.5  96.0
+##  3 dino     46.2  94.5
+##  4 dino     42.8  91.4
+##  5 dino     40.8  88.3
+##  6 dino     38.7  84.9
+##  7 dino     35.6  79.9
+##  8 dino     33.1  77.6
+##  9 dino     29.0  74.5
+## 10 dino     26.2  71.4
+## # … with 1,836 more rows
+</code></pre><p>These datasets are very different from each other!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">datasaurus_dozen <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(x, y, color <span style="color:#666">=</span> dataset)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>dataset, ncol <span style="color:#666">=</span> <span style="color:#40a070">5</span>)
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>But their summary statistics are so similar.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">datasaurus_dozen <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(dataset) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(<span style="color:#06287e">across</span>(<span style="color:#06287e">c</span>(x, y), <span style="color:#06287e">list</span>(mean <span style="color:#666">=</span> mean, sd <span style="color:#666">=</span> sd)),
+    x_y_cor <span style="color:#666">=</span> <span style="color:#06287e">cor</span>(x, y)
+  )
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 13 x 6
+##    dataset    x_mean  x_sd y_mean  y_sd x_y_cor
+##    &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;
+##  1 away         54.3  16.8   47.8  26.9 -0.0641
+##  2 bullseye     54.3  16.8   47.8  26.9 -0.0686
+##  3 circle       54.3  16.8   47.8  26.9 -0.0683
+##  4 dino         54.3  16.8   47.8  26.9 -0.0645
+##  5 dots         54.3  16.8   47.8  26.9 -0.0603
+##  6 h_lines      54.3  16.8   47.8  26.9 -0.0617
+##  7 high_lines   54.3  16.8   47.8  26.9 -0.0685
+##  8 slant_down   54.3  16.8   47.8  26.9 -0.0690
+##  9 slant_up     54.3  16.8   47.8  26.9 -0.0686
+## 10 star         54.3  16.8   47.8  26.9 -0.0630
+## 11 v_lines      54.3  16.8   47.8  26.9 -0.0694
+## 12 wide_lines   54.3  16.8   47.8  26.9 -0.0666
+## 13 x_shape      54.3  16.8   47.8  26.9 -0.0656
+</code></pre><p>Let&rsquo;s explore whether we can use modeling to predict which dataset a point belongs to. This is not a large dataset compared to the number of classes (13!) so this isn&rsquo;t a tutorial that shows best practices for a predictive modeling workflow overall, but it <em>does</em> demonstrate how to evaluate a multiclass model, as well as a bit about how random forest models work.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">datasaurus_dozen <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(dataset)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 13 x 2
+##    dataset        n
+##    &lt;chr&gt;      &lt;int&gt;
+##  1 away         142
+##  2 bullseye     142
+##  3 circle       142
+##  4 dino         142
+##  5 dots         142
+##  6 h_lines      142
+##  7 high_lines   142
+##  8 slant_down   142
+##  9 slant_up     142
+## 10 star         142
+## 11 v_lines      142
+## 12 wide_lines   142
+## 13 x_shape      142
+</code></pre>
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s start out by creating bootstrap resamples of the Datasaurus Dozen. Notice that we aren&rsquo;t splitting into testing and training sets, so we won&rsquo;t have an unbiased estimate of performance on new data. Instead, we will use these resamples to understand the dataset and multiclass models better.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+dino_folds <span style="color:#666">&lt;-</span> datasaurus_dozen <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(dataset <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(dataset)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bootstraps</span>()
+
+dino_folds
+</code></pre></div><pre tabindex="0"><code>## # Bootstrap sampling 
+## # A tibble: 25 x 2
+##    splits             id         
+##    &lt;list&gt;             &lt;chr&gt;      
+##  1 &lt;split [1.8K/672]&gt; Bootstrap01
+##  2 &lt;split [1.8K/689]&gt; Bootstrap02
+##  3 &lt;split [1.8K/680]&gt; Bootstrap03
+##  4 &lt;split [1.8K/674]&gt; Bootstrap04
+##  5 &lt;split [1.8K/692]&gt; Bootstrap05
+##  6 &lt;split [1.8K/689]&gt; Bootstrap06
+##  7 &lt;split [1.8K/689]&gt; Bootstrap07
+##  8 &lt;split [1.8K/695]&gt; Bootstrap08
+##  9 &lt;split [1.8K/664]&gt; Bootstrap09
+## 10 &lt;split [1.8K/671]&gt; Bootstrap10
+## # … with 15 more rows
+</code></pre><p>Let&rsquo;s create a random forest model and set up a model workflow with the model and a formula preprocessor. We are predicting the <code>dataset</code> class (dino vs. circle vs. bullseye vs. &hellip;) from <code>x</code> and <code>y</code>. A random forest model can often do a good job of learning complex interactions in predictors.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rf_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1000</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>)
+
+dino_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_formula</span>(dataset <span style="color:#666">~</span> x <span style="color:#666">+</span> y) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(rf_spec)
+
+dino_wf
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Formula
+## Model: rand_forest()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## dataset ~ x + y
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Random Forest Model Specification (classification)
+## 
+## Main Arguments:
+##   trees = 1000
+## 
+## Computational engine: ranger
+</code></pre><p>Let&rsquo;s fit the random forest model to the bootstrap resamples.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+dino_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(
+  dino_wf,
+  resamples <span style="color:#666">=</span> dino_folds,
+  control <span style="color:#666">=</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+)
+
+dino_rs
+</code></pre></div><pre tabindex="0"><code>## # Resampling results
+## # Bootstrap sampling 
+## # A tibble: 25 x 5
+##    splits            id          .metrics       .notes         .predictions     
+##    &lt;list&gt;            &lt;chr&gt;       &lt;list&gt;         &lt;list&gt;         &lt;list&gt;           
+##  1 &lt;split [1.8K/672… Bootstrap01 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [672 × 1…
+##  2 &lt;split [1.8K/689… Bootstrap02 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [689 × 1…
+##  3 &lt;split [1.8K/680… Bootstrap03 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [680 × 1…
+##  4 &lt;split [1.8K/674… Bootstrap04 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [674 × 1…
+##  5 &lt;split [1.8K/692… Bootstrap05 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [692 × 1…
+##  6 &lt;split [1.8K/689… Bootstrap06 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [689 × 1…
+##  7 &lt;split [1.8K/689… Bootstrap07 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [689 × 1…
+##  8 &lt;split [1.8K/695… Bootstrap08 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [695 × 1…
+##  9 &lt;split [1.8K/664… Bootstrap09 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [664 × 1…
+## 10 &lt;split [1.8K/671… Bootstrap10 &lt;tibble [2 × … &lt;tibble [0 × … &lt;tibble [671 × 1…
+## # … with 15 more rows
+</code></pre><p>We did it!</p>
+
+
+
+
+<h2 id="evaluate-model">Evaluate model
+  <a href="#evaluate-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>How did these models do overall?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(dino_rs)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2 x 5
+##   .metric  .estimator  mean     n std_err
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+## 1 accuracy multiclass 0.449    25 0.00337
+## 2 roc_auc  hand_till  0.846    25 0.00128
+</code></pre><p>The accuracy is not great; a multiclass problem like this, especially one with so many classes, is harder than a binary classification problem. There are so many possible wrong answers!</p>
+<p>Since we saved the predictions with <code>save_pred = TRUE</code> we can compute other performance metrics. Notice that by default the positive predictive value (like accuracy) is macro-weighted for multiclass problems.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">dino_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(id) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ppv</span>(dataset, .pred_class)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 25 x 4
+##    id          .metric .estimator .estimate
+##    &lt;chr&gt;       &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+##  1 Bootstrap01 ppv     macro          0.428
+##  2 Bootstrap02 ppv     macro          0.431
+##  3 Bootstrap03 ppv     macro          0.436
+##  4 Bootstrap04 ppv     macro          0.418
+##  5 Bootstrap05 ppv     macro          0.445
+##  6 Bootstrap06 ppv     macro          0.413
+##  7 Bootstrap07 ppv     macro          0.420
+##  8 Bootstrap08 ppv     macro          0.423
+##  9 Bootstrap09 ppv     macro          0.393
+## 10 Bootstrap10 ppv     macro          0.429
+## # … with 15 more rows
+</code></pre><p>Next, let&rsquo;s compute ROC curves for each class.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">dino_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(id) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">roc_curve</span>(dataset, .pred_away<span style="color:#666">:</span>.pred_x_shape) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#40a070">1</span> <span style="color:#666">-</span> specificity, sensitivity, color <span style="color:#666">=</span> id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_abline</span>(lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray80&#34;</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_path</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>.level, ncol <span style="color:#666">=</span> <span style="color:#40a070">5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_equal</span>()
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-11-1.png" width="3300" />
+<p>We have an ROC curve for each class and each resample in this plot. Notice that the points dataset was easy for the model to identify while the dino dataset was very difficult. The model barely did better than guessing for the dino!</p>
+<p>We can also compute a confusion matrix. We could use <code>tune::conf_mat_resampled()</code> but since there are so few examples per class and the classes were balanced, let&rsquo;s just look at all the resamples together.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">dino_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat</span>(dataset, .pred_class)
+</code></pre></div><pre tabindex="0"><code>##             Truth
+## Prediction   away bullseye circle dino dots h_lines high_lines slant_down slant_up star v_lines wide_lines x_shape
+##   away        220       78     50   59    9      55         78        130       96   58       4        118      83
+##   bullseye    125      470     17   97    3      38        101         74      109   31      40         93      55
+##   circle       99       16    852  105    4      34        147         49       98   85       6         62      30
+##   dino         54       65     16  142    5      42         82        153      114   50      23         66      49
+##   dots         22       20     22   33 1221      39         57         47       34   15      11         28      16
+##   h_lines      52       81     37   60   26     897         37         42       54   34       4         56      36
+##   high_lines  111      105     69  145    8      27        381         95      125   58      34         73      77
+##   slant_down  137       55     24  158   10      30         69        318      114   33      41         89      27
+##   slant_up     81       82     37  144    1      30         64        107      264   30      13         96      49
+##   star         60       52     37   77   19      28         62         73       37  755       0         34      87
+##   v_lines      32       66     30   69    7       9         45         78       56   20    1133         32      14
+##   wide_lines  175      134     55  137    0      56         69        102      193   53      21        390     147
+##   x_shape     158      102     65   79    4      27        121         67       44   92       1        136     648
+</code></pre><p>These counts are can be easier to understand in a visualization.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">dino_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat</span>(dataset, .pred_class) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>(type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;heatmap&#34;</span>)
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-13-1.png" width="3000" />
+<p>There is some real variability on the diagonal, with a factor of 10 difference from dinos to dots.</p>
+<p>If we set the diagonal to all zeroes, we can see which classes were most likely to be confused for each other.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">dino_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(.pred_class <span style="color:#666">!=</span> dataset) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat</span>(dataset, .pred_class) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>(type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;heatmap&#34;</span>)
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-14-1.png" width="3000" />
+<p>The dino dataset was confused with many of the other datasets, and <code>wide_lines</code> was often confused with <code>slant_up</code>.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 14, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1625 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/wind-turbine/">&larr; Tune and interpret decision trees for #TidyTuesday wind turbines</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/ncaa-tuning/">Modeling #TidyTuesday NCAA women&#39;s basketball tournament seeds &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

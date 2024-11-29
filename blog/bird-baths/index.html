@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Fit and predict with tidymodels for #TidyTuesday bird baths in Australia | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Fit and predict with tidymodels for #TidyTuesday bird baths in Australia | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/bird-baths/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/bird-baths/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/bird-baths/featured.png" >
+    
+    
+  <meta itemprop="name" content="Fit and predict with tidymodels for #TidyTuesday bird baths in Australia">
+<meta itemprop="description" content="In this screencast, focus on some tidymodels basics such as how to put together feature engineering and a model algorithm, and how to fit and predict."><meta itemprop="datePublished" content="2021-09-01T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-09-01T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1416"><meta itemprop="image" content="https://juliasilge.com/blog/bird-baths/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Fit and predict with tidymodels for #TidyTuesday bird baths in Australia</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">September 1, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just getting started to tuning more complex models. Today’s screencast is good for folks who are newer to modeling or tidymodels; it focuses on how to use feature engineering together with a model algorithm and how to fit and predict, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on bird baths in Australia. 🐦</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/NXot3Q0QtGk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict whether we’ll see a bird at a 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-08-31/readme.md" target="_blank" rel="noopener">bird bath in Australia</a>, given info like what kind of bird we’re looking for and whether the bird bath is in an urban or rural location.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+bird_baths <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-31/bird_baths.csv&#34;</span>)
+
+bird_baths <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(urban_rural)
+</code></pre></div><pre><code>## # A tibble: 3 × 2
+##   urban_rural      n
+##   &lt;chr&gt;        &lt;int&gt;
+## 1 Rural        49686
+## 2 Urban       111202
+## 3 &lt;NA&gt;           169
+</code></pre>
+<p>Notice that there are some summary rows in the dataset with <code>NA</code> values for <code>urban_rural</code>, <code>survey_year</code>, etc. We can use that to choose some top bird types to focus on, instead of all the many bird types included in this dataset.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">top_birds <span style="color:#666">&lt;-</span>
+  bird_baths <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">is.na</span>(urban_rural)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>bird_count) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(bird_count, n <span style="color:#666">=</span> <span style="color:#40a070">15</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull</span>(bird_type)
+
+top_birds
+</code></pre></div><pre><code>##  [1] &quot;Noisy Miner&quot;        &quot;Australian Magpie&quot;  &quot;Rainbow Lorikeet&quot;  
+##  [4] &quot;Red Wattlebird&quot;     &quot;Superb Fairy-wren&quot;  &quot;Magpie-lark&quot;       
+##  [7] &quot;Pied Currawong&quot;     &quot;Crimson Rosella&quot;    &quot;Eastern Spinebill&quot; 
+## [10] &quot;Spotted Dove&quot;       &quot;Lewin's Honeyeater&quot; &quot;Satin Bowerbird&quot;   
+## [13] &quot;Crested Pigeon&quot;     &quot;Grey Fantail&quot;       &quot;Red-browed Finch&quot;
+</code></pre>
+<p>How likely were the citizen scientists who collected this data to see birds of different types, in different locations?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_parsed <span style="color:#666">&lt;-</span>
+  bird_baths <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(
+    <span style="color:#666">!</span><span style="color:#06287e">is.na</span>(urban_rural),
+    bird_type <span style="color:#666">%in%</span> top_birds
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(urban_rural, bird_type) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(bird_count <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(bird_count), .groups <span style="color:#666">=</span> <span style="color:#4070a0">&#34;drop&#34;</span>)
+
+p1 <span style="color:#666">&lt;-</span>
+  bird_parsed <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(bird_count, bird_type)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_segment</span>(
+    data <span style="color:#666">=</span> bird_parsed <span style="color:#666">%&gt;%</span>
+      <span style="color:#06287e">pivot_wider</span>(
+        names_from <span style="color:#666">=</span> urban_rural,
+        values_from <span style="color:#666">=</span> bird_count
+      ),
+    <span style="color:#06287e">aes</span>(x <span style="color:#666">=</span> Rural, xend <span style="color:#666">=</span> Urban, y <span style="color:#666">=</span> bird_type, yend <span style="color:#666">=</span> bird_type),
+    alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray70&#34;</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(<span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> urban_rural), size <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Probability of seeing bird&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+
+p1
+</code></pre></div><img src="https://juliasilge.com/blog/bird-baths/index_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>Superb fairy-wrens are more rural, while noisy miners are more urban.</p>
+<p>Let’s build a model to predict this probability of seeing a bird using just these two predictors.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_df <span style="color:#666">&lt;-</span>
+  bird_baths <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(
+    <span style="color:#666">!</span><span style="color:#06287e">is.na</span>(urban_rural),
+    bird_type <span style="color:#666">%in%</span> top_birds
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(bird_count <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(bird_count <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>, <span style="color:#4070a0">&#34;bird&#34;</span>, <span style="color:#4070a0">&#34;no bird&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.character, as.factor)
+</code></pre></div>
+
+
+
+<h2 id="build-a-first-model">Build a first model
+  <a href="#build-a-first-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start our modeling by setting up our “data budget.” We are going to use a simple logistic regression model that is unlikely to overfit, but let’s still split our data into training and testing, and then create resampling folds.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+bird_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(bird_df, strata <span style="color:#666">=</span> bird_count)
+bird_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(bird_split)
+bird_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(bird_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+bird_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(bird_train, strata <span style="color:#666">=</span> bird_count)
+bird_folds
+</code></pre></div><pre><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 × 2
+##    splits              id    
+##    &lt;list&gt;              &lt;chr&gt; 
+##  1 &lt;split [9637/1072]&gt; Fold01
+##  2 &lt;split [9638/1071]&gt; Fold02
+##  3 &lt;split [9638/1071]&gt; Fold03
+##  4 &lt;split [9638/1071]&gt; Fold04
+##  5 &lt;split [9638/1071]&gt; Fold05
+##  6 &lt;split [9638/1071]&gt; Fold06
+##  7 &lt;split [9638/1071]&gt; Fold07
+##  8 &lt;split [9638/1071]&gt; Fold08
+##  9 &lt;split [9639/1070]&gt; Fold09
+## 10 &lt;split [9639/1070]&gt; Fold10
+</code></pre>
+<p>We’ll make a couple of attempts at fitting models here, but they will all use straightforward logistic regression.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">glm_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">logistic_reg</span>()
+</code></pre></div><p>For this first model, let’s set up our feature engineering recipe with our <strong>outcome</strong> and two <strong>predictors</strong>, and begin with only one preprocessing step to transform our nominal (factor or character, like <code>urban_rural</code> and <code>bird_type</code>) predictors to 
+<a href="https://www.tmwr.org/recipes.html#dummies" target="_blank" rel="noopener">dummy or indicator variables</a>. Then let’s put our preprocessing recipe together with our model specification in a workflow.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rec_basic <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">recipe</span>(bird_count <span style="color:#666">~</span> urban_rural <span style="color:#666">+</span> bird_type, data <span style="color:#666">=</span> bird_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_dummy</span>(<span style="color:#06287e">all_nominal_predictors</span>())
+
+wf_basic <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(rec_basic, glm_spec)
+</code></pre></div><p>We could fit this one time to the training data, but to get better estimates of performance, let’s fit 10 times to our 10 resampling folds.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+ctrl_preds <span style="color:#666">&lt;-</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+rs_basic <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(wf_basic, bird_folds, control <span style="color:#666">=</span> ctrl_preds)
+</code></pre></div><p>How did this turn out? If we look at some overall metrics, accuracy does not look so bad:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(rs_basic)
+</code></pre></div><pre><code>## # A tibble: 2 × 6
+##   .metric  .estimator  mean     n   std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.822    10 0.0000762 Preprocessor1_Model1
+## 2 roc_auc  binary     0.601    10 0.00783   Preprocessor1_Model1
+</code></pre>
+<p>This is because there were not many birds overall, though! The model is just saying “no bird” everywhere and getting good accuracy. The ROC curve, on the other hand, looks not so great.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">augment</span>(rs_basic) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">roc_curve</span>(bird_count, .pred_bird) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/bird-baths/index_files/figure-html/unnamed-chunk-11-1.png" width="2400" />
+
+
+
+
+<h2 id="add-interactions">Add interactions
+  <a href="#add-interactions"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We know from the plot we made during EDA that there are interactions between whether a bird bath is urban/rural and what kinds of birds we see there; we could model these interactions either with a model type that can handle it natively (like trees) or with explicit interaction terms like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rec_interact <span style="color:#666">&lt;-</span>
+  rec_basic <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_interact</span>(<span style="color:#666">~</span> <span style="color:#06287e">starts_with</span>(<span style="color:#4070a0">&#34;urban_rural&#34;</span>)<span style="color:#666">:</span><span style="color:#06287e">starts_with</span>(<span style="color:#4070a0">&#34;bird_type&#34;</span>))
+
+wf_interact <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(rec_interact, glm_spec)
+rs_interact <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(wf_interact, bird_folds, control <span style="color:#666">=</span> ctrl_preds)
+</code></pre></div><p>How did <em>this</em> do, our same logistic regression model specification but now with interactions?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(rs_interact)
+</code></pre></div><pre><code>## # A tibble: 2 × 6
+##   .metric  .estimator  mean     n   std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.822    10 0.0000762 Preprocessor1_Model1
+## 2 roc_auc  binary     0.669    10 0.00660   Preprocessor1_Model1
+</code></pre>
+<p>The accuracy is about the same (since the model is always predicting “no bird”) but the probabilities look better.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">augment</span>(rs_interact) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">roc_curve</span>(bird_count, .pred_bird) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/bird-baths/index_files/figure-html/unnamed-chunk-14-1.png" width="2400" />
+
+
+
+
+<h2 id="evaluate-model-on-new-data">Evaluate model on new data
+  <a href="#evaluate-model-on-new-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s stick with this model, logistic regression together with interactions between urban/rural and bird type. We can fit the model one time to the entire training set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(wf_interact, bird_train)
+</code></pre></div><p>Now this trained model is ready to be applied to new data. For example, we can predict the test set, perhaps to get out probabilities.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">predict</span>(bird_fit, bird_test, type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;prob&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 3,571 × 2
+##    .pred_bird `.pred_no bird`
+##         &lt;dbl&gt;           &lt;dbl&gt;
+##  1     0.213            0.787
+##  2     0.123            0.877
+##  3     0.141            0.859
+##  4     0.283            0.717
+##  5     0.119            0.881
+##  6     0.252            0.748
+##  7     0.0380           0.962
+##  8     0.123            0.877
+##  9     0.129            0.871
+## 10     0.119            0.881
+## # … with 3,561 more rows
+</code></pre>
+<p>In fact, we can predict on any kind of new data that has the right input variables. Let’s make some ourselves.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">new_bird_data <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">tibble</span>(bird_type <span style="color:#666">=</span> top_birds) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">crossing</span>(urban_rural <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Urban&#34;</span>, <span style="color:#4070a0">&#34;Rural&#34;</span>))
+
+new_bird_data
+</code></pre></div><pre><code>## # A tibble: 30 × 2
+##    bird_type         urban_rural
+##    &lt;chr&gt;             &lt;chr&gt;      
+##  1 Australian Magpie Rural      
+##  2 Australian Magpie Urban      
+##  3 Crested Pigeon    Rural      
+##  4 Crested Pigeon    Urban      
+##  5 Crimson Rosella   Rural      
+##  6 Crimson Rosella   Urban      
+##  7 Eastern Spinebill Rural      
+##  8 Eastern Spinebill Urban      
+##  9 Grey Fantail      Rural      
+## 10 Grey Fantail      Urban      
+## # … with 20 more rows
+</code></pre>
+<p>We can use a 
+<a href="https://parsnip.tidymodels.org/reference/augment.html" target="_blank" rel="noopener">helpful function like <code>augment()</code></a> to take this new data and “augment” it with predicted probabilities and class predictions, and we can 
+<a href="https://parsnip.tidymodels.org/reference/predict.model_fit.html" target="_blank" rel="noopener">use <code>predict()</code> with specific <code>type</code> arguments</a> to return specialized predictions like confidence intervals. Let’s bind these together.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_preds <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">augment</span>(bird_fit, new_bird_data) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_cols</span>(
+    <span style="color:#06287e">predict</span>(bird_fit, new_bird_data, type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;conf_int&#34;</span>)
+  )
+
+bird_preds
+</code></pre></div><pre><code>## # A tibble: 30 × 9
+##    bird_type urban_rural .pred_class .pred_bird `.pred_no bird` .pred_lower_bird
+##    &lt;chr&gt;     &lt;chr&gt;       &lt;fct&gt;            &lt;dbl&gt;           &lt;dbl&gt;            &lt;dbl&gt;
+##  1 Australi… Rural       no bird         0.245            0.755           0.193 
+##  2 Australi… Urban       no bird         0.287            0.713           0.249 
+##  3 Crested … Rural       no bird         0.0826           0.917           0.0526
+##  4 Crested … Urban       no bird         0.141            0.859           0.113 
+##  5 Crimson … Rural       no bird         0.215            0.785           0.166 
+##  6 Crimson … Urban       no bird         0.123            0.877           0.0969
+##  7 Eastern … Rural       no bird         0.283            0.717           0.227 
+##  8 Eastern … Urban       no bird         0.0973           0.903           0.0736
+##  9 Grey Fan… Rural       no bird         0.254            0.746           0.200 
+## 10 Grey Fan… Urban       no bird         0.0614           0.939           0.0435
+## # … with 20 more rows, and 3 more variables: .pred_upper_bird &lt;dbl&gt;,
+## #   .pred_lower_no bird &lt;dbl&gt;, .pred_upper_no bird &lt;dbl&gt;
+</code></pre>
+<p>Now let’s visualize these predictions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">p2 <span style="color:#666">&lt;-</span>
+  bird_preds <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.pred_bird, bird_type, color <span style="color:#666">=</span> urban_rural)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbar</span>(<span style="color:#06287e">aes</span>(
+    xmin <span style="color:#666">=</span> .pred_lower_bird,
+    xmax <span style="color:#666">=</span> .pred_upper_bird
+  ),
+  width <span style="color:#666">=</span> <span style="color:#40a070">.2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">2.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Predicted probability of seeing bird&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+
+p2
+</code></pre></div><img src="https://juliasilge.com/blog/bird-baths/index_files/figure-html/unnamed-chunk-19-1.png" width="2400" />
+<p>Actually, let’s put this together with our earlier plot!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(patchwork)
+
+p1 <span style="color:#666">+</span> p2
+</code></pre></div><img src="https://juliasilge.com/blog/bird-baths/index_files/figure-html/unnamed-chunk-20-1.png" width="3300" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">September 1, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1416 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/billboard-100/">&larr; Dimensionality reduction for #TidyTuesday Billboard Top 100 songs</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/star-trek/">Modeling human/computer interactions on Star Trek from #TidyTuesday with workflowsets &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

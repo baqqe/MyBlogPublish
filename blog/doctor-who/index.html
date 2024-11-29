@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Predicting viewership for #TidyTuesday Doctor Who episodes | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Predicting viewership for #TidyTuesday Doctor Who episodes | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/doctor-who/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/doctor-who/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/doctor-who/featured.png" >
+    
+    
+  <meta itemprop="name" content="Predicting viewership for #TidyTuesday Doctor Who episodes">
+<meta itemprop="description" content="Using a tidymodels workflow can make many modeling tasks more convenient, but sometimes you want more flexibility and control of how to handle your modeling objects. Learn how to handle resampled workflow results and extract the quantities you are interested in."><meta itemprop="datePublished" content="2021-11-27T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-11-27T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1064"><meta itemprop="image" content="https://juliasilge.com/blog/doctor-who/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Predicting viewership for #TidyTuesday Doctor Who episodes</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">November 27, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just getting started to tuning more complex models. Today’s screencast walks through how to handle workflow objects, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Doctor Who episodes. 💙</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/T8SSxIo-9Rg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict the UK viewership of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-11-23/readme.md" target="_blank" rel="noopener">Doctor Who episodes</a> (since the 2005 revival) from the episodes’ air date. How has the viewership of these episodes changed over time?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">episodes <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-11-23/episodes.csv&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(uk_viewers))
+
+episodes <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(first_aired, uk_viewers)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/doctor-who/index_files/figure-html/unnamed-chunk-2-1.png" width="2400" />
+<p>These are quite spiky, with much higher viewer numbers for special episodes like season finales or Christmas episodes.</p>
+<p>I have only ever watched episodes of Doctor Who after they arrive on US streaming platforms, but I will say that I haven’t caught up on some of the latest seasons, much like many viewers in the UK.</p>
+
+
+
+
+<h2 id="create-a-workflow">Create a workflow
+  <a href="#create-a-workflow"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>In tidymodels, we typically recommend using a 
+<a href="https://www.tmwr.org/workflows.html" target="_blank" rel="noopener">workflow</a> in your modeling analyses, to make it easier to carry around preprocessing and modeling components in your code and to protect against errors. Let’s create some bootstrap resampling folds for these episodes, and then a workflow to predict viewership (in millions) from the air date.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(episodes, times <span style="color:#666">=</span> <span style="color:#40a070">100</span>, strata <span style="color:#666">=</span> uk_viewers)
+folds
+</code></pre></div><pre><code>## # Bootstrap sampling using stratification 
+## # A tibble: 100 × 2
+##    splits           id          
+##    &lt;list&gt;           &lt;chr&gt;       
+##  1 &lt;split [167/61]&gt; Bootstrap001
+##  2 &lt;split [167/55]&gt; Bootstrap002
+##  3 &lt;split [167/64]&gt; Bootstrap003
+##  4 &lt;split [167/56]&gt; Bootstrap004
+##  5 &lt;split [167/69]&gt; Bootstrap005
+##  6 &lt;split [167/63]&gt; Bootstrap006
+##  7 &lt;split [167/68]&gt; Bootstrap007
+##  8 &lt;split [167/55]&gt; Bootstrap008
+##  9 &lt;split [167/60]&gt; Bootstrap009
+## 10 &lt;split [167/60]&gt; Bootstrap010
+## # … with 90 more rows
+</code></pre>
+<p>We want to use <code>first_aired</code> as our predictor, but let’s do some feature engineering here. Let’s create a date feature (just year here; if we had more data, maybe we could try week of the year or month), and also create a feature for a few holidays that are celebrated in the UK and have special Doctor Who episodes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">who_rec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">recipe</span>(uk_viewers <span style="color:#666">~</span> first_aired, data <span style="color:#666">=</span> episodes) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_date</span>(first_aired, features <span style="color:#666">=</span> <span style="color:#4070a0">&#34;year&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_holiday</span>(first_aired,
+    holidays <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;NewYearsDay&#34;</span>, <span style="color:#4070a0">&#34;ChristmasDay&#34;</span>),
+    keep_original_cols <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>
+  )
+
+<span style="color:#60a0b0;font-style:italic">## not needed for modeling, but just to check how things are going:</span>
+<span style="color:#06287e">prep</span>(who_rec) <span style="color:#666">%&gt;%</span> <span style="color:#06287e">bake</span>(new_data <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><pre><code>## # A tibble: 167 × 4
+##    uk_viewers first_aired_year first_aired_NewYearsDay first_aired_ChristmasDay
+##         &lt;dbl&gt;            &lt;dbl&gt;                   &lt;dbl&gt;                    &lt;dbl&gt;
+##  1      10.8              2005                       0                        0
+##  2       7.97             2005                       0                        0
+##  3       8.86             2005                       0                        0
+##  4       7.63             2005                       0                        0
+##  5       7.98             2005                       0                        0
+##  6       8.63             2005                       0                        0
+##  7       8.01             2005                       0                        0
+##  8       8.06             2005                       0                        0
+##  9       7.11             2005                       0                        0
+## 10       6.86             2005                       0                        0
+## # … with 157 more rows
+</code></pre>
+<p>Now let’s combine this feature engineering recipe together with a model. We don’t have much data here, so let’s stick with a straightforward OLS linear model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">who_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(who_rec, <span style="color:#06287e">linear_reg</span>())
+who_wf
+</code></pre></div><pre><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 2 Recipe Steps
+## 
+## • step_date()
+## • step_holiday()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Linear Regression Model Specification (regression)
+## 
+## Computational engine: lm
+</code></pre>
+
+
+
+
+<h2 id="extract-custom-quantities-from-resampled-workflows">Extract custom quantities from resampled workflows
+  <a href="#extract-custom-quantities-from-resampled-workflows"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you look at many of my tutorials or the documentation for tidymodels, you’ll see that we can fit our workflow to our resamples with code like <code>fit_resamples(who_wf, folds)</code>. This can give us some useful results, but sometimes we want <em>more</em>. The functions like <code>fit_resamples()</code> and <code>tune_grid()</code> and friends don’t keep the fitted models they train, because they are all trained for the purpose of evaluation or tuning or similar; we usually throw those models away. Sometimes we want to record something about those models beyond their performance; we can do that using a special <code>control_*()</code> function.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">ctrl_extract <span style="color:#666">&lt;-</span> <span style="color:#06287e">control_resamples</span>(extract <span style="color:#666">=</span> extract_fit_engine)
+</code></pre></div><p>To create <code>ctrl_extract</code>, I used the 
+<a href="https://workflows.tidymodels.org/reference/extract-workflow.html" target="_blank" rel="noopener"><code>extract_fit_engine()</code></a> function, but you have total flexibility here and can supply your own function. Check out 
+<a href="https://www.tidymodels.org/learn/models/coefficients/" target="_blank" rel="noopener">this tutorial</a> for another way to supply a custom function here.</p>
+<p>With our <code>ctrl_extract</code> ready to go, we can now fit to our resamples and keep the linear models for each resample.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+who_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(who_wf, folds, control <span style="color:#666">=</span> ctrl_extract)
+who_rs
+</code></pre></div><pre><code>## # Resampling results
+## # Bootstrap sampling using stratification 
+## # A tibble: 100 × 5
+##    splits           id           .metrics         .notes           .extracts    
+##    &lt;list&gt;           &lt;chr&gt;        &lt;list&gt;           &lt;list&gt;           &lt;list&gt;       
+##  1 &lt;split [167/61]&gt; Bootstrap001 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  2 &lt;split [167/55]&gt; Bootstrap002 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  3 &lt;split [167/64]&gt; Bootstrap003 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  4 &lt;split [167/56]&gt; Bootstrap004 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  5 &lt;split [167/69]&gt; Bootstrap005 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  6 &lt;split [167/63]&gt; Bootstrap006 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  7 &lt;split [167/68]&gt; Bootstrap007 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  8 &lt;split [167/55]&gt; Bootstrap008 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+##  9 &lt;split [167/60]&gt; Bootstrap009 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+## 10 &lt;split [167/60]&gt; Bootstrap010 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 1]&gt; &lt;tibble [1 ×…
+## # … with 90 more rows
+</code></pre>
+<p>Since we have each <code>lm</code> object for each resample, we can <code>tidy()</code> them to find the coefficients. We can do any kind of analysis we want on these bootstrapped coefficients, including making a visualization.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">who_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(id, .extracts) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(.extracts) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(coefs <span style="color:#666">=</span> <span style="color:#06287e">map</span>(.extracts, tidy)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(coefs) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate, fill <span style="color:#666">=</span> term)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">12</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(term), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/doctor-who/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>It looks like episodes airing on Christmas Day have <strong>much</strong> higher viewership, 2.5 to 3 million viewers higher than other days. Airing on New Years also looks like it is associated with more viewers, and we see evidence for a modest decrease in viewers with year.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">November 27, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 1064 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/spice-girls/">&larr; Topic modeling for #TidyTuesday Spice Girls lyrics</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/map-challenge/">Spatial resampling for #TidyTuesday and the #30DayMapChallenge &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

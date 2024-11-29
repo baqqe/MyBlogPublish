@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Explore art media over time in the #TidyTuesday Tate collection dataset | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Explore art media over time in the #TidyTuesday Tate collection dataset | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tate-collection/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/tate-collection/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/tate-collection/featured.png" >
+    
+    
+  <meta itemprop="name" content="Explore art media over time in the #TidyTuesday Tate collection dataset">
+<meta itemprop="description" content="Check residuals and other model diagnostics for regression models trained on text features, all with tidymodels functions."><meta itemprop="datePublished" content="2021-01-15T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-01-15T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2555"><meta itemprop="image" content="https://juliasilge.com/blog/tate-collection/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Explore art media over time in the #TidyTuesday Tate collection dataset</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">January 15, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from starting out with first modeling steps to tuning more complex models. Today&rsquo;s screencast walks through how to train a regularized regression model with text features and then check model diagnostics like residuals, using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on the artwork in the 
+<a href="https://www.tate.org.uk/about-us/collection" target="_blank" rel="noopener">Tate collection</a>. 🎨</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/-ErHI3MJyDQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to understand how the media used to create artwork 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-01-12/readme.md" target="_blank" rel="noopener">in the Tate collection</a> has changed over time. Let&rsquo;s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+artwork <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-12/artwork.csv&#34;</span>)
+
+<span style="color:#06287e">glimpse</span>(artwork)
+</code></pre></div><pre tabindex="0"><code>## Rows: 69,201
+## Columns: 20
+## $ id                 &lt;dbl&gt; 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 10…
+## $ accession_number   &lt;chr&gt; &quot;A00001&quot;, &quot;A00002&quot;, &quot;A00003&quot;, &quot;A00004&quot;, &quot;A00005&quot;, …
+## $ artist             &lt;chr&gt; &quot;Blake, Robert&quot;, &quot;Blake, Robert&quot;, &quot;Blake, Robert&quot;,…
+## $ artistRole         &lt;chr&gt; &quot;artist&quot;, &quot;artist&quot;, &quot;artist&quot;, &quot;artist&quot;, &quot;artist&quot;, …
+## $ artistId           &lt;dbl&gt; 38, 38, 38, 38, 39, 39, 39, 39, 39, 39, 39, 39, 39…
+## $ title              &lt;chr&gt; &quot;A Figure Bowing before a Seated Old Man with his …
+## $ dateText           &lt;chr&gt; &quot;date not known&quot;, &quot;date not known&quot;, &quot;?c.1785&quot;, &quot;da…
+## $ medium             &lt;chr&gt; &quot;Watercolour, ink, chalk and graphite on paper. Ve…
+## $ creditLine         &lt;chr&gt; &quot;Presented by Mrs John Richmond 1922&quot;, &quot;Presented …
+## $ year               &lt;dbl&gt; NA, NA, 1785, NA, 1826, 1826, 1826, 1826, 1826, 18…
+## $ acquisitionYear    &lt;dbl&gt; 1922, 1922, 1922, 1922, 1919, 1919, 1919, 1919, 19…
+## $ dimensions         &lt;chr&gt; &quot;support: 394 x 419 mm&quot;, &quot;support: 311 x 213 mm&quot;, …
+## $ width              &lt;dbl&gt; 394, 311, 343, 318, 243, 240, 242, 246, 241, 243, …
+## $ height             &lt;dbl&gt; 419, 213, 467, 394, 335, 338, 334, 340, 335, 340, …
+## $ depth              &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ units              &lt;chr&gt; &quot;mm&quot;, &quot;mm&quot;, &quot;mm&quot;, &quot;mm&quot;, &quot;mm&quot;, &quot;mm&quot;, &quot;mm&quot;, &quot;mm&quot;, &quot;m…
+## $ inscription        &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ thumbnailCopyright &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ thumbnailUrl       &lt;chr&gt; &quot;http://www.tate.org.uk/art/images/work/A/A00/A000…
+## $ url                &lt;chr&gt; &quot;http://www.tate.org.uk/art/artworks/blake-a-figur…
+</code></pre><p>The variable <code>medium</code> contains the info on what media are used for each artwork and <code>year</code> corresponds to the year the artwork was created (as opposed to <code>acquisitionYear</code>, the year Tate acquired the piece).</p>
+<p>What is the distribution of artwork over creation year?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">artwork <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/tate-collection/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Now this is quite <strong>something</strong>. I was surprised! I 
+<a href="https://twitter.com/juliasilge/status/1348836103424364544" target="_blank" rel="noopener">asked on Twitter</a> this week what people thought they would do in a situation where their outcome was distributed like this, and there were lots of interesting thoughts, including &ldquo;cry&rdquo;, &ldquo;ask a lot of questions&rdquo;, &ldquo;change careers&rdquo;. If the goal is to understand how something like medium changes with time, we could dichotomize this variable into something like &ldquo;new&rdquo; and &ldquo;old&rdquo; art and then train a classification model, or we could just keep this as is and train a regression model, hoping that although the outcome is distributed is a rather odd way, the residuals will turn out OK. (There are lots of other options too, of course.) Let&rsquo;s walk through how to try this, and how to evaluate the resulting model.</p>
+<p>Let&rsquo;s focus on the variables we&rsquo;ll use for modeling, and at least focus on just the art created after 1750.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tate_df <span style="color:#666">&lt;-</span> artwork <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(year <span style="color:#666">&gt;</span> <span style="color:#40a070">1750</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(year, medium) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(year)
+
+tate_df
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 57,182 x 2
+##     year medium
+##    &lt;dbl&gt; &lt;chr&gt;
+##  1  1751 Oil paint on canvas
+##  2  1751 Oil paint on canvas
+##  3  1751 Oil paint on canvas
+##  4  1751 Etching and engraving on paper
+##  5  1751 Oil paint on canvas
+##  6  1751 Chalk on paper
+##  7  1752 Oil paint on canvas
+##  8  1752 Graphite on paper
+##  9  1752 Oil paint on canvas
+## 10  1752 Etching and engraving on paper
+## # … with 57,172 more rows
+</code></pre><p>What are the most common words used in describing the media?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+tate_df <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(word, medium) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1,463 x 2
+##    word            n
+##    &lt;chr&gt;       &lt;int&gt;
+##  1 on          55324
+##  2 paper       50134
+##  3 graphite    29486
+##  4 and         10495
+##  5 watercolour  5409
+##  6 paint        4961
+##  7 oil          4367
+##  8 canvas       3644
+##  9 screenprint  3422
+## 10 lithograph   3015
+## # … with 1,453 more rows
+</code></pre><p>Lots of paper, graphite, oil and watercolour paints!</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, splitting our data into training and testing sets, and creating resamples.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+art_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(tate_df, strata <span style="color:#666">=</span> year)
+art_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(art_split)
+art_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(art_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+art_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(art_train, strata <span style="color:#666">=</span> year)
+art_folds
+</code></pre></div><pre tabindex="0"><code>## #  10-fold cross-validation using stratification
+## # A tibble: 10 x 2
+##    splits               id
+##    &lt;list&gt;               &lt;chr&gt;
+##  1 &lt;split [38.6K/4.3K]&gt; Fold01
+##  2 &lt;split [38.6K/4.3K]&gt; Fold02
+##  3 &lt;split [38.6K/4.3K]&gt; Fold03
+##  4 &lt;split [38.6K/4.3K]&gt; Fold04
+##  5 &lt;split [38.6K/4.3K]&gt; Fold05
+##  6 &lt;split [38.6K/4.3K]&gt; Fold06
+##  7 &lt;split [38.6K/4.3K]&gt; Fold07
+##  8 &lt;split [38.6K/4.3K]&gt; Fold08
+##  9 &lt;split [38.6K/4.3K]&gt; Fold09
+## 10 &lt;split [38.6K/4.3K]&gt; Fold10
+</code></pre><p>Next, let&rsquo;s *<em>preprocess</em> out data to get it ready for modeling. We can use specialized steps from 
+<a href="https://tidymodels.github.io/textrecipes/" target="_blank" rel="noopener">textrecipes</a>, along with the general recipe steps.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(textrecipes)
+
+art_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(year <span style="color:#666">~</span> medium, data <span style="color:#666">=</span> art_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tokenize</span>(medium) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_stopwords</span>(medium) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tokenfilter</span>(medium, max_tokens <span style="color:#666">=</span> <span style="color:#40a070">500</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tfidf</span>(medium)
+
+art_rec
+</code></pre></div><pre tabindex="0"><code>## Data Recipe
+##
+## Inputs:
+##
+##       role #variables
+##    outcome          1
+##  predictor          1
+##
+## Operations:
+##
+## Tokenization for medium
+## Stop word removal for medium
+## Text filtering for medium
+## Term frequency-inverse document frequency with medium
+</code></pre><p>Let’s walk through the steps in this recipe, which are what I consider sensible defaults for training a model with text features.</p>
+<ul>
+<li>First, we must tell the recipe() what our model is going to be (using a formula here) and what data we are using.</li>
+<li>Next, we tokenize our text, with the default tokenization into single words.</li>
+<li>Next, we remove stop words (again, just the default set, to remove &ldquo;on&rdquo; and &ldquo;and&rdquo;).</li>
+<li>It wouldn’t be practical to keep all the tokens from this whole dataset in our model, so we can filter down to only keep, in this case, the top 500 most-used tokens (after removing stop words).</li>
+<li>We need to decide on some kind of weighting for these tokens next, either something like term frequency or, what we used here, 
+<a href="https://www.tidytextmining.com/tfidf.html" target="_blank" rel="noopener">tf-idf</a>.</li>
+</ul>
+<p>Next, it&rsquo;s time to specify our model and put it together with our recipe into a 
+<a href="https://www.tmwr.org/workflows.html" target="_blank" rel="noopener">workflow</a>. Recently, we added 
+<a href="https://www.tidyverse.org/blog/2020/11/tidymodels-sparse-support/" target="_blank" rel="noopener">support for sparse data structures to tidymodels</a>, and this is a perfect opportunity to use it for faster model fitting. To use the sparse data structure, create a hardhat blueprint with <code>composition = &quot;dgCMatrix&quot;</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">sparse_bp <span style="color:#666">&lt;-</span> hardhat<span style="color:#666">::</span><span style="color:#06287e">default_recipe_blueprint</span>(composition <span style="color:#666">=</span> <span style="color:#4070a0">&#34;dgCMatrix&#34;</span>)
+
+lasso_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">linear_reg</span>(penalty <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(), mixture <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;glmnet&#34;</span>)
+
+art_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(art_rec, blueprint <span style="color:#666">=</span> sparse_bp) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(lasso_spec)
+
+art_wf
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+##
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 4 Recipe Steps
+##
+## ● step_tokenize()
+## ● step_stopwords()
+## ● step_tokenfilter()
+## ● step_tfidf()
+##
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Linear Regression Model Specification (regression)
+##
+## Main Arguments:
+##   penalty = tune()
+##   mixture = 1
+##
+## Computational engine: glmnet
+</code></pre><p>The only other piece we need to get ready for model fitting is values for the regularization penalty to try. The default goes down to very tiny penalties and I don&rsquo;t think we&rsquo;ll need that, so let&rsquo;s change the <code>range()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lambda_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">grid_regular</span>(<span style="color:#06287e">penalty</span>(range <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">-3</span>, <span style="color:#40a070">0</span>)), levels <span style="color:#666">=</span> <span style="color:#40a070">20</span>)
+</code></pre></div><p>Now let&rsquo;s tune the lasso model on the resampled datasets we created.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">1234</span>)
+
+lasso_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">tune_grid</span>(
+  art_wf,
+  resamples <span style="color:#666">=</span> art_folds,
+  grid <span style="color:#666">=</span> lambda_grid
+)
+
+lasso_rs
+</code></pre></div><pre tabindex="0"><code>## # Tuning results
+## # 10-fold cross-validation using stratification
+## # A tibble: 10 x 4
+##    splits               id     .metrics          .notes
+##    &lt;list&gt;               &lt;chr&gt;  &lt;list&gt;            &lt;list&gt;
+##  1 &lt;split [38.6K/4.3K]&gt; Fold01 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  2 &lt;split [38.6K/4.3K]&gt; Fold02 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  3 &lt;split [38.6K/4.3K]&gt; Fold03 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  4 &lt;split [38.6K/4.3K]&gt; Fold04 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  5 &lt;split [38.6K/4.3K]&gt; Fold05 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  6 &lt;split [38.6K/4.3K]&gt; Fold06 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  7 &lt;split [38.6K/4.3K]&gt; Fold07 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  8 &lt;split [38.6K/4.3K]&gt; Fold08 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+##  9 &lt;split [38.6K/4.3K]&gt; Fold09 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+## 10 &lt;split [38.6K/4.3K]&gt; Fold10 &lt;tibble [40 × 5]&gt; &lt;tibble [0 × 1]&gt;
+</code></pre><p>That was quite fast, because it&rsquo;s a linear model and we used the sparse data structure.</p>
+
+
+
+
+<h2 id="evaluate-model">Evaluate model
+  <a href="#evaluate-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now we can do what we really came here for, which is to talk about how we can evaluate a model like this and see if it was a good idea. How do the results look?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(lasso_rs)
+</code></pre></div><img src="https://juliasilge.com/blog/tate-collection/index_files/figure-html/unnamed-chunk-11-1.png" width="2400" />
+<p>The best $R^2$ is around 0.77, and is a measure of how well the model fits the data. The best RMSE is around 35 or so, and is on the scale of the original outcome, i.e. years. What are some of the best penalty values, in terms of RMSE?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">show_best</span>(lasso_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 5 x 7
+##   penalty .metric .estimator  mean     n std_err .config
+##     &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;
+## 1  0.0785 rmse    standard    34.7    10   0.234 Preprocessor1_Model13
+## 2  0.0546 rmse    standard    34.7    10   0.235 Preprocessor1_Model12
+## 3  0.113  rmse    standard    34.7    10   0.231 Preprocessor1_Model14
+## 4  0.0379 rmse    standard    34.7    10   0.237 Preprocessor1_Model11
+## 5  0.0264 rmse    standard    34.7    10   0.238 Preprocessor1_Model10
+</code></pre><p>We can select the best penalty, and finalize the workflow with it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">best_rmse <span style="color:#666">&lt;-</span> <span style="color:#06287e">select_best</span>(lasso_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>)
+
+final_lasso <span style="color:#666">&lt;-</span> <span style="color:#06287e">finalize_workflow</span>(art_wf, best_rmse)
+final_lasso
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+##
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 4 Recipe Steps
+##
+## ● step_tokenize()
+## ● step_stopwords()
+## ● step_tokenfilter()
+## ● step_tfidf()
+##
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Linear Regression Model Specification (regression)
+##
+## Main Arguments:
+##   penalty = 0.0784759970351461
+##   mixture = 1
+##
+## Computational engine: glmnet
+</code></pre><p>The function <code>last_fit()</code> <strong>fits</strong> this finalized lasso model one last time to the training data and <strong>evaluates</strong> one last time on the testing data. The metrics are computed on the testing data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">art_final <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(final_lasso, art_split)
+<span style="color:#06287e">collect_metrics</span>(art_final)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2 x 4
+##   .metric .estimator .estimate .config
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;
+## 1 rmse    standard      34.6   Preprocessor1_Model1
+## 2 rsq     standard       0.772 Preprocessor1_Model1
+</code></pre><p>We can use the fitted workflow in <code>art_final</code> to explore variable importance using the 
+<a href="https://koalaverse.github.io/vip/" target="_blank" rel="noopener">vip</a> package.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+art_vip <span style="color:#666">&lt;-</span> <span style="color:#06287e">pull_workflow_fit</span>(art_final<span style="color:#666">$</span>.workflow[[1]]) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">vi</span>()
+
+
+art_vip <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(Sign) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(<span style="color:#06287e">abs</span>(Importance), n <span style="color:#666">=</span> <span style="color:#40a070">20</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    Variable <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(Variable, <span style="color:#4070a0">&#34;tfidf_medium_&#34;</span>),
+    Importance <span style="color:#666">=</span> <span style="color:#06287e">abs</span>(Importance),
+    Variable <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(Variable, Importance),
+    Sign <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(Sign <span style="color:#666">==</span> <span style="color:#4070a0">&#34;POS&#34;</span>, <span style="color:#4070a0">&#34;More in later art&#34;</span>, <span style="color:#4070a0">&#34;More in earlier art&#34;</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(Importance, Variable, fill <span style="color:#666">=</span> Sign)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>Sign, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/tate-collection/index_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+<p>Glitter and dung!!! I am so glad I worked on this model, honestly. This tells quite a story about what predictors are most important in pushing the prediction for an observation up or down the most.</p>
+<p>How well does the model actually do, though? Let&rsquo;s plot true and predicted values for years, for the testing data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(art_final) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year, .pred)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_abline</span>(lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.3</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_fixed</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/tate-collection/index_files/figure-html/unnamed-chunk-16-1.png" width="2400" />
+<p>There are clumps of artwork that are predicted well at the high and low end, but notice that prominent horizontal line of observations that are all predicted to be created at about ~1900. Let&rsquo;s dig more into misclassifications.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">misclassified <span style="color:#666">&lt;-</span> <span style="color:#06287e">collect_predictions</span>(art_final) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_cols</span>(art_test <span style="color:#666">%&gt;%</span> <span style="color:#06287e">select</span>(medium)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">abs</span>(year <span style="color:#666">-</span> .pred) <span style="color:#666">&gt;</span> <span style="color:#40a070">100</span>)
+
+misclassified <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(year)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 399 x 6
+##    id             .pred  .row  year .config            medium
+##    &lt;chr&gt;          &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;              &lt;chr&gt;
+##  1 train/test sp… 1898.     1  1751 Preprocessor1_Mod… Oil paint on canvas
+##  2 train/test sp… 1898.     5  1751 Preprocessor1_Mod… Oil paint on canvas
+##  3 train/test sp… 1892.    18  1753 Preprocessor1_Mod… Etching and engraving on…
+##  4 train/test sp… 1898.    25  1755 Preprocessor1_Mod… Oil paint on canvas
+##  5 train/test sp… 1898.    27  1756 Preprocessor1_Mod… Oil paint on canvas
+##  6 train/test sp… 1892.    30  1757 Preprocessor1_Mod… Etching and engraving on…
+##  7 train/test sp… 1898.    31  1757 Preprocessor1_Mod… Oil paint on canvas
+##  8 train/test sp… 1898.    41  1759 Preprocessor1_Mod… Oil paint on canvas
+##  9 train/test sp… 1898.    45  1760 Preprocessor1_Mod… Oil paint on canvas
+## 10 train/test sp… 1898.    49  1760 Preprocessor1_Mod… Oil paint on canvas
+## # … with 389 more rows
+</code></pre><p>These are pieces of art that were created very early but predicted much later. In fact, notice that &ldquo;Oil paint on canvas&rdquo; also predicts to 1898; that is about the mean or median of this whole dataset, that was one of the most common media, and this is how a linear model works!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">misclassified <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>year)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 399 x 6
+##    id            .pred  .row  year .config          medium
+##    &lt;chr&gt;         &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;            &lt;chr&gt;
+##  1 train/test s… 1869. 57179  2012 Preprocessor1_M… Oil paint and graphite on c…
+##  2 train/test s… 1898. 57109  2011 Preprocessor1_M… Oil paint on canvas
+##  3 train/test s… 1843. 57046  2010 Preprocessor1_M… Mezzotint on paper
+##  4 train/test s… 1843. 57049  2010 Preprocessor1_M… Mezzotint on paper
+##  5 train/test s… 1868. 57090  2010 Preprocessor1_M… Paper and gouache on paper
+##  6 train/test s… 1868. 57094  2010 Preprocessor1_M… Paper and gouache on paper
+##  7 train/test s… 1880. 56998  2009 Preprocessor1_M… Oil paint on paper
+##  8 train/test s… 1891. 56861  2008 Preprocessor1_M… Etching and graphite on pap…
+##  9 train/test s… 1849. 56898  2008 Preprocessor1_M… Ink, watercolour and graphi…
+## 10 train/test s… 1880. 56934  2008 Preprocessor1_M… Oil paint on paper
+## # … with 389 more rows
+</code></pre><p>These are pieces of art that were created very recently but predicted much earlier. Notice that they have used what we might think of as antique or traditional techniques.</p>
+<p>Now, finally, it is time for the residuals. We can compute residuals for the test set with the <code>augment()</code> function.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">augment</span>(art_final) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.pred, .resid)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_hline</span>(yintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.3</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;black&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/tate-collection/index_files/figure-html/unnamed-chunk-19-1.png" width="2400" />
+<p>This plot exhibits significant heteroscedasticity, with lower variance for recent artwork and higher variance for older artwork. If the model predicts a recent year, we can be more confident that it is right than if the model predicts an older year, and there is basically no time information in the fact that an artwork was created with a medium like oil on canvas. So is this model bad and not useful? I&rsquo;d say it&rsquo;s not great, for most goals I can think of, but it&rsquo;s interesting to notice how much we can learn about our data even from such a model.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">January 15, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">12 minute read, 2555 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/learn-tidytext-learnr/">&larr; Learn tidytext with my new learnr course</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/chicago-traffic-model/">Predicting injuries for Chicago traffic crashes &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Use OpenAI text embeddings with #TidyTuesday horror movie descriptions | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Use OpenAI text embeddings with #TidyTuesday horror movie descriptions | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/horror-embeddings/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/horror-embeddings/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/horror-embeddings/featured.png" >
+    
+    
+  <meta itemprop="name" content="Use OpenAI text embeddings with #TidyTuesday horror movie descriptions">
+<meta itemprop="description" content="High quality text embeddings are becoming more available from companies like OpenAI. Learn how to obtain them and then use them for text analysis."><meta itemprop="datePublished" content="2023-04-05T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-04-05T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1621"><meta itemprop="image" content="https://juliasilge.com/blog/horror-embeddings/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Use OpenAI text embeddings with #TidyTuesday horror movie descriptions</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">April 5, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is my latest 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencast</a>, on a topic outside of my typical ML/MLOps subject areas. This screencast walks through how to obtain and use text embeddings from OpenAI with R, with a recent 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on horror movies. ️👻</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/UsaZV8ROMSc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>When 
+<a href="https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-11-01" target="_blank" rel="noopener">this dataset</a> was first shared for Tidy Tuesday back in November, I 
+<a href="https://gist.github.com/juliasilge/2708e8b4c9f20a3308afe9101c06ab4d" target="_blank" rel="noopener">computed a correlation network</a> showing what words are used to describe horror movies. Click through to the gist to see details, but there are clusters of correlated words about groups of high school students, small towns, serial killers, and haunted houses. Let’s keep this blog post short, only take a subsample of the movies, and just do a quick <code>glimpse()</code> of the data before we get started with text embeddings.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+horror_movies <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-11-01/horror_movies.csv&#39;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(overview), original_language <span style="color:#666">==</span> <span style="color:#4070a0">&#34;en&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_sample</span>(n <span style="color:#666">=</span> <span style="color:#40a070">1000</span>)
+
+<span style="color:#06287e">glimpse</span>(horror_movies)
+</code></pre></div><pre><code>## Rows: 1,000
+## Columns: 20
+## $ id                &lt;dbl&gt; 751453, 753328, 696605, 46020, 217787, 698676, 14229…
+## $ original_title    &lt;chr&gt; &quot;Sushi Night&quot;, &quot;Spout&quot;, &quot;What Josiah Saw&quot;, &quot;Sharktop…
+## $ title             &lt;chr&gt; &quot;Sushi Night&quot;, &quot;Spout&quot;, &quot;What Josiah Saw&quot;, &quot;Sharktop…
+## $ original_language &lt;chr&gt; &quot;en&quot;, &quot;en&quot;, &quot;en&quot;, &quot;en&quot;, &quot;en&quot;, &quot;en&quot;, &quot;en&quot;, &quot;en&quot;, &quot;en&quot;…
+## $ overview          &lt;chr&gt; &quot;After having a dinner date, a man realizes his love…
+## $ tagline           &lt;chr&gt; NA, NA, &quot;You do what need be done then.&quot;, &quot;Half-shar…
+## $ release_date      &lt;date&gt; 2020-10-08, 2009-11-21, 2021-08-13, 2010-09-25, 201…
+## $ poster_path       &lt;chr&gt; &quot;/s43doT1jZ1yrTibqddL4l2ekHaJ.jpg&quot;, &quot;/1WXajyutGGPlms…
+## $ popularity        &lt;dbl&gt; 0.600, 0.600, 5.622, 8.925, 4.859, 0.871, 3.221, 2.0…
+## $ vote_count        &lt;dbl&gt; 0, 0, 23, 138, 46, 0, 47, 6, 4, 45, 0, 0, 1, 5, 4, 7…
+## $ vote_average      &lt;dbl&gt; 0.0, 0.0, 6.0, 4.5, 3.9, 0.0, 5.1, 4.5, 7.9, 4.3, 0.…
+## $ budget            &lt;dbl&gt; 0, 0, 0, 0, 3600000, 0, 0, 0, 0, 0, 0, 0, 0, 4000, 0…
+## $ revenue           &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30000, …
+## $ runtime           &lt;dbl&gt; 9, 17, 120, 89, 89, 84, 93, 74, 112, 88, 9, 75, 85, …
+## $ status            &lt;chr&gt; &quot;Released&quot;, &quot;Released&quot;, &quot;Released&quot;, &quot;Released&quot;, &quot;Rel…
+## $ adult             &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+## $ backdrop_path     &lt;chr&gt; NA, NA, &quot;/d3rvdCFRHydPhb9bxnMBUFMEA9I.jpg&quot;, &quot;/lHVxlW…
+## $ genre_names       &lt;chr&gt; &quot;Horror, Thriller&quot;, &quot;Drama, Horror&quot;, &quot;Horror, Thrill…
+## $ collection        &lt;dbl&gt; NA, NA, NA, 370374, NA, NA, NA, NA, NA, NA, NA, NA, …
+## $ collection_name   &lt;chr&gt; NA, NA, NA, &quot;Sharktopus Collection&quot;, NA, NA, NA, NA,…
+</code></pre>
+<p>What do these horror movie descriptions look like?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+<span style="color:#06287e">sample</span>(horror_movies<span style="color:#666">$</span>overview, size <span style="color:#666">=</span> <span style="color:#40a070">3</span>)
+</code></pre></div><pre><code>## [1] &quot;A couple head to a remote cottage, where the wife falls under the spell of a mysterious vampire, who starts a painful and horrifying transformation in her.&quot;                                                                                                                                                                                                                              
+## [2] &quot;A psychedelic horror-comedy starring Last Podcast On The Left’s Henry Zebrowski and Bay Area legend Skinner, and featuring special effects from Shane Morton, the mastermind behind Mandy’s Cheddar Goblin.&quot;                                                                                                                                                                              
+## [3] &quot;A giant asteroid is heading toward Earth so some astronauts disembark from a nearby space station to blow it up. The mission is successful, and they return to the station unknowingly bringing back a gooey green substance that mutates into one-eyed tentacled monsters that feed off electricity. Soon the station is crawling with them, and people are being zapped left and right!&quot;
+</code></pre>
+
+
+
+
+<h2 id="text-embeddings">Text embeddings
+  <a href="#text-embeddings"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I’ve written about 
+<a href="https://juliasilge.com/blog/tidy-word-vectors/" target="_blank" rel="noopener">text embeddings</a> 
+<a href="https://juliasilge.com/blog/word-vectors-take-two/" target="_blank" rel="noopener">before</a>, as well as 
+<a href="https://www.youtube.com/watch?v=ke03DGvT8uU" target="_blank" rel="noopener">given talks about them</a>. I would especially refer you to the 
+<a href="https://smltar.com/embeddings.html" target="_blank" rel="noopener">whole chapter</a> in my book with Emil Hvitfeldt on this topic for an introduction and more details. To learn text embeddings, you need a large amount of text data; companies like 
+<a href="https://openai.com/" target="_blank" rel="noopener">OpenAI</a> (known for GPT-3 and GPT-4) are starting to make 
+<a href="https://platform.openai.com/docs/guides/embeddings" target="_blank" rel="noopener">high quality embeddings</a> available. In the case of OpenAI, the embeddings are available for a fee via API. I registered for an API key and then called the API with my horror movie descriptions.</p>
+<p>Before we work with text embeddings, it’s good to reflect on the biases that are literally encoded into the numbers that we will be dealing with. Whatever human prejudice or bias exists in the corpus used for training becomes imprinted into the vector data of the embeddings. 
+<a href="https://platform.openai.com/docs/guides/embeddings/limitations-risks" target="_blank" rel="noopener">OpenAI themselves say</a>:</p>
+<blockquote>
+<p>The models encode social biases, e.g. via stereotypes or negative sentiment towards certain groups.</p>
+</blockquote>
+<p>Click through to read about the specific evidence of bias in these embeddings, and keep these caveats in mind as we move forward, even with this kind of silly example of horror movie descriptions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(httr)
+embeddings_url <span style="color:#666">&lt;-</span> <span style="color:#4070a0">&#34;https://api.openai.com/v1/embeddings&#34;</span>
+auth <span style="color:#666">&lt;-</span> <span style="color:#06287e">add_headers</span>(Authorization <span style="color:#666">=</span> <span style="color:#06287e">paste</span>(<span style="color:#4070a0">&#34;Bearer&#34;</span>, <span style="color:#06287e">Sys.getenv</span>(<span style="color:#4070a0">&#34;OPENAI_API_KEY&#34;</span>)))
+body <span style="color:#666">&lt;-</span> <span style="color:#06287e">list</span>(model <span style="color:#666">=</span> <span style="color:#4070a0">&#34;text-embedding-ada-002&#34;</span>, input <span style="color:#666">=</span> horror_movies<span style="color:#666">$</span>overview)
+
+resp <span style="color:#666">&lt;-</span> <span style="color:#06287e">POST</span>(
+  embeddings_url,
+  auth,
+  body <span style="color:#666">=</span> body,
+  encode <span style="color:#666">=</span> <span style="color:#4070a0">&#34;json&#34;</span>
+)
+
+embeddings <span style="color:#666">&lt;-</span> <span style="color:#06287e">content</span>(resp, as <span style="color:#666">=</span> <span style="color:#4070a0">&#34;text&#34;</span>, encoding <span style="color:#666">=</span> <span style="color:#4070a0">&#34;UTF-8&#34;</span>) <span style="color:#666">%&gt;%</span>
+  jsonlite<span style="color:#666">::</span><span style="color:#06287e">fromJSON</span>(flatten <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pluck</span>(<span style="color:#4070a0">&#34;data&#34;</span>, <span style="color:#4070a0">&#34;embedding&#34;</span>)
+</code></pre></div><p>This API call costs a couple of cents, as best as I can tell. If you don’t want to call the OpenAI API directly, you can use the 
+<a href="https://irudnyts.github.io/openai/" target="_blank" rel="noopener">openai R package</a>. Let’s add these embeddings as a new column with the horror movie data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">horror_embeddings <span style="color:#666">&lt;-</span>
+  horror_movies <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(embeddings <span style="color:#666">=</span> embeddings)
+
+horror_embeddings <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(id, original_title, embeddings)
+</code></pre></div><pre><code>## # A tibble: 1,000 × 3
+##        id original_title              embeddings   
+##     &lt;dbl&gt; &lt;chr&gt;                       &lt;list&gt;       
+##  1 751453 Sushi Night                 &lt;dbl [1,536]&gt;
+##  2 753328 Spout                       &lt;dbl [1,536]&gt;
+##  3 696605 What Josiah Saw             &lt;dbl [1,536]&gt;
+##  4  46020 Sharktopus                  &lt;dbl [1,536]&gt;
+##  5 217787 Paranormal Whacktivity      &lt;dbl [1,536]&gt;
+##  6 698676 Dark Web: Mystery Box       &lt;dbl [1,536]&gt;
+##  7  14229 Ti piace Hitchcock?         &lt;dbl [1,536]&gt;
+##  8 364094 Fun Size Horror: Volume Two &lt;dbl [1,536]&gt;
+##  9 476484 Before I Die                &lt;dbl [1,536]&gt;
+## 10 407626 Ozark Sharks                &lt;dbl [1,536]&gt;
+## # ℹ 990 more rows
+</code></pre>
+<p>The <code>&quot;text-embedding-ada-002&quot;</code> vectors returned from OpenAI are pretty big for text vectors, of length 1536. Think of this as a high dimensional space learned from whatever huge datasets of text that OpenAI uses; each of our horror movie descriptions is located somewhere in the high dimensional space, and horror movies that are described similarly are closer to each while those that are described differently are further away. There is a ton we can now do with these vector representations, like clustering them, or maybe 
+<a href="https://aclanthology.org/2020.emnlp-main.135" target="_blank" rel="noopener">using the clusters like topic models</a>. Let’s walk through two possible applications: finding similar texts and principal component analysis.</p>
+<p>For both, it will be useful to have our embeddings in a matrix, instead of a list of numeric vectors:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">embeddings_mat <span style="color:#666">&lt;-</span> <span style="color:#06287e">matrix</span>(
+  <span style="color:#06287e">unlist</span>(horror_embeddings<span style="color:#666">$</span>embeddings), 
+  ncol <span style="color:#666">=</span> <span style="color:#40a070">1536</span>, byrow <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>
+)
+
+<span style="color:#06287e">dim</span>(embeddings_mat)
+</code></pre></div><pre><code>## [1] 1000 1536
+</code></pre>
+<p>Notice that we have 1,000 rows, one for each of the movies, and 1,536 columns for the 1536-dimensional OpenAI text embeddings.</p>
+
+
+
+
+<h2 id="similarity">Similarity
+  <a href="#similarity"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start by finding the texts most similar to a text we are interested in. We can compute a cosine similarity matrix for all the horror movie descriptions:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">embeddings_similarity <span style="color:#666">&lt;-</span> embeddings_mat <span style="color:#666">/</span> <span style="color:#06287e">sqrt</span>(<span style="color:#06287e">rowSums</span>(embeddings_mat <span style="color:#666">*</span> embeddings_mat))
+embeddings_similarity <span style="color:#666">&lt;-</span> embeddings_similarity <span style="color:#666">%*%</span> <span style="color:#06287e">t</span>(embeddings_similarity)
+<span style="color:#06287e">dim</span>(embeddings_similarity)
+</code></pre></div><pre><code>## [1] 1000 1000
+</code></pre>
+<p>This contains the similarity scores for each description compared to each other description. Let’s say we are most interesting in this particular movie:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">horror_movies <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">slice</span>(<span style="color:#40a070">4</span>) <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">select</span>(title, overview)
+</code></pre></div><pre><code>## # A tibble: 1 × 2
+##   title      overview                                                           
+##   &lt;chr&gt;      &lt;chr&gt;                                                              
+## 1 Sharktopus &quot;The U.S. Navy's special group \&quot;Blue Water\&quot; builds a half-shark,…
+</code></pre>
+<p>Sharktopus!!! 🦈🐙</p>
+<p>Let’s pull out the similarity scores relative to this movie:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">enframe</span>(embeddings_similarity[4,], name <span style="color:#666">=</span> <span style="color:#4070a0">&#34;movie&#34;</span>, value <span style="color:#666">=</span> <span style="color:#4070a0">&#34;similarity&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>similarity)
+</code></pre></div><pre><code>## # A tibble: 1,000 × 2
+##    movie similarity
+##    &lt;int&gt;      &lt;dbl&gt;
+##  1     4      1    
+##  2   935      0.857
+##  3   379      0.849
+##  4   380      0.847
+##  5   533      0.841
+##  6   898      0.840
+##  7   605      0.837
+##  8   914      0.826
+##  9   745      0.825
+## 10   849      0.825
+## # ℹ 990 more rows
+</code></pre>
+<p>What are these most similar movies?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">horror_movies <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">slice</span>(<span style="color:#06287e">c</span>(<span style="color:#40a070">935</span>, <span style="color:#40a070">379</span>, <span style="color:#40a070">380</span>)) <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">select</span>(title, overview)
+</code></pre></div><pre><code>## # A tibble: 3 × 2
+##   title                        overview                                         
+##   &lt;chr&gt;                        &lt;chr&gt;                                            
+## 1 Octaman                      &quot;A scientific team in Mexico discover a pool of …
+## 2 Dark Waters                  &quot;Moneyless, ocean-exploring gigolo and his world…
+## 3 Mega Shark vs. Giant Octopus &quot;The California coast is terrorized by two enorm…
+</code></pre>
+<p>Looks pretty close to me!</p>
+
+
+
+
+<h2 id="pca">PCA
+  <a href="#pca"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I love principal component analysis (PCA) and have 
+<a href="https://juliasilge.com/blog/stack-overflow-pca/" target="_blank" rel="noopener">written and spoken</a> about it a fair amount. We can use PCA to transform our high dimensional text embeddings to a new ✨special✨ high dimensional space with special characteristics. It probably won’t help us to look at what contributes to the first couple of principal component vectors (since we don’t know what the text embedding elements mean) but we can project down to the first couple of principal components and see what kinds of movies are most similar or dissimilar. Time for PCA!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+horror_pca <span style="color:#666">&lt;-</span> irlba<span style="color:#666">::</span><span style="color:#06287e">prcomp_irlba</span>(embeddings_mat, n <span style="color:#666">=</span> <span style="color:#40a070">32</span>)
+</code></pre></div><p>The <code>horror_pca</code> object has the standard deviation of the principal components, the matrix of eigenvectors, and in <code>x</code>, the original data multiplied by that matrix, i.e. projected in the new space. Let’s bind <code>x</code> together with our original dataframe so we have the title and other information. When we plot PC1 vs. PC2, we are looking at the components that explain the most difference between movie descriptions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">augmented_pca <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">as_tibble</span>(horror_pca<span style="color:#666">$</span>x) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_cols</span>(horror_movies)
+
+augmented_pca <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(PC1, PC2, color <span style="color:#666">=</span> vote_average)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.3</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_viridis_c</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/horror-embeddings/index_files/figure-html/unnamed-chunk-12-1.png" width="1260" />
+<p>Looks to me like the vote average is not related to the movie descriptions, really at all!</p>
+<p>Check out an 
+<a href="https://rpubs.com/juliasilge/horror-embeddings" target="_blank" rel="noopener">interactive version of this plot</a> where you can see the titles via tooltip. Our friend <em>Sharktopus</em> is down in the lower left with <em>Ebola Rex Versus Murder Hornets</em> while on the opposite upper right are movies like <em>One Night Stand</em> and <em>Sexual Magic</em>.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 5, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1621 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/vetiver-sagemaker/">&larr; Deploy a model on AWS SageMaker with vetiver</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/art-history/">Resampling to understand gender in #TidyTuesday art history data &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

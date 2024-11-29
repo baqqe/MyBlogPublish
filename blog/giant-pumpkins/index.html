@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Predict #TidyTuesday giant pumpkin weights with workflowsets | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Predict #TidyTuesday giant pumpkin weights with workflowsets | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/giant-pumpkins/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/giant-pumpkins/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/giant-pumpkins/featured.png" >
+    
+    
+  <meta itemprop="name" content="Predict #TidyTuesday giant pumpkin weights with workflowsets">
+<meta itemprop="description" content="Get started with tidymodels workflowsets to handle and evaluate multiple preprocessing and modeling approaches simultaneously, using pumpkin competitions."><meta itemprop="datePublished" content="2021-10-22T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-10-22T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1257"><meta itemprop="image" content="https://juliasilge.com/blog/giant-pumpkins/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Predict #TidyTuesday giant pumpkin weights with workflowsets</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">October 22, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages. If you are a tidymodels user, either just starting out or someone who has used the packages a lot, we are interested in your feedback on 
+<a href="https://www.tidyverse.org/blog/2021/10/tidymodels-2022-survey/" target="_blank" rel="noopener">our priorities for 2022</a>. The survey we fielded last year turned out to be very helpful in making decisions, so we would so appreciate your input again!</p>
+<p>Today’s screencast is great for someone just starting out with 
+<a href="https://workflowsets.tidymodels.org/" target="_blank" rel="noopener">workflowsets</a>, the tidymodels package for handling multiple preprocessing/modeling combinations at once, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on giant pumpkins from competitons. 🥧</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/qNxJKke2rsE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict the weight of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-10-19/readme.md" target="_blank" rel="noopener">giant pumpkins</a> from other characteristics measured during a competition.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+pumpkins_raw <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-19/pumpkins.csv&#34;</span>)
+
+pumpkins <span style="color:#666">&lt;-</span>
+  pumpkins_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">separate</span>(id, into <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;year&#34;</span>, <span style="color:#4070a0">&#34;type&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(<span style="color:#06287e">across</span>(<span style="color:#06287e">c</span>(year, weight_lbs, ott, place), parse_number)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(type <span style="color:#666">==</span> <span style="color:#4070a0">&#34;P&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(weight_lbs, year, place, ott, gpc_site, country)
+
+pumpkins
+</code></pre></div><pre><code>## # A tibble: 15,965 × 6
+##    weight_lbs  year place   ott gpc_site                             country    
+##         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                                &lt;chr&gt;      
+##  1      2032   2013     1   475 Uesugi Farms Weigh-off               United Sta…
+##  2      1985   2013     2   453 Safeway World Championship Pumpkin … United Sta…
+##  3      1894   2013     3   445 Safeway World Championship Pumpkin … United Sta…
+##  4      1874.  2013     4   436 Elk Grove Giant Pumpkin Festival     United Sta…
+##  5      1813   2013     5   430 The Great Howard Dill Giant Pumpkin… Canada     
+##  6      1791   2013     6   431 Elk Grove Giant Pumpkin Festival     United Sta…
+##  7      1784   2013     7   445 Uesugi Farms Weigh-off               United Sta…
+##  8      1784.  2013     8   434 Stillwater Harvestfest               United Sta…
+##  9      1780.  2013     9   422 Stillwater Harvestfest               United Sta…
+## 10      1766.  2013    10   425 Durham Fair Weigh-Off                United Sta…
+## # … with 15,955 more rows
+</code></pre>
+<p>The main relationship here is between the volume/size of the pumpkin (measured via “over-the-top inches”) and weight.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">pumpkins <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(ott <span style="color:#666">&gt;</span> <span style="color:#40a070">20</span>, ott <span style="color:#666">&lt;</span> <span style="color:#40a070">1e3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(ott, weight_lbs, color <span style="color:#666">=</span> place)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.1</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;over-the-top inches&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;weight (lbs)&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_viridis_c</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/giant-pumpkins/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Big, heavy pumpkins placed closer to winning at the competitions, naturally!</p>
+<p>Has there been any shift in this relationship over time?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">pumpkins <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(ott <span style="color:#666">&gt;</span> <span style="color:#40a070">20</span>, ott <span style="color:#666">&lt;</span> <span style="color:#40a070">1e3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(ott, weight_lbs)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.1</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray60&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(<span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(year)),
+    method <span style="color:#666">=</span> lm, formula <span style="color:#666">=</span> y <span style="color:#666">~</span> splines<span style="color:#666">::</span><span style="color:#06287e">bs</span>(x, <span style="color:#40a070">3</span>),
+    se <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;over-the-top inches&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;weight (lbs)&#34;</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_viridis_d</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/giant-pumpkins/index_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>Hard to say, I think.</p>
+<p>Which countries produced more or less massive pumpkins?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">pumpkins <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    country <span style="color:#666">=</span> <span style="color:#06287e">fct_lump</span>(country, n <span style="color:#666">=</span> <span style="color:#40a070">10</span>),
+    country <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(country, weight_lbs)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(country, weight_lbs, color <span style="color:#666">=</span> country)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(outlier.colour <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NA</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_jitter</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.1</span>, width <span style="color:#666">=</span> <span style="color:#40a070">0.15</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;weight (lbs)&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;none&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/giant-pumpkins/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+
+
+
+
+<h2 id="build-and-fit-a-workflow-set">Build and fit a workflow set
+  <a href="#build-and-fit-a-workflow-set"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start our modeling by setting up our “data budget.” We’ll stratify by our outcome <code>weight_lbs</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+pumpkin_split <span style="color:#666">&lt;-</span> pumpkins <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(ott <span style="color:#666">&gt;</span> <span style="color:#40a070">20</span>, ott <span style="color:#666">&lt;</span> <span style="color:#40a070">1e3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> weight_lbs)
+
+pumpkin_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(pumpkin_split)
+pumpkin_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(pumpkin_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+pumpkin_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(pumpkin_train, strata <span style="color:#666">=</span> weight_lbs)
+pumpkin_folds
+</code></pre></div><pre><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 × 2
+##    splits             id    
+##    &lt;list&gt;             &lt;chr&gt; 
+##  1 &lt;split [8954/996]&gt; Fold01
+##  2 &lt;split [8954/996]&gt; Fold02
+##  3 &lt;split [8954/996]&gt; Fold03
+##  4 &lt;split [8954/996]&gt; Fold04
+##  5 &lt;split [8954/996]&gt; Fold05
+##  6 &lt;split [8954/996]&gt; Fold06
+##  7 &lt;split [8955/995]&gt; Fold07
+##  8 &lt;split [8956/994]&gt; Fold08
+##  9 &lt;split [8957/993]&gt; Fold09
+## 10 &lt;split [8958/992]&gt; Fold10
+</code></pre>
+<p>Next, let’s create three data preprocessing recipes: one that only pools infrequently used factors levels, one that also creates indicator variables, and finally one that also creates spline terms for over-the-top inches.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">base_rec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">recipe</span>(weight_lbs <span style="color:#666">~</span> ott <span style="color:#666">+</span> year <span style="color:#666">+</span> country <span style="color:#666">+</span> gpc_site,
+    data <span style="color:#666">=</span> pumpkin_train
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_other</span>(country, gpc_site, threshold <span style="color:#666">=</span> <span style="color:#40a070">0.02</span>)
+
+ind_rec <span style="color:#666">&lt;-</span>
+  base_rec <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_dummy</span>(<span style="color:#06287e">all_nominal_predictors</span>())
+
+spline_rec <span style="color:#666">&lt;-</span>
+  ind_rec <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_bs</span>(ott)
+</code></pre></div><p>Then, let’s create three model specifications: a random forest model, a MARS model, and a linear model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rf_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>)
+
+mars_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">mars</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;earth&#34;</span>)
+
+lm_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">linear_reg</span>()
+</code></pre></div><p>Now it’s time to put the preprocessing and models together in a <code>workflow_set()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">pumpkin_set <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow_set</span>(
+    <span style="color:#06287e">list</span>(base_rec, ind_rec, spline_rec),
+    <span style="color:#06287e">list</span>(rf_spec, mars_spec, lm_spec),
+    cross <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>
+  )
+
+pumpkin_set
+</code></pre></div><pre><code>## # A workflow set/tibble: 3 × 4
+##   wflow_id             info             option    result    
+##   &lt;chr&gt;                &lt;list&gt;           &lt;list&gt;    &lt;list&gt;    
+## 1 recipe_1_rand_forest &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 2 recipe_2_mars        &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 3 recipe_3_linear_reg  &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+</code></pre>
+<p>We use <code>cross = FALSE</code> because we don’t want every combination of these components, only three options to try. Let’s fit these possible candidates to our resamples to see which one performs best.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">2021</span>)
+
+pumpkin_rs <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow_map</span>(
+    pumpkin_set,
+    <span style="color:#4070a0">&#34;fit_resamples&#34;</span>,
+    resamples <span style="color:#666">=</span> pumpkin_folds
+  )
+
+pumpkin_rs
+</code></pre></div><pre><code>## # A workflow set/tibble: 3 × 4
+##   wflow_id             info             option    result   
+##   &lt;chr&gt;                &lt;list&gt;           &lt;list&gt;    &lt;list&gt;   
+## 1 recipe_1_rand_forest &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;rsmp[+]&gt;
+## 2 recipe_2_mars        &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;rsmp[+]&gt;
+## 3 recipe_3_linear_reg  &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;rsmp[+]&gt;
+</code></pre>
+
+
+
+
+<h2 id="evaluate-workflow-set">Evaluate workflow set
+  <a href="#evaluate-workflow-set"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>How did our three candidates do?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(pumpkin_rs)
+</code></pre></div><img src="https://juliasilge.com/blog/giant-pumpkins/index_files/figure-html/unnamed-chunk-11-1.png" width="2400" />
+<p>There is not much difference between the three options, and if anything, our linear model with spline feature engineering maybe did better. This is nice because it’s a simpler model!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(pumpkin_rs)
+</code></pre></div><pre><code>## # A tibble: 6 × 9
+##   wflow_id    .config     preproc model  .metric .estimator   mean     n std_err
+##   &lt;chr&gt;       &lt;chr&gt;       &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+## 1 recipe_1_r… Preprocess… recipe  rand_… rmse    standard   86.1      10 1.10e+0
+## 2 recipe_1_r… Preprocess… recipe  rand_… rsq     standard    0.969    10 9.97e-4
+## 3 recipe_2_m… Preprocess… recipe  mars   rmse    standard   83.8      10 1.92e+0
+## 4 recipe_2_m… Preprocess… recipe  mars   rsq     standard    0.969    10 1.67e-3
+## 5 recipe_3_l… Preprocess… recipe  linea… rmse    standard   82.4      10 2.27e+0
+## 6 recipe_3_l… Preprocess… recipe  linea… rsq     standard    0.970    10 1.97e-3
+</code></pre>
+<p>We can extract the workflow we want to use and fit it to our training data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_fit <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">extract_workflow</span>(pumpkin_rs, <span style="color:#4070a0">&#34;recipe_3_linear_reg&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit</span>(pumpkin_train)
+</code></pre></div><p>We can use an object like this to predict, such as on the test data like <code>predict(final_fit, pumpkin_test)</code>, or we can examine the model parameters.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(final_fit) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span><span style="color:#06287e">abs</span>(estimate))
+</code></pre></div><pre><code>## # A tibble: 15 × 5
+##    term                                   estimate std.error statistic   p.value
+##    &lt;chr&gt;                                     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 (Intercept)                            -9731.     675.      -14.4   1.30e- 46
+##  2 ott_bs_3                                2585.      25.6     101.    0        
+##  3 ott_bs_2                                 450.      11.9      37.9   2.75e-293
+##  4 ott_bs_1                                -345.      36.3      -9.50  2.49e- 21
+##  5 gpc_site_Ohio.Valley.Giant.Pumpkin.Gr…    21.1      7.80      2.70  6.89e-  3
+##  6 country_United.States                     11.9      5.66      2.11  3.53e-  2
+##  7 gpc_site_Stillwater.Harvestfest           11.6      7.87      1.48  1.40e-  1
+##  8 country_Germany                          -11.5      6.68     -1.71  8.64e-  2
+##  9 country_other                            -10.7      6.33     -1.69  9.13e-  2
+## 10 country_Canada                             9.29     6.12      1.52  1.29e-  1
+## 11 country_Italy                              8.12     7.02      1.16  2.47e-  1
+## 12 gpc_site_Elk.Grove.Giant.Pumpkin.Fest…    -7.81     7.70     -1.01  3.10e-  1
+## 13 year                                       4.89     0.334    14.6   5.03e- 48
+## 14 gpc_site_Wiegemeisterschaft.Berlin.Br…     1.51     8.07      0.187 8.51e-  1
+## 15 gpc_site_other                             1.41     5.60      0.251 8.02e-  1
+</code></pre>
+<p>The spline terms are by far the most important, but we do see evidence of certain sites and countries being predictive of weight (either up or down) as well as a small trend of heavier pumpkins with year.</p>
+<p>Don’t forget to take the 
+<a href="https://www.tidyverse.org/blog/2021/10/tidymodels-2022-survey/" target="_blank" rel="noopener">tidymodels survey for 2022 priorities</a>!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 22, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1257 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/map-challenge/">&larr; Spatial resampling for #TidyTuesday and the #30DayMapChallenge</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/nber-papers/">Multiclass predictive modeling for #TidyTuesday NBER papers &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

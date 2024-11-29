@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Deploy a model on AWS SageMaker with vetiver | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Deploy a model on AWS SageMaker with vetiver | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/vetiver-sagemaker/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/vetiver-sagemaker/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/vetiver-sagemaker/featured.png" >
+    
+    
+  <meta itemprop="name" content="Deploy a model on AWS SageMaker with vetiver">
+<meta itemprop="description" content="Learn how to train and deploy a model with R and vetiver on AWS SageMaker infrastructure."><meta itemprop="datePublished" content="2023-05-04T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-05-04T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1152"><meta itemprop="image" content="https://juliasilge.com/blog/vetiver-sagemaker/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Deploy a model on AWS SageMaker with vetiver</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">May 4, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast walks through how to train and deploy a model using R and 
+<a href="https://vetiver.rstudio.com/" target="_blank" rel="noopener">vetiver</a> on AWS SageMaker infrastructure. 🏺</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/aeCcd-W1XXs" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>As of the time of publication, the 
+<a href="https://rstudio.github.io/vetiver-r/dev/reference/index.html#sagemaker" target="_blank" rel="noopener">functions for interacting with SageMaker</a> from R are in the development version of vetiver; you will need to install from GitHub via <code>pak::pak(&quot;rstudio/vetiver-r&quot;)</code>. If you try out this new functionality, we would love 
+<a href="https://github.com/rstudio/vetiver-r/issues" target="_blank" rel="noopener">to get any feedback</a> on how it went for you.</p>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="train-a-model">Train a model
+  <a href="#train-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To get started quickly, let&rsquo;s use a dataset that many tidymodels users are very familiar with, the 
+<a href="https://modeldata.tidymodels.org/reference/ames.html" target="_blank" rel="noopener">Ames housing data</a> that is used throughout 
+<a href="https://www.tmwr.org/" target="_blank" rel="noopener"><em>Tidy Modeling with R</em></a>. If you have taken a look at our book, this model training will look very familiar:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+<span style="color:#06287e">data</span>(ames)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+
+ames_split <span style="color:#666">&lt;-</span> 
+  ames <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(Sale_Price <span style="color:#666">=</span> <span style="color:#06287e">log10</span>(Sale_Price)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.integer, as.numeric) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(prop <span style="color:#666">=</span> <span style="color:#40a070">0.80</span>, strata <span style="color:#666">=</span> Sale_Price)
+
+ames_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(ames_split)
+ames_test  <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(ames_split)
+
+rf_spec <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1000</span>) <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>) <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>)
+
+rf_wflow <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">workflow</span>(
+    Sale_Price <span style="color:#666">~</span> Neighborhood <span style="color:#666">+</span> Gr_Liv_Area <span style="color:#666">+</span> Year_Built <span style="color:#666">+</span> Bldg_Type <span style="color:#666">+</span> 
+      Latitude <span style="color:#666">+</span> Longitude,
+    rf_spec
+  )
+
+rf_fit <span style="color:#666">&lt;-</span> rf_wflow <span style="color:#666">%&gt;%</span> <span style="color:#06287e">fit</span>(data <span style="color:#666">=</span> ames_train)
+</code></pre></div>
+
+
+
+<h2 id="create-a-deployable-vetiver-model">Create a deployable vetiver model
+  <a href="#create-a-deployable-vetiver-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our model is now trained, and it&rsquo;s time to create a deployable model object using vetiver. This example shows how to deploy a tidymodels object, but vetiver has support for 
+<a href="https://rstudio.github.io/vetiver-r/dev/" target="_blank" rel="noopener">many types of models in R</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vetiver)
+v <span style="color:#666">&lt;-</span> <span style="color:#06287e">vetiver_model</span>(rf_fit, <span style="color:#4070a0">&#34;ames-pricing&#34;</span>)
+v
+</code></pre></div><pre tabindex="0"><code>## 
+## ── ames-pricing ─ &lt;bundled_workflow&gt; model for deployment 
+## A ranger regression modeling workflow using 6 features
+</code></pre><p>Notice that we have captured important characteristics of this model that we need for reliable deployment, like what the input predictor columns are like and the software dependencies of the model.</p>
+
+
+
+
+<h2 id="publish-and-version-model-on-aws-s3">Publish and version model on AWS S3
+  <a href="#publish-and-version-model-on-aws-s3"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The next step is to store our model object as a 
+<a href="https://pins.rstudio.com/dev/" target="_blank" rel="noopener">pin</a> in an S3 bucket. The functions from pins don&rsquo;t create a bucket, so we need to use an existing bucket here.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(pins)
+<span style="color:#60a0b0;font-style:italic">## existing bucket:</span>
+identifier <span style="color:#666">&lt;-</span> <span style="color:#4070a0">&#34;sagemaker-vetiver-demo&#34;</span>
+
+board <span style="color:#666">&lt;-</span> <span style="color:#06287e">board_s3</span>(bucket <span style="color:#666">=</span> identifier)
+<span style="color:#06287e">vetiver_pin_write</span>(board, v)
+</code></pre></div><p>Using pins allows us 
+<a href="https://vetiver.rstudio.com/get-started/version.html" target="_blank" rel="noopener">to version our model</a>. If I trained this model again with new data on houses in Ames, I could store it as a new version of the same model.</p>
+
+
+
+
+<h2 id="build-docker-container-and-deploy-endpoint">Build Docker container and deploy endpoint
+  <a href="#build-docker-container-and-deploy-endpoint"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>There are three main tasks that need to be done to deploy this model as a SageMake endpoint:</p>
+<ul>
+<li>Generate and build a Docker image on SageMaker for a vetiver model</li>
+<li>Create an Amazon SageMaker model</li>
+<li>Deploy an Amazon SageMaker model endpoint</li>
+</ul>
+<p>There is a single function 
+<a href="https://rstudio.github.io/vetiver-r/dev/reference/vetiver_deploy_sagemaker.html" target="_blank" rel="noopener"><code>vetiver_deploy_sagemaker()</code></a> that takes care of all three of these for straightforward uses cases, but in this screencast, let&rsquo;s walk through how to use 
+<a href="https://rstudio.github.io/vetiver-r/dev/reference/vetiver_sm_build.html" target="_blank" rel="noopener">more modular functions individually</a>. Typically you would choose to do this instead of <code>vetiver_deploy_sagemaker()</code> if you needed more control of the deployment process.</p>
+<p>The first function generates the files necessary to build a Docker container to deploy a vetiver model in SageMaker and then builds the image on 
+<a href="https://aws.amazon.com/codebuild/" target="_blank" rel="noopener">AWS CodeBuild</a>. The resulting image is stored in 
+<a href="https://aws.amazon.com/ecr/" target="_blank" rel="noopener">AWS ECR</a>. This step can take a while.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">new_image_uri <span style="color:#666">&lt;-</span> <span style="color:#06287e">vetiver_sm_build</span>(board, <span style="color:#4070a0">&#34;ames-pricing&#34;</span>)
+</code></pre></div><pre tabindex="0"><code>## * Lockfile written to 'vetiver_renv.lock'.
+## [Container] 2023/05/03 22:02:50 Waiting for agent ping
+## [Container] 2023/05/03 22:02:53 Waiting for DOWNLOAD_SOURCE
+## [Container] 2023/05/03 22:02:55 Phase is DOWNLOAD_SOURCE
+## [Container] 2023/05/03 22:02:55 CODEBUILD_SRC_DIR=/codebuild/output/src623956017/src
+## [Container] 2023/05/03 22:02:55 YAML location is /codebuild/output/src623956017/src/buildspec.yml
+## [Container] 2023/05/03 22:02:55 Setting HTTP client timeout to higher timeout for S3 source
+## [Container] 2023/05/03 22:02:55 Processing environment variables
+## [Container] 2023/05/03 22:02:55 No runtime version selected in buildspec.
+## [Container] 2023/05/03 22:02:55 Moving to directory /codebuild/output/src623956017/src
+## [Container] 2023/05/03 22:02:55 Configuring ssm agent with target id: codebuild:91967f79-f29e-4c47-8f58-26aef90251c2
+## [Container] 2023/05/03 22:02:55 Successfully updated ssm agent configuration
+## [Container] 2023/05/03 22:02:55 Registering with agent
+## [Container] 2023/05/03 22:02:55 Phases found in YAML: 3
+## [Container] 2023/05/03 22:02:55  PRE_BUILD: 9 commands
+## [Container] 2023/05/03 22:02:55  BUILD: 4 commands
+## [Container] 2023/05/03 22:02:55  POST_BUILD: 3 commands
+## [Container] 2023/05/03 22:02:55 Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED
+## [Container] 2023/05/03 22:02:55 Phase context status code:  Message:
+## [Container] 2023/05/03 22:02:55 Entering phase INSTALL
+## [Container] 2023/05/03 22:02:55 Phase complete: INSTALL State: SUCCEEDED
+## [Container] 2023/05/03 22:02:55 Phase context status code:  Message:
+## [Container] 2023/05/03 22:02:55 Entering phase PRE_BUILD
+## [Container] 2023/05/03 22:02:55 Running command echo Logging in to Amazon ECR...
+## [Container] 2023/05/03 22:03:00 Phase complete: PRE_BUILD State: SUCCEEDED
+## [Container] 2023/05/03 22:03:00 Phase context status code:  Message:
+## [Container] 2023/05/03 22:03:00 Entering phase BUILD
+## [Container] 2023/05/03 22:03:00 Running command echo Build started on `date`
+## [Container] 2023/05/03 22:03:00 Running command echo Building the Docker image...
+## [Container] 2023/05/03 22:03:00 Running command docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+## [Container] 2023/05/03 22:05:04 Phase complete: POST_BUILD State: SUCCEEDED
+## [Container] 2023/05/03 22:05:04 Phase context status code:  Message:
+## julia-silge-rstudio-com-8ab: digest: sha256:ac67ab9aaf4681b3ac5bf6be7c36df2be2c4df32d608f87a7a1a440bec08d9f9 size: 2422
+## 
+## [Container] 2023/05/03 22:05:04 Phase complete: POST_BUILD State: SUCCEEDED
+## [Container] 2023/05/03 22:05:04 Phase context status code:  Message:
+## INFO [2023-05-03 22:05:22.243]: Image URI: 350573666743.dkr.ecr.us-east-2.amazonaws.com/sagemaker-studio-d-if5drhy5daez:julia-silge-rstudio-com-8ab
+</code></pre><p>The second function creates a SageMaker model object from the Docker image. (This part is fast!)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">model_name <span style="color:#666">&lt;-</span> <span style="color:#06287e">vetiver_sm_model</span>(new_image_uri)
+</code></pre></div><p>The third function sets up a SageMaker endpoint from the newly created model. This step can also take a while, but you can set the argument <code>wait = FALSE</code> to free up your R session immediately (just be aware the endpoint won&rsquo;t be up for a while).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">new_endpoint <span style="color:#666">&lt;-</span> <span style="color:#06287e">vetiver_sm_endpoint</span>(model_name, <span style="color:#4070a0">&#34;ml.t2.medium&#34;</span>)
+new_endpoint
+</code></pre></div><pre tabindex="0"><code>## 
+## ── A SageMaker model endpoint for prediction: 
+## Model endpoint: sagemaker-studio-d-if5drhy5daez-2023-05-03-22-05-22-711
+## Region: us-east-2
+</code></pre><p>Remember that you can use the single function <code>vetiver_deploy_sagemaker()</code> for straightforward use cases, but it can be helpful to understand what is going on under the hood like this. The <code>vetiver_deploy_sagemaker()</code> also has some nice quality-of-life features like setting some vetiver-specific tags and giving your ECR repo a vetiver-specific name, for discoverability.</p>
+
+
+
+
+<h2 id="make-predictions-with-your-deployed-model">Make predictions with your deployed model
+  <a href="#make-predictions-with-your-deployed-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Once the endpoint is fully deployed, we can make predictions with it. You can see interactive documentation for the endpoint in the SageMaker UI under &ldquo;Deployments&rdquo; and then &ldquo;Endpoints&rdquo;. You would input predictors as JSON, like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">[
+  {
+    <span style="color:#062873;font-weight:bold">&#34;Neighborhood&#34;</span>: <span style="color:#4070a0">&#34;North_Ames&#34;</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Gr_Liv_Area&#34;</span>: <span style="color:#40a070">1500</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Year_Built&#34;</span>: <span style="color:#40a070">1960</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Bldg_Type&#34;</span>: <span style="color:#4070a0">&#34;OneFam&#34;</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Latitude&#34;</span>: <span style="color:#40a070">42.0</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Longitude&#34;</span>: <span style="color:#40a070">-93.6</span>
+  },
+  {
+    <span style="color:#062873;font-weight:bold">&#34;Neighborhood&#34;</span>: <span style="color:#4070a0">&#34;North_Ames&#34;</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Gr_Liv_Area&#34;</span>: <span style="color:#40a070">2100</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Year_Built&#34;</span>: <span style="color:#40a070">1995</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Bldg_Type&#34;</span>: <span style="color:#4070a0">&#34;OneFam&#34;</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Latitude&#34;</span>: <span style="color:#40a070">42.0</span>,
+    <span style="color:#062873;font-weight:bold">&#34;Longitude&#34;</span>: <span style="color:#40a070">-93.6</span>
+  } 
+]
+</code></pre></div><p>You can also get predictions with curl from the endpoint, or from R:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">new_homes <span style="color:#666">&lt;-</span> ames_test <span style="color:#666">%&gt;%</span> <span style="color:#06287e">slice_sample</span>(n <span style="color:#666">=</span> <span style="color:#40a070">50</span>) 
+<span style="color:#06287e">predict</span>(new_endpoint, new_homes)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 50 × 1
+##    .pred
+##    &lt;dbl&gt;
+##  1  5.01
+##  2  4.92
+##  3  5.12
+##  4  5.03
+##  5  5.14
+##  6  5.08
+##  7  5.25
+##  8  4.92
+##  9  5.31
+## 10  5.60
+## # ℹ 40 more rows
+</code></pre><p>This new functionality for SageMaker is in the development version of vetiver as of publication, and we would love 
+<a href="https://github.com/rstudio/vetiver-r/issues" target="_blank" rel="noopener">to hear from you</a> if you have feedback after trying it out!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 4, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1152 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/childcare-costs/">&larr; Tune an xgboost model with early stopping and #TidyTuesday childcare costs</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/horror-embeddings/">Use OpenAI text embeddings with #TidyTuesday horror movie descriptions &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Handling model coefficients for #TidyTuesday collegiate sports | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Handling model coefficients for #TidyTuesday collegiate sports | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/college-sports/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/college-sports/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/college-sports/featured.png" >
+    
+    
+  <meta itemprop="name" content="Handling model coefficients for #TidyTuesday collegiate sports">
+<meta itemprop="description" content="Understand how much money colleges spend on sports using linear modeling and bootstrap intervals."><meta itemprop="datePublished" content="2022-04-09T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-04-09T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1242"><meta itemprop="image" content="https://juliasilge.com/blog/college-sports/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Handling model coefficients for #TidyTuesday collegiate sports</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">April 9, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of
+
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating
+how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages. This
+screencast is less about predictive modeling and more about how to
+handle and generate model coefficients with tidymodels. Let&rsquo;s learn more
+about this using the 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code>
+dataset</a> on collegiate
+sports in the US. 🏈</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-1_d2c41aa78603b44133cead855cce98ca">
+<div class="cell-output-display">
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/5LKrMTlJvo0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</div>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading
+instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to understand what affects expenditures on
+
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2022/2022-03-29/readme.md" target="_blank" rel="noopener">collegiate sports in the
+US</a>.
+How many different sports are there in this dataset?</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-2_aad2889e60496dbba7c212317ebe6635">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+sports_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-29/sports.csv&#39;</span>)
+
+<span style="color:#06287e">unique</span>(sports_raw<span style="color:#666">$</span>sports)
+</code></pre></div><div class="cell-output-stdout">
+<pre><code> [1] &quot;Baseball&quot;                   &quot;Basketball&quot;                
+ [3] &quot;All Track Combined&quot;         &quot;Football&quot;                  
+ [5] &quot;Golf&quot;                       &quot;Soccer&quot;                    
+ [7] &quot;Softball&quot;                   &quot;Tennis&quot;                    
+ [9] &quot;Volleyball&quot;                 &quot;Bowling&quot;                   
+[11] &quot;Rifle&quot;                      &quot;Beach Volleyball&quot;          
+[13] &quot;Ice Hockey&quot;                 &quot;Lacrosse&quot;                  
+[15] &quot;Gymnastics&quot;                 &quot;Rowing&quot;                    
+[17] &quot;Swimming and Diving&quot;        &quot;Track and Field, X-Country&quot;
+[19] &quot;Equestrian&quot;                 &quot;Track and Field, Indoor&quot;   
+[21] &quot;Track and Field, Outdoor&quot;   &quot;Wrestling&quot;                 
+[23] &quot;Other Sports&quot;               &quot;Rodeo&quot;                     
+[25] &quot;Skiing&quot;                     &quot;Swimming&quot;                  
+[27] &quot;Water Polo&quot;                 &quot;Archery&quot;                   
+[29] &quot;Field Hockey&quot;               &quot;Fencing&quot;                   
+[31] &quot;Sailing&quot;                    &quot;Badminton&quot;                 
+[33] &quot;Squash&quot;                     &quot;Diving&quot;                    
+[35] &quot;Synchronized Swimming&quot;      &quot;Table Tennis&quot;              
+[37] &quot;Weight Lifting&quot;             &quot;Team Handball&quot;             
+</code></pre>
+</div>
+</div>
+<p>Let&rsquo;s combine some of those sports categories:</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-3_c4c496ebb233f19f562fabd1c69472ee">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">sports_parsed <span style="color:#666">&lt;-</span> sports_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(sports <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    <span style="color:#06287e">str_detect</span>(sports, <span style="color:#4070a0">&#34;Swimming&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Swimming and Diving&#34;</span>,
+    <span style="color:#06287e">str_detect</span>(sports, <span style="color:#4070a0">&#34;Diving&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Swimming and Diving&#34;</span>,
+    <span style="color:#06287e">str_detect</span>(sports, <span style="color:#4070a0">&#34;Track&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Track&#34;</span>,
+    <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> sports
+  ))
+
+<span style="color:#06287e">unique</span>(sports_parsed<span style="color:#666">$</span>sports)
+</code></pre></div><div class="cell-output-stdout">
+<pre><code> [1] &quot;Baseball&quot;            &quot;Basketball&quot;          &quot;Track&quot;              
+ [4] &quot;Football&quot;            &quot;Golf&quot;                &quot;Soccer&quot;             
+ [7] &quot;Softball&quot;            &quot;Tennis&quot;              &quot;Volleyball&quot;         
+[10] &quot;Bowling&quot;             &quot;Rifle&quot;               &quot;Beach Volleyball&quot;   
+[13] &quot;Ice Hockey&quot;          &quot;Lacrosse&quot;            &quot;Gymnastics&quot;         
+[16] &quot;Rowing&quot;              &quot;Swimming and Diving&quot; &quot;Equestrian&quot;         
+[19] &quot;Wrestling&quot;           &quot;Other Sports&quot;        &quot;Rodeo&quot;              
+[22] &quot;Skiing&quot;              &quot;Water Polo&quot;          &quot;Archery&quot;            
+[25] &quot;Field Hockey&quot;        &quot;Fencing&quot;             &quot;Sailing&quot;            
+[28] &quot;Badminton&quot;           &quot;Squash&quot;              &quot;Table Tennis&quot;       
+[31] &quot;Weight Lifting&quot;      &quot;Team Handball&quot;      
+</code></pre>
+</div>
+</div>
+<p>Let&rsquo;s choose some variables to explore further and create a dataset with
+<code>bind_rows()</code> that has one row for each sport and gender.</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-4_57acc2318bd886ff81c4b0c2eaf85bfc">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">sports <span style="color:#666">&lt;-</span> <span style="color:#06287e">bind_rows</span>(
+  sports_parsed <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">select</span>(year, institution_name, sports, 
+           participants <span style="color:#666">=</span> partic_men, 
+           revenue <span style="color:#666">=</span> rev_men, 
+           expenditure <span style="color:#666">=</span> exp_men) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(gender <span style="color:#666">=</span> <span style="color:#4070a0">&#34;men&#34;</span>),
+  sports_parsed <span style="color:#666">%&gt;%</span> 
+    <span style="color:#06287e">select</span>(year, institution_name, sports, 
+           participants <span style="color:#666">=</span> partic_women, 
+           revenue <span style="color:#666">=</span> rev_women, 
+           expenditure <span style="color:#666">=</span> exp_women) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(gender <span style="color:#666">=</span> <span style="color:#4070a0">&#34;women&#34;</span>)
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>()
+
+sports
+</code></pre></div><div class="cell-output-stdout">
+<pre><code># A tibble: 130,748 × 7
+    year institution_name         sports participants revenue expenditure gender
+   &lt;dbl&gt; &lt;chr&gt;                    &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt; &lt;chr&gt; 
+ 1  2015 Alabama A &amp; M University Baseb…           31  345592      397818 men   
+ 2  2015 Alabama A &amp; M University Baske…           19 1211095      817868 men   
+ 3  2015 Alabama A &amp; M University Track            61  183333      246949 men   
+ 4  2015 Alabama A &amp; M University Footb…           99 2808949     3059353 men   
+ 5  2015 Alabama A &amp; M University Golf              9   78270       83913 men   
+ 6  2015 Alabama A &amp; M University Tennis            7   78274       99612 men   
+ 7  2015 University of Alabama a… Baseb…           32 1286361     1245150 men   
+ 8  2015 University of Alabama a… Baske…           13 4189826     4189826 men   
+ 9  2015 University of Alabama a… Golf             10  407728      407728 men   
+10  2015 University of Alabama a… Soccer           33 1062855     1052063 men   
+# … with 130,738 more rows
+</code></pre>
+</div>
+</div>
+<p>In the screencast I did more EDA, but here let&rsquo;s just make one
+exploratory plot.</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-5_35cbe4a207596aa466bce73786ff2cfb">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">sports <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(sports <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(sports, expenditure)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(expenditure, sports, fill <span style="color:#666">=</span> gender, color <span style="color:#666">=</span> gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(position <span style="color:#666">=</span> <span style="color:#06287e">position_dodge</span>(preserve <span style="color:#666">=</span> <span style="color:#4070a0">&#34;single&#34;</span>), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>dollar) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;top&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_brewer</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Dark2&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_brewer</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Dark2&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Expenditures per team&#34;</span>)
+</code></pre></div><div class="cell-output-display">
+<img src="index_files/figure-gfm/unnamed-chunk-5-1.png" width="1440" />
+</div>
+</div>
+<p>Notice the log scale and those outliers for sports like football and
+men&rsquo;s basketball! 😳 It doesn&rsquo;t look like there is much difference
+between men and women for any given sport.</p>
+
+
+
+
+<h2 id="build-linear-models">Build linear models
+  <a href="#build-linear-models"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s take a straightforward, &ldquo;native R&rdquo; approach to fitting two linear
+models for this data:</p>
+<ul>
+<li>
+<p>explaining expenditures based on number of participants and gender</p>
+</li>
+<li>
+<p>the same, but adding in sport as a predictor to estimate the impact
+of different sports on how much money is spent per team</p>
+</li>
+</ul>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-6_603d35c02acea45abc501080a2aad7d7">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">ignore_sport <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">lm</span>(expenditure <span style="color:#666">~</span> gender <span style="color:#666">+</span> participants, data <span style="color:#666">=</span> sports)
+account_for_sport <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">lm</span>(expenditure <span style="color:#666">~</span> gender <span style="color:#666">+</span> participants <span style="color:#666">+</span> sports, data <span style="color:#666">=</span> sports)
+</code></pre></div></div>
+<p>In tidymodels, we recommend using broom to handle the output of models
+like these, so we can more easily handle, manipulate, and visualize our
+results. Check out 
+<a href="https://www.tmwr.org/base-r.html#tidiness-modeling" target="_blank" rel="noopener">Chapter 3 of <em>Tidy Modeling with
+R</em></a> for more on this
+topic!</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-7_4703d200d5c4677d437421e1729e10b6">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(broom)
+<span style="color:#06287e">bind_rows</span>(
+  <span style="color:#06287e">tidy</span>(ignore_sport) <span style="color:#666">%&gt;%</span> <span style="color:#06287e">mutate</span>(sport <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ignore&#34;</span>), 
+  <span style="color:#06287e">tidy</span>(account_for_sport) <span style="color:#666">%&gt;%</span> <span style="color:#06287e">mutate</span>(sport <span style="color:#666">=</span> <span style="color:#4070a0">&#34;account for sport&#34;</span>)
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">str_detect</span>(term, <span style="color:#4070a0">&#34;sports&#34;</span>), term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate, term, color <span style="color:#666">=</span> sport)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbar</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.4</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>,
+                <span style="color:#06287e">aes</span>(xmin <span style="color:#666">=</span> estimate <span style="color:#666">-</span> <span style="color:#40a070">1.96</span> <span style="color:#666">*</span> std.error, xmax <span style="color:#666">=</span> estimate <span style="color:#666">+</span> <span style="color:#40a070">1.96</span> <span style="color:#666">*</span> std.error)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>dollar) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position<span style="color:#666">=</span><span style="color:#4070a0">&#34;bottom&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_brewer</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Accent&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Change in expenditures&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Include sport in model?&#34;</span>,
+       title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Expenditures on college sports&#34;</span>,
+       subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Colleges spend less on women&#39;s sports overall\nFor the same sport, we don&#39;t see differences by gender&#34;</span>)
+</code></pre></div><div class="cell-output-display">
+<img src="index_files/figure-gfm/unnamed-chunk-7-1.png" width="1440" />
+</div>
+</div>
+<p>We see here that colleges spend less per team overall on women&rsquo;s sports,
+but this isn&rsquo;t true when we control for sport. Basically, it&rsquo;s just
+football driving the differences between men and women! Also, when we
+account for sport, the increase in expenditure per participant comes
+down a lot.</p>
+
+
+
+
+<h2 id="bootstrap-intervals">Bootstrap intervals
+  <a href="#bootstrap-intervals"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We used the standard intervals from <code>lm()</code> in the section above, but
+what if we&rsquo;re worried about the assumptions of OLS and/or just want to
+create more robust interval estimates? We can use 
+<a href="https://moderndive.com/8-confidence-intervals.html" target="_blank" rel="noopener">bootstrap
+intervals</a> instead.
+There are 
+<a href="https://www.tidymodels.org/learn/statistics/bootstrap/" target="_blank" rel="noopener">several ways to estimate bootstrap
+intervals</a> in
+tidymodels, but the 
+<a href="https://rsample.tidymodels.org/reference/reg_intervals.html" target="_blank" rel="noopener">simplest is using <code>reg_intervals()</code> from
+rsample</a>:</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-8_c5cf9d831abd553d3ddf02b9531defc5">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(rsample)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+ignore_intervals <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">reg_intervals</span>(expenditure <span style="color:#666">~</span> gender <span style="color:#666">+</span> participants, data <span style="color:#666">=</span> sports, times <span style="color:#666">=</span> <span style="color:#40a070">500</span>)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+account_for_sport_intervals <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">reg_intervals</span>(expenditure <span style="color:#666">~</span> gender <span style="color:#666">+</span> participants <span style="color:#666">+</span> sports, data <span style="color:#666">=</span> sports, times <span style="color:#666">=</span> <span style="color:#40a070">500</span>)
+</code></pre></div></div>
+<p>What are the estimates for the change in expenditures for each sport?</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-9_0adba854e4925ebe2acba74b924e7a8b">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">account_for_sport_intervals <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">str_detect</span>(term, <span style="color:#4070a0">&#34;sports&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#06287e">desc</span>(.estimate))
+</code></pre></div><div class="cell-output-stdout">
+<pre><code># A tibble: 30 × 6
+   term                 .lower .estimate   .upper .alpha .method  
+   &lt;chr&gt;                 &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+ 1 sportsFootball     2634926.  2835381. 3067996.   0.05 student-t
+ 2 sportsGymnastics    644231.   704069.  761619.   0.05 student-t
+ 3 sportsIce Hockey    523371.   578347.  648220.   0.05 student-t
+ 4 sportsBasketball    549469.   575278.  602532.   0.05 student-t
+ 5 sportsEquestrian    109748.   204648.  305266.   0.05 student-t
+ 6 sportsRifle          89728.   155763.  210560.   0.05 student-t
+ 7 sportsVolleyball    130863.   146536.  161185.   0.05 student-t
+ 8 sportsSkiing        100897.   126746.  151963.   0.05 student-t
+ 9 sportsRowing         73766.   119037.  159192.   0.05 student-t
+10 sportsField Hockey   89872.   118878.  142696.   0.05 student-t
+# … with 20 more rows
+</code></pre>
+</div>
+</div>
+<p>The difference between football and the next sport is LARGE. Let&rsquo;s make
+a similar plot for the model coefficients as in the last section.</p>
+<div class="cell"
+hash="index_cache/gfm/unnamed-chunk-10_28f59f1097435acedfd4b3088615e2aa">
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">bind_rows</span>(
+  ignore_intervals <span style="color:#666">%&gt;%</span> <span style="color:#06287e">mutate</span>(sport <span style="color:#666">=</span> <span style="color:#4070a0">&#34;ignore&#34;</span>), 
+  account_for_sport_intervals <span style="color:#666">%&gt;%</span> <span style="color:#06287e">mutate</span>(sport <span style="color:#666">=</span> <span style="color:#4070a0">&#34;account for sport&#34;</span>)
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">str_detect</span>(term, <span style="color:#4070a0">&#34;sports&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.estimate, term, color <span style="color:#666">=</span> sport)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbar</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.4</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>,
+                <span style="color:#06287e">aes</span>(xmin <span style="color:#666">=</span> .lower, xmax <span style="color:#666">=</span> .upper)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>dollar) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_brewer</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Accent&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position<span style="color:#666">=</span><span style="color:#4070a0">&#34;bottom&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Change in expenditures&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Include sport in model?&#34;</span>,
+       title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Bootstrap confidence intervals for expenditures in college sports&#34;</span>,
+       subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Colleges spend less on women&#39;s sports overall\nIn any specific sport, we don&#39;t see evidence for differences&#34;</span>)
+</code></pre></div><div class="cell-output-display">
+<img src="index_files/figure-gfm/unnamed-chunk-10-1.png" width="1440" />
+</div>
+</div>
+<p>This plot looks very similar, although the relative size of the
+intervals for gender and number of participants has changed (intervals
+for number of participants are larger; intervals for gender are
+smaller). Again, we see that overall, the expenditures per team are much
+less for women&rsquo;s sports, but that we don&rsquo;t have evidence for differences
+within individual sports.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 9, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1242 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/nyt-bestsellers/">&larr; Predict #TidyTuesday NYT bestsellers</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/rstats-vignettes/">Poisson regression for #TidyTuesday counts of R package vignettes &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

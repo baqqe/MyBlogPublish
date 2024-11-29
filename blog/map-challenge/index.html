@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Spatial resampling for #TidyTuesday and the #30DayMapChallenge | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Spatial resampling for #TidyTuesday and the #30DayMapChallenge | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/map-challenge/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/map-challenge/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/map-challenge/featured.png" >
+    
+    
+  <meta itemprop="name" content="Spatial resampling for #TidyTuesday and the #30DayMapChallenge">
+<meta itemprop="description" content="Use spatial resampling to more accurately estimate model performance for geographic data."><meta itemprop="datePublished" content="2021-11-05T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-11-05T00:00:00+00:00" />
+<meta itemprop="wordCount" content="860"><meta itemprop="image" content="https://juliasilge.com/blog/map-challenge/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Spatial resampling for #TidyTuesday and the #30DayMapChallenge</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">November 5, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just getting started to tuning more complex models. Today’s screencast walks through how to use spatial resampling for evaluating a model, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on geographic data. 🗾</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/wVrcw_ek3a4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Geographic data is special when it comes to, well, basically everything! This includes modeling and especially <em>evaluating</em> models. This week’s <code>#TidyTuesday</code> is all about exploring 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-11-02/readme.md" target="_blank" rel="noopener">spatial data</a> for the 
+<a href="https://github.com/tjukanovt/30DayMapChallenge" target="_blank" rel="noopener"><code>#30DayMapChallenge</code></a> this month, and especially the spData and spDataLarge packages along with the book 
+<a href="https://geocompr.robinlovelace.net/" target="_blank" rel="noopener"><em>Geocomputation with R</em></a>.</p>
+<p>Let’s use the dataset of landslides (plus not-landslide locations) in Southern Ecuador.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">data</span>(<span style="color:#4070a0">&#34;lsl&#34;</span>, package <span style="color:#666">=</span> <span style="color:#4070a0">&#34;spDataLarge&#34;</span>)
+landslides <span style="color:#666">&lt;-</span> <span style="color:#06287e">as_tibble</span>(lsl)
+landslides
+</code></pre></div><pre><code>## # A tibble: 350 × 8
+##          x        y lslpts slope    cplan     cprof  elev log10_carea
+##      &lt;dbl&gt;    &lt;dbl&gt; &lt;fct&gt;  &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;
+##  1 715078. 9558647. FALSE   37.4  0.0205   0.00866  2477.        2.61
+##  2 713748. 9558047. FALSE   41.7 -0.0241   0.00679  2486.        3.07
+##  3 712508. 9558887. FALSE   20.0  0.0390   0.0147   2142.        2.29
+##  4 713998. 9558187. FALSE   45.8 -0.00632  0.00435  2391.        3.83
+##  5 714308. 9557307. FALSE   41.7  0.0423  -0.0202   2570.        2.70
+##  6 713488. 9558117. FALSE   52.9  0.0323   0.00703  2418.        2.48
+##  7 714948. 9558347. FALSE   51.9  0.0399   0.000791 2546.        3.15
+##  8 714678. 9560357. FALSE   38.5  0.0164   0.0299   1932.        3.26
+##  9 714368. 9560287. FALSE   24.1 -0.0188  -0.00956  2059.        3.20
+## 10 712528. 9559217. FALSE   50.5  0.0142   0.0151   1973.        2.60
+## # … with 340 more rows
+</code></pre>
+<p>How are these landslides (plus not landslides) distributes in this area?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">ggplot</span>(landslides, <span style="color:#06287e">aes</span>(x, y)) <span style="color:#666">+</span>
+  <span style="color:#06287e">stat_summary_hex</span>(<span style="color:#06287e">aes</span>(z <span style="color:#666">=</span> elev), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">12</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(<span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> lslpts), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_fixed</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_viridis_c</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_manual</span>(values <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;gray90&#34;</span>, <span style="color:#4070a0">&#34;midnightblue&#34;</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Elevation&#34;</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Landslide?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/map-challenge/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+
+
+
+
+<h2 id="create-spatial-resamples">Create spatial resamples
+  <a href="#create-spatial-resamples"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>In tidymodels, one of the first steps we recommend thinking about is “spending your data budget.” When it comes to geographic data, points close to each other are often similar so we don’t want to randomly resample our observations. Instead, we want to use a resampling strategy that accounts for that autocorrelation. Let’s create both resamples that are appropriate to spatial data and resamples that might work for “regular,” non-spatial data but are not a good fit for geographic data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+<span style="color:#06287e">library</span>(spatialsample)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+good_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">spatial_clustering_cv</span>(landslides, coords <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;x&#34;</span>, <span style="color:#4070a0">&#34;y&#34;</span>), v <span style="color:#666">=</span> <span style="color:#40a070">5</span>)
+good_folds
+</code></pre></div><pre><code>## #  5-fold spatial cross-validation 
+## # A tibble: 5 × 2
+##   splits           id   
+##   &lt;list&gt;           &lt;chr&gt;
+## 1 &lt;split [306/44]&gt; Fold1
+## 2 &lt;split [256/94]&gt; Fold2
+## 3 &lt;split [251/99]&gt; Fold3
+## 4 &lt;split [303/47]&gt; Fold4
+## 5 &lt;split [284/66]&gt; Fold5
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+bad_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(landslides, v <span style="color:#666">=</span> <span style="color:#40a070">5</span>, strata <span style="color:#666">=</span> lslpts)
+bad_folds
+</code></pre></div><pre><code>## #  5-fold cross-validation using stratification 
+## # A tibble: 5 × 2
+##   splits           id   
+##   &lt;list&gt;           &lt;chr&gt;
+## 1 &lt;split [280/70]&gt; Fold1
+## 2 &lt;split [280/70]&gt; Fold2
+## 3 &lt;split [280/70]&gt; Fold3
+## 4 &lt;split [280/70]&gt; Fold4
+## 5 &lt;split [280/70]&gt; Fold5
+</code></pre>
+<p>The 
+<a href="https://spatialsample.tidymodels.org/" target="_blank" rel="noopener">spatialsample</a> package currently provides one method for spatial resampling and we are interested in hearing about what other methods we should support next.</p>
+<p>How do these resamples look? Let’s create a little helper function:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">plot_splits <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(split) {
+  p <span style="color:#666">&lt;-</span> <span style="color:#06287e">bind_rows</span>(
+    <span style="color:#06287e">analysis</span>(split) <span style="color:#666">%&gt;%</span>
+      <span style="color:#06287e">mutate</span>(analysis <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Analysis&#34;</span>),
+    <span style="color:#06287e">assessment</span>(split) <span style="color:#666">%&gt;%</span>
+      <span style="color:#06287e">mutate</span>(analysis <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Assessment&#34;</span>)
+  ) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(x, y, color <span style="color:#666">=</span> analysis)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">coord_fixed</span>() <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+  <span style="color:#06287e">print</span>(p)
+}
+</code></pre></div><p>The spatial resampling creates resamples where observations close to each other are together.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">walk</span>(good_folds<span style="color:#666">$</span>splits, plot_splits)
+</code></pre></div><img src="https://juliasilge.com/blog/map-challenge/index_files/figure-html/unnamed-chunk-6-.gif" width="1800" />
+<p>The regular resampling doesn’t do this; it just randomly resamples all observations.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">walk</span>(bad_folds<span style="color:#666">$</span>splits, plot_splits)
+</code></pre></div><img src="https://juliasilge.com/blog/map-challenge/index_files/figure-html/unnamed-chunk-7-.gif" width="1800" />
+<p>This second option is <em>not</em> a good idea for geographic data.</p>
+
+
+
+
+<h2 id="fit-and-evaluate-model">Fit and evaluate model
+  <a href="#fit-and-evaluate-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s create a straightforward logistic regression model to predict whether a location saw a landslide based on the other characteristics like slope, elevation, amount of water flow, etc. We can estimate how well this <em>same</em> model fits the data both with our regular folds and our special spatial resampling.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">glm_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">logistic_reg</span>()
+lsl_form <span style="color:#666">&lt;-</span> lslpts <span style="color:#666">~</span> slope <span style="color:#666">+</span> cplan <span style="color:#666">+</span> cprof <span style="color:#666">+</span> elev <span style="color:#666">+</span> log10_carea
+
+lsl_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(lsl_form, glm_spec)
+
+doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">2021</span>)
+regular_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(lsl_wf, bad_folds)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">2021</span>)
+spatial_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(lsl_wf, good_folds)
+</code></pre></div><p>How did our results turn out?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(regular_rs)
+</code></pre></div><pre><code>## # A tibble: 2 × 6
+##   .metric  .estimator  mean     n std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.737     5  0.0173 Preprocessor1_Model1
+## 2 roc_auc  binary     0.808     5  0.0201 Preprocessor1_Model1
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(spatial_rs)
+</code></pre></div><pre><code>## # A tibble: 2 × 6
+##   .metric  .estimator  mean     n std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.677     5 0.0708  Preprocessor1_Model1
+## 2 roc_auc  binary     0.782     5 0.00790 Preprocessor1_Model1
+</code></pre>
+<p>If we use the “regular” resampling, we get a more optimistc estimate of performance which would fool us into thinking our model would perform better than it really could. The lower performance estimate using spatial resampling is more accurate because of the autocorrelation of this geographic data; observations near each other are more alike than observations far apart. With geographic data, it’s important to use an appropriate model evaluation strategy!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">November 5, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 860 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/doctor-who/">&larr; Predicting viewership for #TidyTuesday Doctor Who episodes</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/giant-pumpkins/">Predict #TidyTuesday giant pumpkin weights with workflowsets &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

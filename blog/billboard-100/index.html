@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Dimensionality reduction for #TidyTuesday Billboard Top 100 songs | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Dimensionality reduction for #TidyTuesday Billboard Top 100 songs | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/billboard-100/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/billboard-100/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/billboard-100/featured.png" >
+    
+    
+  <meta itemprop="name" content="Dimensionality reduction for #TidyTuesday Billboard Top 100 songs">
+<meta itemprop="description" content="Songs on the Billboard Top 100 have many audio features. We can use data preprocessing recipes to implement dimensionality reduction and understand how these features are related."><meta itemprop="datePublished" content="2021-09-15T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-09-15T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1555"><meta itemprop="image" content="https://juliasilge.com/blog/billboard-100/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Dimensionality reduction for #TidyTuesday Billboard Top 100 songs</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">September 15, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just getting started to tuning more complex models. Today’s screencast focuses only on data preprocessing, or feature engineering; let’s walk through how to use dimensionality reduction for song features sourced from Spotify (mostly audio), with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Billboard Top 100 songs. 🎵</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/kE7H1oQ2rY4" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to use dimensionality reduction for features of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-09-14/readme.md" target="_blank" rel="noopener">Billboard Top 100 songs</a>, connecting data about where the songs were in the rankings with mostly audio features available from Spotify.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+<span style="color:#60a0b0;font-style:italic">## billboard ranking data</span>
+billboard <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/billboard.csv&#34;</span>)
+
+<span style="color:#60a0b0;font-style:italic">## spotify feature data</span>
+audio_features <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/audio_features.csv&#34;</span>)
+</code></pre></div><p>Let’s start by finding the longest streak each song was on this chart.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">max_weeks <span style="color:#666">&lt;-</span>
+  billboard <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(song_id) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(weeks_on_chart <span style="color:#666">=</span> <span style="color:#06287e">max</span>(weeks_on_chart), .groups <span style="color:#666">=</span> <span style="color:#4070a0">&#34;drop&#34;</span>)
+
+max_weeks
+</code></pre></div><pre><code>## # A tibble: 29,389 × 2
+##    song_id                                                    weeks_on_chart
+##    &lt;chr&gt;                                                               &lt;dbl&gt;
+##  1 -twistin'-White Silver SandsBill Black's Combo                          2
+##  2 ¿Dònde Està Santa Claus? (Where Is Santa Claus?)Augie Rios              4
+##  3 ......And Roses And RosesAndy Williams                                  7
+##  4 ...And Then There Were DrumsSandy Nelson                                4
+##  5 ...Baby One More TimeBritney Spears                                    32
+##  6 ...Ready For It?Taylor Swift                                           19
+##  7 '03 Bonnie &amp; ClydeJay-Z Featuring Beyonce Knowles                      23
+##  8 '65 Love AffairPaul Davis                                              20
+##  9 '98 Thug ParadiseTragedy, Capone, Infinite                              5
+## 10 'Round We GoBig Sister                                                  2
+## # … with 29,379 more rows
+</code></pre>
+<p>Now let’s join this with the Spotify audio features (where available). We don’t have Spotify features for all the songs, and it’s possible that there are systematic differences in songs that we could vs. could not get Spotify data for. Something to keep in mind!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">billboard_joined <span style="color:#666">&lt;-</span>
+  audio_features <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(spotify_track_popularity)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">inner_join</span>(max_weeks)
+
+billboard_joined
+</code></pre></div><pre><code>## # A tibble: 24,395 × 23
+##    song_id   performer  song   spotify_genre  spotify_track_id spotify_track_pr…
+##    &lt;chr&gt;     &lt;chr&gt;      &lt;chr&gt;  &lt;chr&gt;          &lt;chr&gt;            &lt;chr&gt;            
+##  1 ......An… Andy Will… .....… ['adult stand… 3tvqPPpXyIgKrm4… https://p.scdn.c…
+##  2 ...And T… Sandy Nel… ...An… ['rock-and-ro… 1fHHq3qHU8wpRKH… &lt;NA&gt;             
+##  3 ...Baby … Britney S… ...Ba… ['dance pop',… 3MjUtNVVq3C8Fn0… https://p.scdn.c…
+##  4 ...Ready… Taylor Sw… ...Re… ['pop', 'post… 2yLa0QULdQr0qAI… &lt;NA&gt;             
+##  5 '03 Bonn… Jay-Z Fea… '03 B… ['east coast … 5ljCWsDlSyJ41kw… &lt;NA&gt;             
+##  6 '65 Love… Paul Davis '65 L… ['album rock'… 5nBp8F6tekSrnFg… https://p.scdn.c…
+##  7 'til I C… Tammy Wyn… 'til … ['country', '… 0aJHZYjwbfTmeyU… https://p.scdn.c…
+##  8 'Til My … Luther Va… 'Til … ['funk', 'mot… 2R97RZWUx4vAFbM… https://p.scdn.c…
+##  9 'Til Sum… Keith Urb… 'Til … ['australian … 1CKmI1IQjVEVB3F… &lt;NA&gt;             
+## 10 'Til You… After 7    'Til … ['funk', 'neo… 3kGMziz884MLV1o… &lt;NA&gt;             
+## # … with 24,385 more rows, and 17 more variables:
+## #   spotify_track_duration_ms &lt;dbl&gt;, spotify_track_explicit &lt;lgl&gt;,
+## #   spotify_track_album &lt;chr&gt;, danceability &lt;dbl&gt;, energy &lt;dbl&gt;, key &lt;dbl&gt;,
+## #   loudness &lt;dbl&gt;, mode &lt;dbl&gt;, speechiness &lt;dbl&gt;, acousticness &lt;dbl&gt;,
+## #   instrumentalness &lt;dbl&gt;, liveness &lt;dbl&gt;, valence &lt;dbl&gt;, tempo &lt;dbl&gt;,
+## #   time_signature &lt;dbl&gt;, spotify_track_popularity &lt;dbl&gt;, weeks_on_chart &lt;dbl&gt;
+</code></pre>
+<p>Some of the features we now have for each song are characteristics of the song like the time signature (3/4, 4/4, 5/4) and the tempo in BPM.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">billboard_joined <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(tempo <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>, time_signature <span style="color:#666">&gt;</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(tempo, fill <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(time_signature))) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>, position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;identity&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;time signature&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>Pop songs like those on the Billboard chart are overwhelming in 4/4!</p>
+<p>There are other features available from Spotify as well, such as “danceability” and “loudness.”</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(corrr)
+
+billboard_joined <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(danceability<span style="color:#666">:</span>weeks_on_chart) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">correlate</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">rearrange</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">network_plot</span>(colours <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;orange&#34;</span>, <span style="color:#4070a0">&#34;white&#34;</span>, <span style="color:#4070a0">&#34;midnightblue&#34;</span>))
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-6-1.png" width="2400" />
+<p>It looks like only <code>spotify_track_popularity</code> is really at all correlated with <code>weeks_on_chart</code>. That popularity metric isn’t really an audio feature of the song per se, but it might be helpful to have such a feature as we understand more how dimensionality reduction works.</p>
+
+
+
+
+<h2 id="dimensionality-reduction">Dimensionality reduction
+  <a href="#dimensionality-reduction"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>In our book <em>Tidy Modeling with R</em>, we recently published a chapter on 
+<a href="https://www.tmwr.org/dimensionality.html" target="_blank" rel="noopener">dimensionality reduction</a>. My post today walks through a more brief and basic outline of some of the material from that chapter. Within the tidymodels framework, dimensionality reduction is a feature engineering or data preprocessing step, so we use 
+<a href="https://recipes.tidymodels.org/" target="_blank" rel="noopener">recipes</a> to implement this kind of analysis. I typically show how to use a data preprocessing recipe together with a model, but in this post, let’s just focus on recipes and how they work.</p>
+<p>Let’s still start by splitting our data into training and testing sets, so we can estimate or traing our preprocessing recipe on our training set, and then apply that trained recipe onto a new set (our testing set).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+billboard_split <span style="color:#666">&lt;-</span> billboard_joined <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(danceability<span style="color:#666">:</span>weeks_on_chart) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(weeks_on_chart <span style="color:#666">=</span> <span style="color:#06287e">log</span>(weeks_on_chart)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> weeks_on_chart)
+
+<span style="color:#60a0b0;font-style:italic">## how many observations in each set?</span>
+billboard_split
+</code></pre></div><pre><code>## &lt;Analysis/Assess/Total&gt;
+## &lt;18245/6084/24329&gt;
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">billboard_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(billboard_split)
+billboard_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(billboard_split)
+</code></pre></div><p>Now let’s make a basic starter recipe that we can work off of.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">billboard_rec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">recipe</span>(weeks_on_chart <span style="color:#666">~</span> ., data <span style="color:#666">=</span> billboard_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_zv</span>(<span style="color:#06287e">all_numeric_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_normalize</span>(<span style="color:#06287e">all_numeric_predictors</span>())
+
+rec_trained <span style="color:#666">&lt;-</span> <span style="color:#06287e">prep</span>(billboard_rec)
+rec_trained
+</code></pre></div><pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##    outcome          1
+##  predictor         13
+## 
+## Training data contained 18245 data points and no missing data.
+## 
+## Operations:
+## 
+## Zero variance filter removed no terms [trained]
+## Centering and scaling for danceability, energy, key, loudness, ... [trained]
+</code></pre>
+<p>When we <code>prep()</code> the recipe, we use the training data to estimate the quantities we need to apply these steps to new data. So in this case, we would, for example, compute the mean and standard deviation from the training data in order to center and scale. The testing data will be centered and scaled with the mean and standard deviation from the training data.</p>
+<p>Next, let’s make a little helper function for us to extend this starter recipe. This function will:</p>
+<ul>
+<li><code>prep()</code> the recipe (you can <code>prep()</code> an already-prepped recipe, for example after you have added new steps)</li>
+<li><code>bake()</code> the recipe using our <strong>testing</strong> data</li>
+<li>make a visualization of the results</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(ggforce)
+
+plot_test_results <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(recipe, dat <span style="color:#666">=</span> billboard_test) {
+  recipe <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">prep</span>() <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">bake</span>(new_data <span style="color:#666">=</span> dat) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>() <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_autopoint</span>(<span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> weeks_on_chart), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.4</span>, size <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_autodensity</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">.3</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">facet_matrix</span>(<span style="color:#06287e">vars</span>(<span style="color:#666">-</span>weeks_on_chart), layer.diag <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_color_distiller</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;BuPu&#34;</span>, direction <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;weeks (log)&#34;</span>)
+}
+</code></pre></div>
+
+
+
+<h3 id="pca">PCA
+  <a href="#pca"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h3>
+<p>Let’s start with principal component analysis, one of the most straightforward dimensionality reduction approaches. It is linear, unsupervised, and makes new features that try to account for as much variation in the data as possible. Remember that our function estimates PCA components from our training data and then applies those to our testing data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rec_trained <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_pca</span>(<span style="color:#06287e">all_numeric_predictors</span>(), num_comp <span style="color:#666">=</span> <span style="color:#40a070">4</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">plot_test_results</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">ggtitle</span>(<span style="color:#4070a0">&#34;Principal Component Analysis&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-11-1.png" width="2400" />
+<p>This looks a bit underwhelming in terms of the components being connected to weeks on the chart, but there is a little bit of relationship.</p>
+<p>We 
+<a href="https://www.tmwr.org/recipes.html#tidy-a-recipe" target="_blank" rel="noopener">can <code>tidy()</code> recipes</a>, either as a whole or for individual steps, and either before or after using <code>prep()</code>. Let’s <code>tidy()</code> this recipe to find the features that contribute the most to the PC components.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rec_trained <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_pca</span>(<span style="color:#06287e">all_numeric_predictors</span>(), num_comp <span style="color:#666">=</span> <span style="color:#40a070">4</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">prep</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">tidy</span>(number <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(component <span style="color:#666">%in%</span> <span style="color:#06287e">paste0</span>(<span style="color:#4070a0">&#34;PC&#34;</span>, <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">4</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(component) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(<span style="color:#06287e">abs</span>(value), n <span style="color:#666">=</span> <span style="color:#40a070">5</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#06287e">abs</span>(value), terms, fill <span style="color:#666">=</span> value <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(component), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Contribution to principal component&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Positive?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-12-1.png" width="2400" />
+<p>I’ve 
+<a href="https://juliasilge.com/blog/best-hip-hop/" target="_blank" rel="noopener">implemented PCA for these features before</a>. The results this time for a different sample of songs aren’t exactly the same but have some qualitative similarities; we see that the first component is mostly about loudness/energy vs. acoustic while the second is about valence, where high valence means more positive, cheerful, happy music.</p>
+
+
+
+
+<h3 id="pls">PLS
+  <a href="#pls"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h3>
+<p>Partial least squares is a lot like PCA but it is <strong>supervised</strong>; it makes components that try to account for a lot of variation but also are related to the outcome.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rec_trained <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_pls</span>(<span style="color:#06287e">all_numeric_predictors</span>(), outcome <span style="color:#666">=</span> <span style="color:#4070a0">&#34;weeks_on_chart&#34;</span>, num_comp <span style="color:#666">=</span> <span style="color:#40a070">4</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">plot_test_results</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">ggtitle</span>(<span style="color:#4070a0">&#34;Partial Least Squares&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-13-1.png" width="2400" />
+<p>We do see a stronger relationship to weeks on the chart here, like we would hope since we were using PLS.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">rec_trained <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_pls</span>(<span style="color:#06287e">all_numeric_predictors</span>(), outcome <span style="color:#666">=</span> <span style="color:#4070a0">&#34;weeks_on_chart&#34;</span>, num_comp <span style="color:#666">=</span> <span style="color:#40a070">4</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">prep</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">tidy</span>(number <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(component <span style="color:#666">%in%</span> <span style="color:#06287e">paste0</span>(<span style="color:#4070a0">&#34;PLS&#34;</span>, <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">4</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(component) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(<span style="color:#06287e">abs</span>(value), n <span style="color:#666">=</span> <span style="color:#40a070">5</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#06287e">abs</span>(value), terms, fill <span style="color:#666">=</span> value <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(component), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Contribution to PLS component&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Positive?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-14-1.png" width="2400" />
+<p>The Spotify popularity feature, which like we said before is not really an audio feature, is now a big contributor to the first couple of components.</p>
+
+
+
+
+<h3 id="umap">UMAP
+  <a href="#umap"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h3>
+<p>Uniform manifold approximation and projection (UMAP) is another dimensionality reduction technique, but it works very differently than either PCA or PLS. It is not linear. Instead, it starts by finding nearest neighbors for the observations in the high dimensional space, building a graph network, and then creating a new lower dimensional space based on that.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(embed)
+
+rec_trained <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_umap</span>(<span style="color:#06287e">all_numeric_predictors</span>(), num_comp <span style="color:#666">=</span> <span style="color:#40a070">4</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">plot_test_results</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">ggtitle</span>(<span style="color:#4070a0">&#34;UMAP&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/billboard-100/index_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+<p>UMAP is very good at making little clusters in the new reduced space, but notice that in our case they aren’t very connected to weeks on the chart. UMAP results can seem very appealing but it’s good to understand how arbitrary some of the structure we see here is, and generally 
+<a href="https://twitter.com/lpachter/status/1431325969411821572" target="_blank" rel="noopener">this algorithm’s limitations</a>.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">September 15, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1555 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/nber-papers/">&larr; Multiclass predictive modeling for #TidyTuesday NBER papers</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/bird-baths/">Fit and predict with tidymodels for #TidyTuesday bird baths in Australia &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

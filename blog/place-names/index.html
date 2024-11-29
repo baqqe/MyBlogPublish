@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>What tokens are used more vs. less in #TidyTuesday place names? | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="What tokens are used more vs. less in #TidyTuesday place names? | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/place-names/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/place-names/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/place-names/featured.png" >
+    
+    
+  <meta itemprop="name" content="What tokens are used more vs. less in #TidyTuesday place names?">
+<meta itemprop="description" content="Let&rsquo;s use byte pair encoding tokenization along with Poisson regression to understand which tokens are more more often (or less often) in US place names."><meta itemprop="datePublished" content="2023-07-05T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-07-05T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1151"><meta itemprop="image" content="https://juliasilge.com/blog/place-names/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">What tokens are used more vs. less in #TidyTuesday place names?</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">July 5, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to use tidymodels to learn a subword tokenization strategy, using this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on place names in the United States. 🏞️</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/BQ3X59pBigo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal in this case is to predict the number of uses of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-06-27/readme.md" target="_blank" rel="noopener">geographical place names in the United States</a>, to find out which kinds of names are more and less common. Let’s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+us_place_names <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-06-27/us_place_names.csv&#39;</span>)
+
+<span style="color:#06287e">glimpse</span>(us_place_names)
+</code></pre></div><pre><code>## Rows: 187,519
+## Columns: 9
+## $ feature_id     &lt;dbl&gt; 479, 492, 511, 538, 542, 580, 581, 605, 728, 765, 770, …
+## $ feature_name   &lt;chr&gt; &quot;Adamana&quot;, &quot;Adobe&quot;, &quot;Agua Fria&quot;, &quot;Ajo&quot;, &quot;Ak Chin&quot;, &quot;Alh…
+## $ state_name     &lt;chr&gt; &quot;Arizona&quot;, &quot;Arizona&quot;, &quot;Arizona&quot;, &quot;Arizona&quot;, &quot;Arizona&quot;, …
+## $ county_name    &lt;chr&gt; &quot;Apache&quot;, &quot;Maricopa&quot;, &quot;Maricopa&quot;, &quot;Pima&quot;, &quot;Pinal&quot;, &quot;Mar…
+## $ county_numeric &lt;dbl&gt; 1, 13, 13, 19, 21, 13, 19, 13, 3, 21, 21, 25, 13, 17, 2…
+## $ date_created   &lt;date&gt; 1980-02-08, 1980-02-08, 1980-02-08, 1980-02-08, 1980-0…
+## $ date_edited    &lt;date&gt; 2022-06-07, 2022-06-07, 2022-06-07, 2022-06-07, 2022-0…
+## $ prim_lat_dec   &lt;dbl&gt; 34.97669, 33.68921, 33.60559, 32.37172, 33.03283, 33.49…
+## $ prim_long_dec  &lt;dbl&gt; -109.8223, -112.1227, -112.3146, -112.8607, -112.0732, …
+</code></pre>
+<p>How many times is each place name used? Let’s restrict our analysis to place names used more than one time.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">place_counts <span style="color:#666">&lt;-</span> 
+  us_place_names <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(feature_name, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">1</span>)
+
+place_counts
+</code></pre></div><pre><code>## # A tibble: 20,974 × 2
+##    feature_name       n
+##    &lt;chr&gt;          &lt;int&gt;
+##  1 Midway           215
+##  2 Fairview         210
+##  3 Oak Grove        169
+##  4 Five Points      149
+##  5 Riverside        127
+##  6 Pleasant Hill    123
+##  7 Mount Pleasant   119
+##  8 Bethel           108
+##  9 Centerville      107
+## 10 New Hope         105
+## # ℹ 20,964 more rows
+</code></pre>
+<p>So many Midways and Fairviews! As is common with text data, we see something 
+<a href="https://en.wikipedia.org/wiki/Zipf%27s_law" target="_blank" rel="noopener">like Zipf’s law</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">place_counts <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(n)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">12</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/place-names/index_files/figure-html/unnamed-chunk-4-1.png" width="1260" />
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage and splitting our data into training and testing sets. We don’t have much resampling to do in this analysis (and might not even really use the test set for much) but still think about this stage as <em>spending your data budget</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+place_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(place_counts, strata <span style="color:#666">=</span> n)
+place_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(place_split)
+place_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(place_split)
+</code></pre></div><p>Next, let’s create our feature engineering recipe. Let’s tokenize using 
+<a href="https://en.wikipedia.org/wiki/Byte_pair_encoding" target="_blank" rel="noopener">byte pair encoding</a>; this is an algorithm that iteratively merges frequently occurring subword pairs and gets us information in between the character level and the word level. You can read more about byte pair encoding in 
+<a href="https://smltar.com/dlcnn.html#case-study-byte-pair-encoding" target="_blank" rel="noopener">this section of <em>Supervised Machine Learning for Text Analysis in R</em></a>. Byte pair encoding is used in LLMs like GPT models and friends, and it is great to understand how it works.</p>
+<p>It would probably be a good idea to <strong>tune</strong> the vocabulary size using our text data to find the optimal value, but let’s just stick with a small-to-medium vocabulary for this dataset of place</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(textrecipes)
+
+place_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(n <span style="color:#666">~</span> feature_name, data <span style="color:#666">=</span> place_train) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">step_tokenize_bpe</span>(feature_name, vocabulary_size <span style="color:#666">=</span> <span style="color:#40a070">200</span>) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">step_tokenfilter</span>(feature_name, max_tokens <span style="color:#666">=</span> <span style="color:#40a070">100</span>) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">step_tf</span>(feature_name)
+
+place_rec
+</code></pre></div><p>There are a number of 
+<a href="https://www.tidymodels.org/packages/#specialized-packages" target="_blank" rel="noopener">specialized packages</a>, outside the core tidymodels packages, for less general, more specialized data analysis and modeling tasks. One of these is 
+<a href="https://poissonreg.tidymodels.org/" target="_blank" rel="noopener">poissonreg</a>, for Poisson regression models such as those we can use with this count data. The counts here are the number of times each place name is used. Since we aren’t tuning anything, we can just go ahead and fit our model to our training data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(poissonreg)
+poisson_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(place_rec, <span style="color:#06287e">poisson_reg</span>())
+poisson_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(poisson_wf, place_train)
+</code></pre></div>
+
+
+
+<h2 id="understand-our-model-results">Understand our model results
+  <a href="#understand-our-model-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can <code>tidy()</code> our fitted model to get out the coefficients. What are the top 20 subwords that drive the number of uses in US place names either up or down?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(poisson_fit) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(term <span style="color:#666">=</span> <span style="color:#06287e">str_remove_all</span>(term, <span style="color:#4070a0">&#34;tf_feature_name_&#34;</span>)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">slice_max</span>(<span style="color:#06287e">abs</span>(estimate), n <span style="color:#666">=</span> <span style="color:#40a070">20</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>estimate)
+</code></pre></div><pre><code>## # A tibble: 20 × 5
+##    term            estimate std.error statistic   p.value
+##    &lt;chr&gt;              &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 wood               0.310    0.0223     13.9  6.71e- 44
+##  2 id                 0.258    0.0266      9.68 3.81e- 22
+##  3 `▁L`              -0.228    0.0180    -12.7  8.66e- 37
+##  4 `▁R`              -0.238    0.0183    -13.0  1.49e- 38
+##  5 ou                -0.244    0.0360     -6.80 1.07e- 11
+##  6 et                -0.252    0.0321     -7.87 3.51e- 15
+##  7 `▁Br`             -0.258    0.0280     -9.23 2.70e- 20
+##  8 `▁B`              -0.259    0.0170    -15.2  2.63e- 52
+##  9 `▁Park`           -0.260    0.0258    -10.1  8.28e- 24
+## 10 at                -0.281    0.0245    -11.5  2.03e- 30
+## 11 `▁D`              -0.282    0.0218    -12.9  3.75e- 38
+## 12 `▁Co`             -0.285    0.0264    -10.8  4.86e- 27
+## 13 ill               -0.296    0.0322     -9.19 3.89e- 20
+## 14 ac                -0.320    0.0260    -12.3  6.94e- 35
+## 15 `▁T`              -0.352    0.0212    -16.6  9.17e- 62
+## 16 `▁K`              -0.361    0.0288    -12.5  6.12e- 36
+## 17 es                -0.423    0.0253    -16.7  8.98e- 63
+## 18 `▁Heights`        -0.497    0.0318    -15.6  4.53e- 55
+## 19 `▁Estates`        -0.573    0.0306    -18.8  1.91e- 78
+## 20 `▁(historical)`   -0.621    0.0175    -35.5  2.78e-276
+</code></pre>
+<p>Looks like there are lots of place names that include “wood”, and subwords like “historical”, “Estates”, and “Heights” are less common. What are some of these names like?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">place_train <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">str_detect</span>(feature_name, <span style="color:#4070a0">&#34;Estates|wood&#34;</span>))
+</code></pre></div><pre><code>## # A tibble: 640 × 2
+##    feature_name           n
+##    &lt;chr&gt;              &lt;int&gt;
+##  1 Allwood                3
+##  2 Basswood               3
+##  3 Bear Creek Estates     3
+##  4 Belair Estates         3
+##  5 Belmont Estates        3
+##  6 Bingham Estates        3
+##  7 Birchwood Estates      3
+##  8 Boulevard Estates      3
+##  9 Braddock Estates       3
+## 10 Brandywine Estates     3
+## # ℹ 630 more rows
+</code></pre>
+<p>Let’s make a visualization.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">place_train <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">str_detect</span>(feature_name, <span style="color:#4070a0">&#34;Estates|wood&#34;</span>)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(feature_name <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    <span style="color:#06287e">str_detect</span>(feature_name, <span style="color:#4070a0">&#34;wood&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;wood&#34;</span>,
+    <span style="color:#06287e">str_detect</span>(feature_name, <span style="color:#4070a0">&#34;Estates&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;estate&#34;</span>
+  )) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(n, fill <span style="color:#666">=</span> feature_name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;dodge&#34;</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">12</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of place name uses&#34;</span>,
+       y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Count&#34;</span>,
+       fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/place-names/index_files/figure-html/unnamed-chunk-10-1.png" width="1260" />
+<p>In this dataset of place names in the US, woods are <em>more</em> numerous, while estates are <em>less</em> numerous.</p>
+<p>We didn’t train this model with an eye to predictive performance, but it’s often still a good idea to estimate how well a model fits the data using an appropriate model metric. Since we are predicting <em>counts</em>, we can use a metric appropriate for count data 
+<a href="https://yardstick.tidymodels.org/reference/poisson_log_loss.html" target="_blank" rel="noopener">like <code>poisson_log_loss()</code></a>, and as always, we do not estimate performance using the same data we trained with, but rather the test data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">augment</span>(poisson_fit, place_test) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">poisson_log_loss</span>(n, .pred)
+</code></pre></div><pre><code>## # A tibble: 1 × 3
+##   .metric          .estimator .estimate
+##   &lt;chr&gt;            &lt;chr&gt;          &lt;dbl&gt;
+## 1 poisson_log_loss standard        3.53
+</code></pre>
+<p>If we wanted to tune the <code>vocabulary_size</code> for the byte pair encoding tokenization, we would use a metric appropriate for this problem like <code>poisson_log_loss()</code>. For more on using Poisson regression, check out 
+<a href="https://www.tmwr.org/inferential.html" target="_blank" rel="noopener">Chapter 21 of <em>Tidy Modeling with R</em></a>.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 5, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1151 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/gpt-detectors/">&larr; Classification metrics for #TidyTuesday GPT detectors</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/tornadoes/">Predict the magnitude of #TidyTuesday tornadoes with effect encoding and xgboost &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Classification metrics for #TidyTuesday GPT detectors | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Classification metrics for #TidyTuesday GPT detectors | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/gpt-detectors/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/gpt-detectors/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/gpt-detectors/featured.png" >
+    
+    
+  <meta itemprop="name" content="Classification metrics for #TidyTuesday GPT detectors">
+<meta itemprop="description" content="Learn about different kinds of metrics for evaluating classification models, and how to compute, compare, and visualize them."><meta itemprop="datePublished" content="2023-07-19T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-07-19T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1741"><meta itemprop="image" content="https://juliasilge.com/blog/gpt-detectors/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Classification metrics for #TidyTuesday GPT detectors</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">July 19, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to use tidymodels for computing classification metrics, using this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on GPT detectors. 🤖</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/8N5zIHSzJoE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We’re not going to train a model here, but instead use the output (i.e. predictions) from a handful of models that have been trained to 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-07-18/readme.md" target="_blank" rel="noopener">detect text output from GPT</a>. Let’s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+<span style="color:#06287e">library</span>(detectors)
+
+detectors
+</code></pre></div><pre><code>## # A tibble: 6,185 × 9
+##    kind  .pred_AI .pred_class detector     native name  model document_id prompt
+##    &lt;fct&gt;    &lt;dbl&gt; &lt;fct&gt;       &lt;chr&gt;        &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt;       &lt;dbl&gt; &lt;chr&gt; 
+##  1 Human 1.00     AI          Sapling      No     Real… Human         497 &lt;NA&gt;  
+##  2 Human 0.828    AI          Crossplag    No     Real… Human         278 &lt;NA&gt;  
+##  3 Human 0.000214 Human       Crossplag    Yes    Real… Human         294 &lt;NA&gt;  
+##  4 AI    0        Human       ZeroGPT      &lt;NA&gt;   Fake… GPT3          671 Plain 
+##  5 AI    0.00178  Human       Originality… &lt;NA&gt;   Fake… GPT4          717 Eleva…
+##  6 Human 0.000178 Human       HFOpenAI     Yes    Real… Human         855 &lt;NA&gt;  
+##  7 AI    0.992    AI          HFOpenAI     &lt;NA&gt;   Fake… GPT3          533 Plain 
+##  8 AI    0.0226   Human       Crossplag    &lt;NA&gt;   Fake… GPT4          484 Eleva…
+##  9 Human 0        Human       ZeroGPT      Yes    Real… Human         781 &lt;NA&gt;  
+## 10 Human 1.00     AI          Sapling      No     Real… Human         460 &lt;NA&gt;  
+## # ℹ 6,175 more rows
+</code></pre>
+<p>The <code>kind</code> variable tells us whether a document was written by a human or generated via GPT, and the two <code>.pred_*</code> variables tells us what <code>detector</code> thought about that text, the predicted probability (<code>.pred_AI</code>) and predicted class (<code>.pred_class</code>) of that text being generated by AI. The <code>native</code> variable records whether a certain document was written by a native English writer or not.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(native, kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 6 × 4
+##   native kind  .pred_class     n
+##   &lt;chr&gt;  &lt;fct&gt; &lt;fct&gt;       &lt;int&gt;
+## 1 No     Human AI            390
+## 2 No     Human Human         247
+## 3 Yes    Human AI             59
+## 4 Yes    Human Human        1772
+## 5 &lt;NA&gt;   AI    AI           1158
+## 6 &lt;NA&gt;   AI    Human        2559
+</code></pre>
+<p>This is a great example for talking about classification metrics, because we are in a pretty common situation where a variable of interest (<code>native</code>) only applies to one class, the real humans. The AI-generated texts were certainly not generated by a native English writer, but they also were not generated by a non-native English writer.</p>
+<p>For the real humans, what is the distribution of predicted probability for native and non-native English writers?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(native)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(native <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(native <span style="color:#666">==</span> <span style="color:#4070a0">&#34;Yes&#34;</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Native English writer&#34;</span>,
+                            native <span style="color:#666">==</span> <span style="color:#4070a0">&#34;No&#34;</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Non-native English writer&#34;</span>)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.pred_AI, fill <span style="color:#666">=</span> native)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">40</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(native), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>, nrow <span style="color:#666">=</span> <span style="color:#40a070">2</span>) 
+</code></pre></div><img src="https://juliasilge.com/blog/gpt-detectors/index_files/figure-html/unnamed-chunk-4-1.png" width="1260" />
+<p>This is the main point of the 
+<a href="https://arxiv.org/abs/2304.02819" target="_blank" rel="noopener">paper this data comes from</a>: GPT detectors are much more wrong for non-native English writers than for native writers. Pretty dramatic! Let’s walk through how to use classification metrics to measure this in a different way from looking at the distribution overall.</p>
+<p>These GPT detectors are classification models (predicting “human” vs. “AI”), and there are two main categories of metrics for classification models:</p>
+<ul>
+<li>Metrics that use a predicted <strong>class</strong>, like “human” or “AI”</li>
+<li>Metrics that use a predicted <strong>probability</strong>, like <code>.pred_AI = 0.828</code></li>
+</ul>
+
+
+
+
+<h2 id="metrics-that-use-a-predicted-class">Metrics that use a predicted class
+  <a href="#metrics-that-use-a-predicted-class"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>In 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a>, the package that handles model metrics is 
+<a href="https://yardstick.tidymodels.org/" target="_blank" rel="noopener">yardstick</a>. Let’s start by making a confusion matrix, which uses the predicted classes, for the dataset as a whole:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(yardstick)
+
+detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">conf_mat</span>(kind, .pred_class)
+</code></pre></div><pre><code>##           Truth
+## Prediction   AI Human
+##      AI    1158   449
+##      Human 2559  2019
+</code></pre>
+<p>This <code>\(2 \times 2\)</code> matrix or table tells us specifics about how these models are right and wrong. Overall, these models look to be better at identifying human documents (2019 right vs. 449 wrong) than identifying AI documents (1158 right vs. 2559 wrong).</p>
+<p>One of the most common metrics for classification models is accuracy, just the plain old proportion of our data that is predicted correctly:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">accuracy</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 1 × 3
+##   .metric  .estimator .estimate
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 accuracy binary         0.514
+</code></pre>
+<p>Random guessing for a binary classification problem will give you 0.5, so here we see that these detectors are not much better than random guessing, aggregated over all these documents and different models/detectors. Do some detectors do better than others?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(detector) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">accuracy</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 7 × 4
+##   detector      .metric  .estimator .estimate
+##   &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 Crossplag     accuracy binary         0.501
+## 2 GPTZero       accuracy binary         0.489
+## 3 HFOpenAI      accuracy binary         0.514
+## 4 OriginalityAI accuracy binary         0.590
+## 5 Quil          accuracy binary         0.478
+## 6 Sapling       accuracy binary         0.5  
+## 7 ZeroGPT       accuracy binary         0.517
+</code></pre>
+<p>There is a little bit of variation here, I guess. What about differences across the <code>native</code> variable?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(native) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">accuracy</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 3 × 4
+##   native .metric  .estimator .estimate
+##   &lt;chr&gt;  &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 No     accuracy binary         0.388
+## 2 Yes    accuracy binary         0.968
+## 3 &lt;NA&gt;   accuracy binary         0.312
+</code></pre>
+<p>This is now a much bigger difference. Notice that the accuracy for native English writers is <strong>GREAT</strong> while for non-native English writers it’s not much better than for the AI documents (remember that <code>native = NA</code> here means an AI generated document).</p>
+<p>If you’ve learned a bit about ML, you probably have heard that accuracy is often not a great metric (especially when you have much class imbalance) so let’s try out a pair of related metrics that tell us 
+<a href="https://en.wikipedia.org/wiki/Sensitivity_and_specificity" target="_blank" rel="noopener">the true positive rate and true negative rate</a>.</p>
+<p>Sensitivity tells us the true positive rate:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">sensitivity</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 1 × 3
+##   .metric     .estimator .estimate
+##   &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 sensitivity binary         0.312
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(detector) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">sensitivity</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 7 × 4
+##   detector      .metric     .estimator .estimate
+##   &lt;chr&gt;         &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 Crossplag     sensitivity binary         0.249
+## 2 GPTZero       sensitivity binary         0.202
+## 3 HFOpenAI      sensitivity binary         0.271
+## 4 OriginalityAI sensitivity binary         0.444
+## 5 Quil          sensitivity binary         0.379
+## 6 Sapling       sensitivity binary         0.392
+## 7 ZeroGPT       sensitivity binary         0.245
+</code></pre>
+<p>Sensitivity is a metric that can vary between 0 (bad) and 1 (good) so this looks like we will have lots of false negatives. Can we measure the true positive rate for different types of human writers?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(native) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">sensitivity</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 3 × 4
+##   native .metric     .estimator .estimate
+##   &lt;chr&gt;  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 No     sensitivity binary        NA    
+## 2 Yes    sensitivity binary        NA    
+## 3 &lt;NA&gt;   sensitivity binary         0.312
+</code></pre>
+<p>No, we can’t! Since there are no AI-generated documents written by native (or non-native) English writers, we can’t compute any metrics that need those empty elements of the confusion matrix:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(native)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">conf_mat</span>(kind, .pred_class)
+</code></pre></div><pre><code>##           Truth
+## Prediction   AI Human
+##      AI       0   449
+##      Human    0  2019
+</code></pre>
+<p>Specificity, the true negative rate, works the same way, but “flipped”:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(native) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">specificity</span>(kind, .pred_class)
+</code></pre></div><pre><code>## # A tibble: 3 × 4
+##   native .metric     .estimator .estimate
+##   &lt;chr&gt;  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 No     specificity binary         0.388
+## 2 Yes    specificity binary         0.968
+## 3 &lt;NA&gt;   specificity binary        NA
+</code></pre>
+<p>We can see that the true negative rate is much better for native English writers than non-native ones, but we can’t compute a true negative rate for <em>only</em> the AI-generated documents. This kind of situation comes up a fair amount for real models where a variable you are interested in only applies to one class in your classification problem.</p>
+
+
+
+
+<h2 id="metrics-that-use-a-predicted-probability">Metrics that use a predicted probability
+  <a href="#metrics-that-use-a-predicted-probability"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The other main category of metrics for this type of model use a probability rather than a class. If you have ever seen or used an ROC curve, it is an example of model evaluation that uses probabilities:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">roc_curve</span>(kind, .pred_AI) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/gpt-detectors/index_files/figure-html/unnamed-chunk-13-1.png" width="1260" />
+<p>Notice how we’re using <code>.pred_AI</code> instead of <code>.pred_class</code>. How do the different detectors/models do in an ROC curve?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">group_by</span>(detector) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">roc_curve</span>(kind, .pred_AI) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/gpt-detectors/index_files/figure-html/unnamed-chunk-14-1.png" width="1260" />
+<p>Yikes, OK. These curves can be used to compute the ROC AUC (area under the ROC curve):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(detector) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">roc_auc</span>(kind, .pred_AI) 
+</code></pre></div><pre><code>## # A tibble: 7 × 4
+##   detector      .metric .estimator .estimate
+##   &lt;chr&gt;         &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 Crossplag     roc_auc binary         0.613
+## 2 GPTZero       roc_auc binary         0.750
+## 3 HFOpenAI      roc_auc binary         0.614
+## 4 OriginalityAI roc_auc binary         0.682
+## 5 Quil          roc_auc binary         0.584
+## 6 Sapling       roc_auc binary         0.480
+## 7 ZeroGPT       roc_auc binary         0.603
+</code></pre>
+<p>Can we compute this kind of metric and compare across the <code>native</code> categories?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">group_by</span>(native) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">roc_curve</span>(kind, .pred_AI)
+</code></pre></div><pre><code>## Error in `roc_curve()`:
+## ! No event observations were detected in `truth` with event level 'AI'.
+</code></pre>
+<p>Unfortunately, no, because in, say, the non-native English writer category, there are no AI-generated texts.</p>
+<p>Let’s think about a metric that works in a different way, like 
+<a href="https://yardstick.tidymodels.org/reference/mn_log_loss.html" target="_blank" rel="noopener">mean log loss</a>. This metric can distinguish between predictions that are a little wrong vs. very wrong; for example, it will say that a real human document with <code>.pred_AI = 0.8</code> is predicted worse than one with <code>.pred_AI = 0.6</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">mn_log_loss</span>(kind, .pred_AI)
+</code></pre></div><pre><code>## # A tibble: 1 × 3
+##   .metric     .estimator .estimate
+##   &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 mn_log_loss binary          4.73
+</code></pre>
+<p>A log loss is better when it is lower. How does log loss vary over the detectors/models?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">group_by</span>(detector) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">mn_log_loss</span>(kind, .pred_AI) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">arrange</span>(.estimate)
+</code></pre></div><pre><code>## # A tibble: 7 × 4
+##   detector      .metric     .estimator .estimate
+##   &lt;chr&gt;         &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 OriginalityAI mn_log_loss binary          1.94
+## 2 Crossplag     mn_log_loss binary          2.81
+## 3 HFOpenAI      mn_log_loss binary          2.83
+## 4 Quil          mn_log_loss binary          3.18
+## 5 GPTZero       mn_log_loss binary          4.60
+## 6 Sapling       mn_log_loss binary          5.82
+## 7 ZeroGPT       mn_log_loss binary         11.9
+</code></pre>
+<p>This is a pretty dramatic range in log loss. 😳 What about across the <code>native</code> variable?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">detectors <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">group_by</span>(native) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">mn_log_loss</span>(kind, .pred_AI)
+</code></pre></div><pre><code>## # A tibble: 3 × 4
+##   native .metric     .estimator .estimate
+##   &lt;chr&gt;  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt;
+## 1 No     mn_log_loss binary         3.60 
+## 2 Yes    mn_log_loss binary         0.116
+## 3 &lt;NA&gt;   mn_log_loss binary         7.21
+</code></pre>
+<p>Here we see that the documents written by non-native English writers are predicted better than the AI-generated documents, but way, way worse than those by native Engish writers.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 19, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">9 minute read, 1741 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/spam-email/">&larr; Evaluate multiple modeling approaches for #TidyTuesday spam email</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/place-names/">What tokens are used more vs. less in #TidyTuesday place names? &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

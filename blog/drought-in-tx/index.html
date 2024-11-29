@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Use resampling to understand #TidyTuesday drought in TX | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Use resampling to understand #TidyTuesday drought in TX | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/drought-in-tx/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/drought-in-tx/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/drought-in-tx/featured.png" >
+    
+    
+  <meta itemprop="name" content="Use resampling to understand #TidyTuesday drought in TX">
+<meta itemprop="description" content="The spatialsample package is gaining many new methods this summer, and we can use spatially aware resampling to understand how drought is related to other quantities across Texas."><meta itemprop="datePublished" content="2022-06-15T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-06-15T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1474"><meta itemprop="image" content="https://juliasilge.com/blog/drought-in-tx/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Use resampling to understand #TidyTuesday drought in TX</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">June 15, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages.
+This summer, I am so happy to be working with 
+<a href="https://www.mm218.dev/" target="_blank" rel="noopener">Mike Mahoney</a> as one of our open source interns at RStudio; Mike is spending the summer with us working on the 
+<a href="https://spatialsample.tidymodels.org/dev/" target="_blank" rel="noopener">spatialsample</a> package.
+This screencast walks through how to use spatial resampling with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on drought.
+🚰</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/l-CfniOBDBc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to use resampling to understand how 
+<a href="https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-06-14" target="_blank" rel="noopener">drought</a> is related to another characteristic in a location, like perhaps income. I am definitely not making a causal claim here! However, we can use resampling and simple models to understand how quantities are related.</p>
+<p>Since I am from Texas (and it has a nice number of counties), let’s restrict our analysis to only counties in Texas:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+drought_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-14/drought-fips.csv&#39;</span>)
+
+drought <span style="color:#666">&lt;-</span> drought_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(State <span style="color:#666">==</span> <span style="color:#4070a0">&#34;TX&#34;</span>, lubridate<span style="color:#666">::</span><span style="color:#06287e">year</span>(date) <span style="color:#666">==</span> <span style="color:#40a070">2021</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(GEOID <span style="color:#666">=</span> FIPS) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(DSCI <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(DSCI)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>()
+
+drought
+</code></pre></div><pre><code>## # A tibble: 254 × 2
+##    GEOID  DSCI
+##    &lt;chr&gt; &lt;dbl&gt;
+##  1 48001  68.7
+##  2 48003 244.
+##  3 48005  81
+##  4 48007  46.8
+##  5 48009  62.1
+##  6 48011 138.
+##  7 48013  84.9
+##  8 48015  40.1
+##  9 48017 253.
+## 10 48019 114.
+## # … with 244 more rows
+</code></pre>
+
+
+
+
+<h2 id="visualizing-drought-in-tx">Visualizing drought in TX
+  <a href="#visualizing-drought-in-tx"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Whenever I see FIPS codes, I think 
+<a href="https://walker-data.com/tidycensus/" target="_blank" rel="noopener">tidycensus</a>! I am such a huge fan of that package and how it has made accessing and using US Census data easier in R. Let’s get the median household income for counties in Texas from the ACS tables. (I had to look up the right name for this table.)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidycensus)
+
+tx_median_rent <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">get_acs</span>(
+    geography <span style="color:#666">=</span> <span style="color:#4070a0">&#34;county&#34;</span>,
+    state <span style="color:#666">=</span> <span style="color:#4070a0">&#34;TX&#34;</span>,
+    variables <span style="color:#666">=</span> <span style="color:#4070a0">&#34;B19013_001&#34;</span>,
+    year <span style="color:#666">=</span> <span style="color:#40a070">2020</span>,
+    geometry <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>
+  )
+
+tx_median_rent
+</code></pre></div><pre><code>## Simple feature collection with 254 features and 5 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -106.6456 ymin: 25.83738 xmax: -93.50829 ymax: 36.5007
+## Geodetic CRS:  NAD83
+## First 10 features:
+##    GEOID                      NAME   variable estimate   moe
+## 1  48355      Nueces County, Texas B19013_001    56784  1681
+## 2  48215     Hidalgo County, Texas B19013_001    41846   974
+## 3  48167   Galveston County, Texas B19013_001    74633  1798
+## 4  48195    Hansford County, Texas B19013_001    46507 12855
+## 5  48057     Calhoun County, Texas B19013_001    57170  6165
+## 6  48389      Reeves County, Texas B19013_001    61543 14665
+## 7  48423       Smith County, Texas B19013_001    59450  2471
+## 8  48053      Burnet County, Texas B19013_001    59919  2935
+## 9  48051    Burleson County, Texas B19013_001    60058  8744
+## 10 48347 Nacogdoches County, Texas B19013_001    44507  2782
+##                          geometry
+## 1  MULTIPOLYGON (((-97.11172 2...
+## 2  MULTIPOLYGON (((-98.5853 26...
+## 3  MULTIPOLYGON (((-94.78337 2...
+## 4  MULTIPOLYGON (((-101.6239 3...
+## 5  MULTIPOLYGON (((-96.80935 2...
+## 6  MULTIPOLYGON (((-104.101 31...
+## 7  MULTIPOLYGON (((-95.59454 3...
+## 8  MULTIPOLYGON (((-98.45924 3...
+## 9  MULTIPOLYGON (((-96.96363 3...
+## 10 MULTIPOLYGON (((-94.97813 3...
+</code></pre>
+<p>Notice that this a 
+<a href="https://r-spatial.github.io/sf/" target="_blank" rel="noopener">simple features</a> dataframe, with a geometry that we can plot. Let’s join the drought data together with the Census data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">drought_sf <span style="color:#666">&lt;-</span> tx_median_rent <span style="color:#666">%&gt;%</span> <span style="color:#06287e">left_join</span>(drought)
+</code></pre></div><p>We can use ggplot2 to map datasets like this without too much trouble:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">drought_sf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(fill <span style="color:#666">=</span> DSCI)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_sf</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.9</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NA</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_viridis_c</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/drought-in-tx/index_files/figure-html/unnamed-chunk-5-1.png" width="1440" />
+<p>Looks like last year, the highest rates of drought in Texas were far west in the Panhandle and towards El Paso.</p>
+<p>How are drought and our Census variable, median household income, related?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">drought_sf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(DSCI, estimate)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">2</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(method <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lm&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Drought score&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Median household income&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/drought-in-tx/index_files/figure-html/unnamed-chunk-6-1.png" width="1440" />
+<p>It looks like areas with high drought have lower incomes, but this might be pretty much flat without those several high income, low drought counties up in the top left.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>In tidymodels, one of the first steps we recommend thinking about is “spending your data budget.” When it comes to spatial data like what we have from the Census, areas close to each other are often similar so we don’t want to randomly resample our observations. Instead, we want to use a resampling strategy that accounts for that autocorrelation. This summer Mike has been 
+<a href="https://spatialsample.tidymodels.org/dev/reference/index.html" target="_blank" rel="noopener">adding great new resampling methods</a>; let’s use spatial block cross-validation for these counties in Texas.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+<span style="color:#06287e">library</span>(spatialsample)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">spatial_block_cv</span>(drought_sf, v <span style="color:#666">=</span> <span style="color:#40a070">10</span>)
+folds
+</code></pre></div><pre><code>## #  10-fold spatial block cross-validation
+## # A tibble: 10 × 2
+##    splits           id
+##    &lt;list&gt;           &lt;chr&gt;
+##  1 &lt;split [223/31]&gt; Fold01
+##  2 &lt;split [219/35]&gt; Fold02
+##  3 &lt;split [234/20]&gt; Fold03
+##  4 &lt;split [226/28]&gt; Fold04
+##  5 &lt;split [228/26]&gt; Fold05
+##  6 &lt;split [226/28]&gt; Fold06
+##  7 &lt;split [236/18]&gt; Fold07
+##  8 &lt;split [231/23]&gt; Fold08
+##  9 &lt;split [237/17]&gt; Fold09
+## 10 &lt;split [226/28]&gt; Fold10
+</code></pre>
+<p>The spatialsample package has also gained an <code>autoplot()</code> method for its resampling objects:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(folds)
+</code></pre></div><img src="https://juliasilge.com/blog/drought-in-tx/index_files/figure-html/unnamed-chunk-8-1.png" width="1440" />
+<p>You can also <code>autoplot()</code> any individual split to see what is in the analysis (or training) set and what is in the assessment (or testing) set:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(folds<span style="color:#666">$</span>splits[[1]])
+</code></pre></div><img src="https://juliasilge.com/blog/drought-in-tx/index_files/figure-html/unnamed-chunk-9-1.png" width="1440" />
+<p>Now that we have spent our data budget in an appropriate way for this spatial data, we can build a model. Let’s create a simple linear model explaining the median income by the drought score, and fit that model to each of our resamples. We can use <code>control_resamples(save_pred = TRUE)</code> to save not only the metrics but also the predictions for each resample.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">drought_res <span style="color:#666">&lt;-</span>
+    <span style="color:#06287e">workflow</span>(estimate <span style="color:#666">~</span> DSCI, <span style="color:#06287e">linear_reg</span>()) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">fit_resamples</span>(folds, control <span style="color:#666">=</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>))
+
+drought_res
+</code></pre></div><pre><code>## # Resampling results
+## # 10-fold spatial block cross-validation
+## # A tibble: 10 × 5
+##    splits           id     .metrics         .notes           .predictions
+##    &lt;list&gt;           &lt;chr&gt;  &lt;list&gt;           &lt;list&gt;           &lt;list&gt;
+##  1 &lt;split [223/31]&gt; Fold01 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [31 × 4]&gt;
+##  2 &lt;split [219/35]&gt; Fold02 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [35 × 4]&gt;
+##  3 &lt;split [234/20]&gt; Fold03 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [20 × 4]&gt;
+##  4 &lt;split [226/28]&gt; Fold04 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [28 × 4]&gt;
+##  5 &lt;split [228/26]&gt; Fold05 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [26 × 4]&gt;
+##  6 &lt;split [226/28]&gt; Fold06 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [28 × 4]&gt;
+##  7 &lt;split [236/18]&gt; Fold07 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [18 × 4]&gt;
+##  8 &lt;split [231/23]&gt; Fold08 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [23 × 4]&gt;
+##  9 &lt;split [237/17]&gt; Fold09 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [17 × 4]&gt;
+## 10 &lt;split [226/28]&gt; Fold10 &lt;tibble [2 × 4]&gt; &lt;tibble [0 × 3]&gt; &lt;tibble [28 × 4]&gt;
+</code></pre>
+<p>What do the predictions for household income look like?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(drought_res)
+</code></pre></div><pre><code>## # A tibble: 254 × 5
+##    id      .pred  .row estimate .config
+##    &lt;chr&gt;   &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;
+##  1 Fold01 56293.     1    56784 Preprocessor1_Model1
+##  2 Fold01 53812.     2    41846 Preprocessor1_Model1
+##  3 Fold01 51421.     6    61543 Preprocessor1_Model1
+##  4 Fold01 56358.    10    44507 Preprocessor1_Model1
+##  5 Fold01 57224.    11    41568 Preprocessor1_Model1
+##  6 Fold01 57212.    17    41170 Preprocessor1_Model1
+##  7 Fold01 55963.    18    40946 Preprocessor1_Model1
+##  8 Fold01 54367.    23    40083 Preprocessor1_Model1
+##  9 Fold01 56017.    24    47301 Preprocessor1_Model1
+## 10 Fold01 51866.    37    61915 Preprocessor1_Model1
+## # … with 244 more rows
+</code></pre>
+
+
+
+
+<h2 id="mapping-modeling-results">Mapping modeling results
+  <a href="#mapping-modeling-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can join these out-of-sample predictions back up with our original data, and compute any 
+<a href="https://yardstick.tidymodels.org/" target="_blank" rel="noopener">metrics</a> we would like to, like RMSE, for all the counties in Texas.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">drought_rmse <span style="color:#666">&lt;-</span>
+    drought_sf <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(.row <span style="color:#666">=</span> <span style="color:#06287e">row_number</span>()) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">left_join</span>(<span style="color:#06287e">collect_predictions</span>(drought_res)) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">group_by</span>(GEOID) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">rmse</span>(estimate, .pred) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">select</span>(GEOID, .estimate)
+drought_rmse
+</code></pre></div><pre><code>## # A tibble: 254 × 2
+##    GEOID .estimate
+##    &lt;chr&gt;     &lt;dbl&gt;
+##  1 48001    10604.
+##  2 48003    28840.
+##  3 48005     6550.
+##  4 48007     7858.
+##  5 48009     8149.
+##  6 48011    17246.
+##  7 48013     3856.
+##  8 48015     7263.
+##  9 48017     7160.
+## 10 48019     6730.
+## # … with 244 more rows
+</code></pre>
+<p>Let’s join this one more time to our original data, and plot the RMSE in dollars across Texas.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">drought_sf <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">left_join</span>(drought_rmse) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(fill <span style="color:#666">=</span> .estimate)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_sf</span>(color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NA</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;RMSE&#34;</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_fill_viridis_c</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>())
+</code></pre></div><img src="https://juliasilge.com/blog/drought-in-tx/index_files/figure-html/unnamed-chunk-13-1.png" width="1440" />
+<p>This is so interesting! Those high RMSE counties are urban counties like those containing Dallas and Forth Worth, Houston, Austin, etc. In an urban county, the median household income is high relative to the drought being experienced. Again, this is not a causal claim, but instead a way to use these tools to understand the relationship.</p>
+<p>If you&rsquo;re interested in trying out the new spatialsample features like this one, please 
+<a href="https://github.com/tidymodels/spatialsample/" target="_blank" rel="noopener">install from GitHub</a>. Now is a great time for feedback because we&rsquo;ll be doing a CRAN release soon!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 15, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1474 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/pay-gap-uk/">&larr; Three ways to look at #TidyTuesday UK pay gap data</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/nyt-bestsellers/">Predict #TidyTuesday NYT bestsellers &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

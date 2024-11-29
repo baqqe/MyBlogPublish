@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Which #TidyTuesday Netflix titles are movies and which are TV shows? | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Which #TidyTuesday Netflix titles are movies and which are TV shows? | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/netflix-titles/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/netflix-titles/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/netflix-titles/featured.png" >
+    
+    
+  <meta itemprop="name" content="Which #TidyTuesday Netflix titles are movies and which are TV shows?">
+<meta itemprop="description" content="Use tidymodels to build features for modeling from Netflix description text, then fit and evaluate a support vector machine model."><meta itemprop="datePublished" content="2021-04-23T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-04-23T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1385"><meta itemprop="image" content="https://juliasilge.com/blog/netflix-titles/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Which #TidyTuesday Netflix titles are movies and which are TV shows?</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">April 23, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just starting out to tuning more complex models with many hyperparameters. Today’s screencast walks through how to build features for modeling from text, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Netflix titles. 📺</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/XYj8vyK864Y" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict whether a title on Netflix 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-04-20/readme.md" target="_blank" rel="noopener">is a TV show or a movie based on its description in this week’s #TidyTuesday dataset</a>.</p>
+<p>Let’s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+netflix_titles <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-20/netflix_titles.csv&#34;</span>)
+</code></pre></div><p>How many titles are there in this data set?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">netflix_titles <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(type)
+</code></pre></div><pre><code>## # A tibble: 2 x 2
+##   type        n
+##   &lt;chr&gt;   &lt;int&gt;
+## 1 Movie    5377
+## 2 TV Show  2410
+</code></pre>
+<p>What do the descriptions look like? It is always a good idea to actually look at your data before modeling.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">netflix_titles <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_sample</span>(n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull</span>(description)
+</code></pre></div><pre><code>##  [1] &quot;When sinister Dr. Pacenstein schemes to swap bodies with Pac during a Halloween party, Spiral, Cyli and Count Pacula scramble to save their pal.&quot;      
+##  [2] &quot;Monstrous frights meet hilarious reveals on this hidden-camera prank show as real people become the stars of their own full-blown horror movie.&quot;       
+##  [3] &quot;After faking his death, a tech billionaire recruits a team of international operatives for a bold and bloody mission to take down a brutal dictator.&quot;  
+##  [4] &quot;When a confident college professor is courted by four eligible and well-established men, she struggles to decide who she likes the best.&quot;              
+##  [5] &quot;When a gay brainiac with OCD questions his identity, he enters a romantic relationship with a woman, leaving sex and physical intimacy out of it.&quot;     
+##  [6] &quot;When her class rank threatens her college plans, an ambitious teen convinces a nerdy peer to run for the school board to abolish the ranking system.&quot;  
+##  [7] &quot;In each episode, four celebrities join host Jon Favreau for dinner and share revealing stories about both show business and their personal lives.&quot;     
+##  [8] &quot;After dating a charming cop who turns into an obsessive stalker, a small-town girl must save herself from his deadly ways.&quot;                            
+##  [9] &quot;A new part-time job forces Henry Hart to balance two lives, one as a typical teenager and the other as secret superhero sidekick Kid Danger.&quot;          
+## [10] &quot;After getting a memory implant, working stiff Douglas Quaid discovers he might actually be a secret agent embroiled in a violent insurrection on Mars.&quot;
+</code></pre>
+<p>What are the top words in each category?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+netflix_titles <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(word, description) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">anti_join</span>(<span style="color:#06287e">get_stopwords</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(type, word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(type) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(n, n <span style="color:#666">=</span> <span style="color:#40a070">15</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(word <span style="color:#666">=</span> <span style="color:#06287e">reorder_within</span>(word, n, type)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(n, word, fill <span style="color:#666">=</span> type)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_reordered</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>type, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Word frequency&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Top words in Netflix descriptions by frequency&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;After removing stop words&#34;</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/netflix-titles/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>There are some differences in even the very top, most frequent words used, so hopefully we can train a model to distinguish these categories.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, splitting our data into training and testing sets, and creating cross-validation samples. Think about this stage as <em>spending your data budget</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+netflix_split <span style="color:#666">&lt;-</span> netflix_titles <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(type, description) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> type)
+
+netflix_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(netflix_split)
+netflix_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(netflix_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+netflix_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(netflix_train, strata <span style="color:#666">=</span> type)
+netflix_folds
+</code></pre></div><pre><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 x 2
+##    splits             id    
+##    &lt;list&gt;             &lt;chr&gt; 
+##  1 &lt;split [5256/585]&gt; Fold01
+##  2 &lt;split [5256/585]&gt; Fold02
+##  3 &lt;split [5256/585]&gt; Fold03
+##  4 &lt;split [5257/584]&gt; Fold04
+##  5 &lt;split [5257/584]&gt; Fold05
+##  6 &lt;split [5257/584]&gt; Fold06
+##  7 &lt;split [5257/584]&gt; Fold07
+##  8 &lt;split [5257/584]&gt; Fold08
+##  9 &lt;split [5258/583]&gt; Fold09
+## 10 &lt;split [5258/583]&gt; Fold10
+</code></pre>
+<p>Next, let’s create our feature engineering recipe and our model, and then put them together in a modeling 
+<a href="https://www.tmwr.org/workflows.html" target="_blank" rel="noopener">workflow</a>. This feature engineering recipe is a good basic default for a text model, but you can read more about creating features from text in my book with Emil Hvitfeldt, 
+<a href="https://smltar.com/" target="_blank" rel="noopener"><em>Supervised Machine Learning for Text Analysis in R</em></a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(textrecipes)
+<span style="color:#06287e">library</span>(themis)
+
+netflix_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(type <span style="color:#666">~</span> description, data <span style="color:#666">=</span> netflix_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tokenize</span>(description) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tokenfilter</span>(description, max_tokens <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tfidf</span>(description) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_normalize</span>(<span style="color:#06287e">all_numeric_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_smote</span>(type)
+
+netflix_rec
+</code></pre></div><pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##    outcome          1
+##  predictor          1
+## 
+## Operations:
+## 
+## Tokenization for description
+## Text filtering for description
+## Term frequency-inverse document frequency with description
+## Centering and scaling for all_numeric_predictors()
+## SMOTE based on type
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">svm_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">svm_linear</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;LiblineaR&#34;</span>)
+
+netflix_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(netflix_rec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(svm_spec)
+
+netflix_wf
+</code></pre></div><pre><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: svm_linear()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 5 Recipe Steps
+## 
+## ● step_tokenize()
+## ● step_tokenfilter()
+## ● step_tfidf()
+## ● step_normalize()
+## ● step_smote()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Linear Support Vector Machine Specification (classification)
+## 
+## Computational engine: LiblineaR
+</code></pre>
+<p>This linear support vector machine is a newer model in parsnip, currently in the development version on GitHub. Linear SVMs are often a good starting choice for text models. When you use an SVM, remember to <code>step_normalize()</code>!</p>
+<p>Now let’s fit this workflow (that combines feature engineering with the SVM model) to the resamples we created earlier. The linear SVM model does not support class probabilities, so we need to set a custom <code>metric_set()</code> that only includes metrics for hard class probabilities.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+svm_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(
+  netflix_wf,
+  netflix_folds,
+  metrics <span style="color:#666">=</span> <span style="color:#06287e">metric_set</span>(accuracy, recall, precision),
+  control <span style="color:#666">=</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+)
+
+<span style="color:#06287e">collect_metrics</span>(svm_rs)
+</code></pre></div><pre><code>## # A tibble: 3 x 6
+##   .metric   .estimator  mean     n std_err .config             
+##   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy  binary     0.680    10 0.00457 Preprocessor1_Model1
+## 2 precision binary     0.791    10 0.00341 Preprocessor1_Model1
+## 3 recall    binary     0.729    10 0.00592 Preprocessor1_Model1
+</code></pre>
+<p>We can use 
+<a href="https://tune.tidymodels.org/reference/conf_mat_resampled.html" target="_blank" rel="noopener"><code>conf_mat_resampled()</code></a> to compute a separate confusion matrix for each resample, and then average the cell counts.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">svm_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat_resampled</span>(tidy <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/netflix-titles/index_files/figure-html/unnamed-chunk-9-1.png" width="2400" />
+
+
+
+
+<h2 id="fit-and-evaluate-final-model">Fit and evaluate final model
+  <a href="#fit-and-evaluate-final-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Next, let’s fit our model on last time to the <strong>whole</strong> training set at once (rather than resampled data) and evaluate on the testing set. This is the first time we have touched the testing set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_fitted <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(
+  netflix_wf,
+  netflix_split,
+  metrics <span style="color:#666">=</span> <span style="color:#06287e">metric_set</span>(accuracy, recall, precision)
+)
+<span style="color:#06287e">collect_metrics</span>(final_fitted)
+</code></pre></div><pre><code>## # A tibble: 3 x 4
+##   .metric   .estimator .estimate .config             
+##   &lt;chr&gt;     &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy  binary         0.685 Preprocessor1_Model1
+## 2 recall    binary         0.734 Preprocessor1_Model1
+## 3 precision binary         0.794 Preprocessor1_Model1
+</code></pre>
+<p>Our performance on the testing set is about the same as what we found with our resampled data, which is good.</p>
+<p>We can explore how the model is doing for both the positive and negative classes with a confusion matrix.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(final_fitted) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat</span>(type, .pred_class)
+</code></pre></div><pre><code>##           Truth
+## Prediction Movie TV Show
+##    Movie     987     256
+##    TV Show   357     346
+</code></pre>
+<p>There is a fitted workflow in the <code>.workflow</code> column of the <code>final_fitted</code> tibble that can be saved and used for prediction later. Here, let’s pull out the parsnip fit and learn about model explanations.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">netflix_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">pull_workflow_fit</span>(final_fitted<span style="color:#666">$</span>.workflow[[1]])
+
+<span style="color:#06287e">tidy</span>(netflix_fit) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(estimate)
+</code></pre></div><pre><code>## # A tibble: 1,001 x 2
+##    term                          estimate
+##    &lt;chr&gt;                            &lt;dbl&gt;
+##  1 Bias                           -0.362 
+##  2 tfidf_description_documentary  -0.200 
+##  3 tfidf_description_biopic       -0.176 
+##  4 tfidf_description_performance  -0.137 
+##  5 tfidf_description_how          -0.107 
+##  6 tfidf_description_stand        -0.104 
+##  7 tfidf_description_comic        -0.103 
+##  8 tfidf_description_mr           -0.0941
+##  9 tfidf_description_film         -0.0916
+## 10 tfidf_description_summer       -0.0905
+## # … with 991 more rows
+</code></pre>
+<p>Those <code>term</code> items are the word features that we created during feature engineering. Let’s set up a visualization to see them better.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(netflix_fit) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;Bias&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(sign <span style="color:#666">=</span> estimate <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(<span style="color:#06287e">abs</span>(estimate), n <span style="color:#666">=</span> <span style="color:#40a070">15</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    term <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(term, <span style="color:#4070a0">&#34;tfidf_description_&#34;</span>),
+    sign <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(sign, <span style="color:#4070a0">&#34;More from TV shows&#34;</span>, <span style="color:#4070a0">&#34;More from movies&#34;</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#06287e">abs</span>(estimate), <span style="color:#06287e">fct_reorder</span>(term, <span style="color:#06287e">abs</span>(estimate)), fill <span style="color:#666">=</span> sign)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>sign, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Coefficient from linear SVM&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Which words are most predictive of movies vs. TV shows?&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;For description text of movies and TV shows on Netflix&#34;</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/netflix-titles/index_files/figure-html/unnamed-chunk-13-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 23, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1385 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/ceo-departures/">&larr; Estimate change in #TidyTuesday CEO departures with bootstrap resampling</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/hawaii-post-offices/">Which #TidyTuesday post offices are in Hawaii? &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

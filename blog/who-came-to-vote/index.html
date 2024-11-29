@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Who Came to Vote in Utah&#39;s Caucuses? | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Mapping Voter Turnout">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Who Came to Vote in Utah&#39;s Caucuses? | Julia Silge">
+<meta property="og:description" content="Mapping Voter Turnout" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/who-came-to-vote/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Who Came to Vote in Utah&#39;s Caucuses?">
+<meta itemprop="description" content="Late last month, I analyzed results from Utah&rsquo;s Republican and Democratic caucuses to show how the different presidential candidates fared across Utah. That was fun work to do, but I realized there was one more map I wanted to make; I want to compare the Republican and Democratic voter turnout across the counties in Utah. Utah is a politically conservative state and we know from the last plot I made in that post that many more people voted in the Republican caucus than the Democratic caucus, but I would like to see how voter turnout was distributed across the state."><meta itemprop="datePublished" content="2016-04-08T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-04-08T00:00:00+00:00" />
+<meta itemprop="wordCount" content="997">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Who Came to Vote in Utah&#39;s Caucuses?</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">April 8, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Late last month, I analyzed results from Utah&rsquo;s Republican and Democratic caucuses to show 
+<a href="http://juliasilge.com/blog/Mapping-Utah-Caucus/" target="_blank" rel="noopener">how the different presidential candidates fared across Utah</a>. That was fun work to do, but I realized there was one more map I wanted to make; I want to compare the Republican and Democratic voter turnout across the counties in Utah. Utah is a politically conservative state and we know from the last plot I made in that post that many more people voted in the Republican caucus than the Democratic caucus, but I would like to see how voter turnout was distributed across the state. Ari Lamstein has organized an 
+<a href="http://www.arilamstein.com/blog/2016/03/28/announcing-r-election-analysis-contest/" target="_blank" rel="noopener">R election analysis contest</a>, so I will finish this up and contribute to the interesting projects that people are putting together.</p>
+<p>First, let&rsquo;s download the caucus results from CNN.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(jsonlite)
+utahRJSON &lt;- fromJSON(&quot;http://data.cnn.com/ELECTION/2016primary/UT/county/S.json&quot;,
+               flatten=TRUE)
+utahDJSON &lt;- fromJSON(&quot;http://data.cnn.com/ELECTION/2016primary/UT/county/E.json&quot;,
+               flatten=TRUE)
+</code></pre><p>Now, let&rsquo;s add up every vote cast for each candidate in each county, first for the Republicans and then for the Democrats.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(purrr)
+library(dplyr)
+
+votesR &lt;- mutate(map_df(utahRJSON$counties$race.candidates, function(x) {
+        x %&gt;% summarise(votes = sum(votes))
+        }), FIPS=utahRJSON$counties$countycode)
+votesD &lt;- mutate(map_df(utahDJSON$counties$race.candidates, function(x) {
+        x %&gt;% summarise(votes = sum(votes))
+        }), FIPS=utahRJSON$counties$countycode)
+</code></pre><p>Once again, <code>purrr</code> has made life so lovely and easy to understand. I am still getting my mind wrapped around it but WOW.</p>
+
+
+
+
+<h2 id="how-many-people-can-vote">How Many People Can Vote?
+  <a href="#how-many-people-can-vote"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now we have the number of votes cast in each county, but we also need to know the number of people in each county who were eligible to vote. It turns out that this is a tricky thing to find out, and there 
+<a href="http://www.pewtrusts.org/en/research-and-analysis/analysis/2014/07/31/measuring-voter-turnout" target="_blank" rel="noopener">are different ways to estimate it</a>. I am going to use the 
+<a href="https://www.census.gov/rdo/data/voting_age_population_by_citizenship_and_race_cvap.html" target="_blank" rel="noopener">voting age  citizen population</a> as estimated by the US Census. The Census provides a zip file for download 
+<a href="https://www.census.gov/rdo/data/voting_age_population_by_citizenship_and_race_cvap.html" target="_blank" rel="noopener">here</a> that includes separate files for state, county, census tract, etc. One of the quantities in this file is the estimated total number of United States citizens 18 years of age or older for each county, which is what I want.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(stringr)
+countiesCSV &lt;- read.csv(&quot;./County.csv&quot;, stringsAsFactors = FALSE)
+countiesVAP &lt;- countiesCSV %&gt;% filter(LNNUMBER == 1) %&gt;%
+        select(GEOID, VAP = CVAP_EST) %&gt;% 
+        mutate(FIPS = as.integer(str_extract(GEOID, &quot;.{5}$&quot;)))
+</code></pre><p>It is important to note that this estimate is not perfect or unambiguous. This number includes some people who are not eligible to vote, such as felons, and also it includes people who are not registered to vote; these people sometimes are and sometimes are not included in the denominator when reporting voter turnout. Anyway, let&rsquo;s blithely move on and join each of the data frames of votes cast to the data frame of voting age citizen population.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">votesR &lt;- inner_join(votesR, countiesVAP)
+votesD &lt;- inner_join(votesD, countiesVAP)
+</code></pre><p>Now let&rsquo;s calculate a voter turnout.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">votesR &lt;- votesR %&gt;% mutate(turnout = votes/VAP*100) %&gt;% 
+        mutate(region = FIPS, value = turnout)
+votesD &lt;- votesD %&gt;% mutate(turnout = votes/VAP*100) %&gt;% 
+        mutate(region = FIPS, value = turnout)
+</code></pre><p>We need <code>region</code> and <code>value</code> for the mapping. Speaking of which&hellip;</p>
+
+
+
+
+<h2 id="now-maps">Now, Maps!
+  <a href="#now-maps"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(choroplethr)
+library(choroplethrMaps)
+library(ggplot2)
+library(RColorBrewer)
+library(gridExtra)
+choro1 = CountyChoropleth$new(votesR)
+choro1$set_zoom(&quot;utah&quot;)
+choro1$set_num_colors(1)
+choro1$ggplot_polygon = geom_polygon(aes(fill = value), color = NA)
+choro1$ggplot_scale = scale_fill_gradientn(name = &quot;Percent&quot;, 
+                                           colours = brewer.pal(8, &quot;Reds&quot;),
+                                           limits = c(0, 20))
+choro2 = CountyChoropleth$new(votesD)
+choro2$set_zoom(&quot;utah&quot;)
+choro2$set_num_colors(1)
+choro2$ggplot_polygon = geom_polygon(aes(fill = value), color = NA)
+choro2$ggplot_scale = scale_fill_gradientn(name = &quot;Percent&quot;,
+                                           colours = brewer.pal(8, &quot;Blues&quot;),
+                                           limits = c(0, 12))
+map1 &lt;- choro1$render() + 
+        labs(title = &quot;Republican Caucus Turnout&quot;,
+             subtitle = &quot;Percent of voting age citizens who voted in the Republican caucus&quot;) +
+        theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;)) +
+        theme(text=element_text(family=&quot;RobotoCondensed-Regular&quot;)) + 
+        theme(plot.title=element_text(hjust = .15)) +
+        theme(plot.subtitle=element_text(hjust = -2)) +
+        theme(plot.subtitle=element_text(size=9))
+map2 &lt;- choro2$render() + 
+        labs(title = &quot;Democratic Caucus Turnout&quot;,
+             subtitle = &quot;Percent of voting age citizens who voted in the Democratic caucus&quot;) +
+        theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;)) +
+        theme(text=element_text(family=&quot;RobotoCondensed-Regular&quot;)) +
+        theme(plot.title=element_text(hjust = .15)) +
+        theme(plot.subtitle=element_text(hjust = -1.5)) +
+        theme(plot.subtitle=element_text(size=9))
+grid.arrange(map1, map2, ncol = 2)
+</code></pre><p><img src="/figs/2016-04-08-Who-Came-To-Vote/unnamed-chunk-7-1.png" alt="center"></p>
+<p>The Republican voter turnout (the percent of the total voting age citizen population who voted in the Republican caucus) is higher across the state than the Democratic voter turnout, as we would expect. What is going on over there in that eastern county with the highest Democratic turnout? That is Grand County, Utah, which is home to Moab, Arches National Park, and Canyonland National Park. There are only about 7000 voter age citizens in the whole county, but 797 of them voted in the Democratic caucus while 337 voted in the Republican caucus. Moab has a significant environmentalist influence because of the national parks and such. The other counties that had more significant Democratic voter turnout are Summit County, home to Park City and ski resorts galore, and Salt Lake City, my own home county where we have the largest city in Utah and more significant diversity.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Voter turnout is typically lower in primaries and caucuses than in a general election, but these numbers are quite low for what is being reported in this election cycle. The sum of the voter turnout for the Democratic and Republican caucuses in Utah has a median of 14.13% and this sum was only higher than 20% in one county. This is somewhat lower than what 
+<a href="http://www.pewresearch.org/fact-tank/2016/03/08/so-far-turnout-in-this-years-primaries-rivals-2008-record/" target="_blank" rel="noopener">has been reported</a> for primaries and caucuses in other states this cycle. This is partly because there are so few Democrats in Utah, of course, but even if you just compare Republican turnout to typical Republican turnout this cycle, Utah still comes up short. Is this because different numbers are being used in the denominator (i.e. how is the pool of eligible voters defined)? It is hard to tell because people don&rsquo;t get very specific in the popular press. I learned that Utah does have a history of 
+<a href="http://www.google.com/search?q=utah&#43;voter&#43;turnout" target="_blank" rel="noopener">comparatively low voter turnout</a>. It is interesting that I started this analysis in the context of 
+<a href="http://www.sltrib.com/home/3694882-155/utah-dems-republicans-see-huge-turnout" target="_blank" rel="noopener">reports of shockingly high turnout in the Democratic caucuses</a>! It turns out that much of that perception in both political parties was 
+<a href="http://kutv.com/news/local/utahs-caucus-not-the-turnout-blockbuster-many-might-think" target="_blank" rel="noopener">due to Utah&rsquo;s recent shift from a primary to a caucus</a>. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-04-08-Who-Came-To-Vote.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 8, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 997 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/how-i-stopped/">&larr; How I Learned to Stop Worrying and Love R CMD Check</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/i-went-to-ropensci/">I Went to ROpenSci Unconference and All I Got Were These Lousy Hex Stickers &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

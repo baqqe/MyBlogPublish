@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Amazon Alexa and Accented English | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Amazon Alexa and Accented English | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/amazon-alexa/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Amazon Alexa and Accented English">
+<meta itemprop="description" content="Earlier this spring, one of my data science friends here in SLC got in contact with me about some fun analysis. My friend Dylan Zwick is a founder at Pulse Labs, a voice-testing startup, and they were chatting with the Washington Post about a piece on how devices like Amazon Alexa deal with accented English. The piece is published today in the Washington Post and turned out really interesting! Let’s walk through the analysis I did for Dylan and Pulse Labs."><meta itemprop="datePublished" content="2018-07-19T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2018-07-19T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1145">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Amazon Alexa and Accented English</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">July 19, 2018</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+
+
+<p>Earlier this spring, one of my data science friends here in SLC got in contact with me about some fun analysis. My friend <a href="https://www.linkedin.com/in/dylanzwick/">Dylan Zwick</a> is a founder at <a href="https://www.pulselabs.ai/#/">Pulse Labs</a>, a voice-testing startup, and they were chatting with the Washington Post about a piece on how devices like Amazon Alexa deal with accented English. The piece is <a href="https://www.washingtonpost.com/graphics/2018/business/alexa-does-not-understand-your-accent/">published today in the Washington Post</a> and turned out really interesting! Let’s walk through the analysis I did for Dylan and Pulse Labs.</p>
+<div id="understanding-the-data" class="section level2">
+<h2>Understanding the data</h2>
+<p>Dylan shared voice testing results data with me via Google Sheets. The dataset included the phrase that each speaker spoke aloud, the transcription of the phrase that the Alexa device understood, and a categorization for each speaker’s accent.</p>
+<pre class="r"><code>library(tidyverse)
+library(googlesheets)
+library(stringdist)
+
+alexa_raw &lt;- gs_title(&quot;Alexa Speech to Text by Accent Data&quot;) %&gt;%
+    gs_read(range = cell_cols(1:4),
+            verbose = FALSE) %&gt;%
+    set_names(&quot;truth&quot;, &quot;measured&quot;, &quot;accent&quot;, &quot;example&quot;)</code></pre>
+<p>What do a few examples look like?</p>
+<pre class="r"><code>alexa_raw %&gt;% 
+    sample_n(3) %&gt;% 
+    select(truth, measured, accent) %&gt;% 
+    kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">truth</th>
+<th align="left">measured</th>
+<th align="left">accent</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">China proposes removal of two term limit potentially paving way for Xi to remain President</td>
+<td align="left">china proposes removal of to term limit potentially paving way for gh remain president</td>
+<td align="left">1</td>
+</tr>
+<tr class="even">
+<td align="left">As winter games close team USA falls short of expectations</td>
+<td align="left">ask winter games close team usa fall short of expectations</td>
+<td align="left">1</td>
+</tr>
+<tr class="odd">
+<td align="left">China proposes removal of two term limit potentially paving way for Xi to remain President</td>
+<td align="left">china china proposes removal of to time limit potentially paving way to remain president</td>
+<td align="left">1</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>truth</code> column here contains the phrase that the speaker was instructed to read (there are three separate test phrases), while the <code>measured</code> column contains the text as it was transcribed by Alexa. The <code>accent</code> column is a numeric coding (1, 2, or 3) for the three categories of accented English in this text. The three categories are US flat (which would be typical broadcast English in the US, often encounted in the West and Midwest), a native speaker accent (these folks included Southern US accents and accents from Britain and Australia), and a non-native speaker accent (individuals for whom English is not their first language).</p>
+<pre class="r"><code>alexa &lt;- alexa_raw %&gt;%
+    mutate(accent = case_when(accent == 1 ~ &quot;US flat&quot;,
+                              accent == 2 ~ &quot;Native speaker accent&quot;,
+                              accent == 3 ~ &quot;Non-native speaker accent&quot;),
+           accent = factor(accent, levels = c(&quot;US flat&quot;,
+                                              &quot;Native speaker accent&quot;,
+                                              &quot;Non-native speaker accent&quot;)),
+           example = case_when(example == &quot;X&quot; ~ TRUE,
+                               TRUE ~ FALSE),
+           truth = str_to_lower(truth),
+           measured = str_to_lower(measured)) %&gt;%
+    filter(truth != &quot;phrase&quot;,
+           truth != &quot;&quot;) %&gt;%
+    mutate(distance = stringdist(truth, measured, &quot;lv&quot;))</code></pre>
+<p>How many recordings from an Alexa device do we have data for, for each accent?</p>
+<pre class="r"><code>alexa %&gt;%
+    count(accent) %&gt;%
+    kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">accent</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">US flat</td>
+<td align="right">46</td>
+</tr>
+<tr class="even">
+<td align="left">Native speaker accent</td>
+<td align="right">33</td>
+</tr>
+<tr class="odd">
+<td align="left">Non-native speaker accent</td>
+<td align="right">20</td>
+</tr>
+</tbody>
+</table>
+<p>This is a pretty small sample; we would be able to make stronger conclusions with more recordings.</p>
+</div>
+<div id="visualizations" class="section level2">
+<h2>Visualizations</h2>
+<p>Let’s look at the <a href="https://en.wikipedia.org/wiki/Levenshtein_distance">string distance</a> between each between each benchmark phrase (the phrase that the speaker intended to speak) and the speech-to-text output from Alexa. We can think about this metric as the difference between what the speaker said and what Alexa heard.</p>
+<pre class="r"><code>alexa %&gt;%
+    ggplot(aes(accent, distance, fill = accent, color = accent)) +
+    geom_boxplot(alpha = 0.2, size = 1.5) +
+    labs(x = NULL, y = &quot;String distance (Levenshtein distance)&quot;,
+         title = &quot;How well does Alexa understand different accents?&quot;,
+         subtitle = &quot;Speech with non-native accents is converted to text with the lowest accuracy&quot;) +
+    theme(legend.position=&quot;none&quot;)</code></pre>
+<p><img src="/blog/2018/2018-07-19-amazon-alexa_files/figure-html/boxplot-1.png" width="1440" /></p>
+<p>I used the Levenshtein distance, but the results are robust to other string distance measures.</p>
+<pre class="r"><code>alexa %&gt;%
+    group_by(accent) %&gt;%
+    summarise(distance = median(distance)) %&gt;%
+    ggplot(aes(accent, distance, fill = accent)) +
+    geom_col(alpha = 0.8) +
+    geom_text(aes(x = accent, y = 0.5, label = accent), color=&quot;white&quot;,
+            family=&quot;IBMPlexSans-Medium&quot;, size=7, hjust = 0) +
+    labs(x = NULL, y = &quot;String distance between phrase and speech-to-text output (median Levenshtein distance)&quot;,
+         title = &quot;How well does Alexa understand English speakers with different accents?&quot;,
+         subtitle = &quot;Speech with non-native accents is converted to text with the lowest accuracy&quot;) +
+    scale_y_continuous(expand = c(0,0)) +
+    theme(axis.text.y=element_blank(),
+          legend.position=&quot;none&quot;) +
+    coord_flip()</code></pre>
+<p><img src="/blog/2018/2018-07-19-amazon-alexa_files/figure-html/barplot-1.png" width="1440" /></p>
+<p>We can see here that the median difference is higher, by over 30%, for speakers with non-native-speaking accents. There is no difference for speakers with accents like British or Southern accents. That result looks pretty convincing, and certainly lines up with what <a href="https://www.washingtonpost.com/graphics/2018/business/alexa-does-not-understand-your-accent/">other groups in the WashPo piece</a> found, but it’s based on quite a small sample. Let’s try a statistical test.</p>
+</div>
+<div id="statistical-tests" class="section level2">
+<h2>Statistical tests</h2>
+<p>Let’s compare first the native speaker accent to the US flat group, then the non-native speakers to the US flat group.</p>
+<pre class="r"><code>t.test(distance ~ accent, data = alexa %&gt;% filter(accent != &quot;Non-native speaker accent&quot;))</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  distance by accent
+## t = -0.55056, df = 60.786, p-value = 0.584
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -3.875468  2.202214
+## sample estimates:
+##               mean in group US flat mean in group Native speaker accent 
+##                            8.739130                            9.575758</code></pre>
+<pre class="r"><code>t.test(distance ~ accent, data = alexa %&gt;% filter(accent != &quot;Native speaker accent&quot;))</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  distance by accent
+## t = -1.3801, df = 25.213, p-value = 0.1797
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -8.125065  1.603326
+## sample estimates:
+##                   mean in group US flat 
+##                                 8.73913 
+## mean in group Non-native speaker accent 
+##                                12.00000</code></pre>
+<p>Performing some t-tests indicates that the group of speakers with flat accents and those with native speaker accents (Southern, British, etc.) are not different from each other; notice how big the p-value is (almost 0.6).</p>
+<p>The situation is not clear for the comparison of the speakers with flat accents and those with non-native speaker accents, either. The p-value is about 0.18, higher than normal statistical cutoffs. It would be better to have more data to draw clear conclusions. Let’s do a simple power calculation to estimate how many measurements we would need to measure a difference this big (~30%, or ~3 on the string distance scale).</p>
+<pre class="r"><code>power.t.test(delta = 3, sd = sd(alexa$distance), 
+             sig.level = 0.05, power = 0.8)</code></pre>
+<pre><code>## 
+##      Two-sample t test power calculation 
+## 
+##               n = 93.37079
+##           delta = 3
+##              sd = 7.278467
+##       sig.level = 0.05
+##           power = 0.8
+##     alternative = two.sided
+## 
+## NOTE: n is number in *each* group</code></pre>
+<p>This indicates we would need on the order of 90 examples per group (instead of the 20 to 40 that we have) to measure the ~30% difference we see with statistical significance. That may be a lot of voice testing to do for a single newspaper article but would be necessary to make strong statements. This dataset shows how complicated the landscape for these devices is. Check out the piece online (which includes quotes from Kaggle’s <a href="http://www.rctatman.com/">Rachael Tatman</a>) and let me know if you have any feedback or questions!</p>
+</div>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 19, 2018</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1145 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/evaluating-stm/">&larr; Training, evaluating, and interpreting topic models</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/punctution-literature/">Punctuation in literature &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

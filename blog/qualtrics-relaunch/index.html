@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Relaunching the qualtRics package | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Relaunching the qualtRics package | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/qualtrics-relaunch/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Relaunching the qualtRics package">
+<meta itemprop="description" content="Note: cross-posted with the rOpenSci blog.
+rOpenSci is one of the first organizations in the R community I ever interacted with, when I participated in the 2016 rOpenSci unconf. I have since reviewed several rOpenSci packages and been so happy to be connected to this community, but I have never submitted or maintained a package myself. All that changed when I heard the call for a new maintainer for the qualtRics package."><meta itemprop="datePublished" content="2019-04-30T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2019-04-30T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1049">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Relaunching the qualtRics package</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">April 30, 2019</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+
+
+<p><em>Note: cross-posted <a href="https://ropensci.org/blog/2019/04/30/qualtrics-relaunch/">with the rOpenSci blog</a>.</em></p>
+<p>rOpenSci is one of the first organizations in the R community I ever interacted with, when I participated in the <a href="https://juliasilge.com/blog/i-went-to-ropensci/">2016 rOpenSci unconf</a>. I have since <a href="https://ropensci.org/software-review/">reviewed several rOpenSci packages</a> and been so happy to be connected to this community, but I have never submitted or maintained a package myself. All that changed when I heard the call for a new maintainer for the <a href="https://github.com/ropensci/qualtRics">qualtRics</a> package. “IT’S GO TIME,” I thought. 😎</p>
+<p><a href="https://www.qualtrics.com/">Qualtrics</a> is an online survey and data collection software platform. Qualtrics is used across many domains in both academia and industry for online surveys and research, including by me at my day job as a data scientist at <a href="https://stackoverflow.com/">Stack Overflow</a>. While users can manually download survey responses from Qualtrics through a browser, importing this data into R is then cumbersome. The qualtRics R package implements the retrieval of survey data using the Qualtrics API and aims to reduce the pre-processing steps needed in analyzing such surveys. This package has been a huge help to me in my real day-to-day work, and I have been so grateful for the excellent work of the package’s original authors, including the previous maintainer <a href="https://jasperginn.io/">Jasper Ginn</a>. This package is currently the only package on CRAN that offers functionality like this for Qualtrics’ API, and is included in the official Qualtrics API documentation.</p>
+<p>The previous maintainer of this package was no longer using Qualtrics in his work life and needed to step away from maintaining qualtRics. Also, early in 2018, the package had been archived on CRAN for a fairly minor issue: using <a href="https://testthat.r-lib.org/">testthat</a> for tests but <a href="http://r-pkgs.had.co.nz/tests.html">not having it included in <code>Suggests</code></a>. So for me, that meant this project would involve several steps: making improvements I wanted to the package for usability (especially with regards to authentication credentials), bringing the package in line with CRAN policies, and getting the package back on CRAN but as a new maintainer of an archived package.</p>
+<div id="qualtrics-and-the-stack-overflow-developer-survey" class="section level2">
+<h2>Qualtrics and the Stack Overflow Developer Survey</h2>
+<p>The timing of when I did the usability work for this package was either wonderful or terrible, depending on your perspective. I did that work concurrently with the analysis for the <a href="https://insights.stackoverflow.com/survey/2019">2019 Stack Overflow Developer Survey</a>. This survey is the largest and most comprehensive survey of people who code around the world each year, and this year we had almost 90,000 respondents who answered questions covering everything from their favorite technologies to what music they listen to while coding.</p>
+<p>The survey is fielded using Qualtrics and I’ve used the qualtRics package for the past several years as part of my workflow. This year, I made changes to the package while I was working with the Developer Survey data. I’ll be honest; it was… A LOT to juggle at one time. 😳 However, it did allow me to test out improvements and changes iteratively with the real world data I had at hand, and I think I ended up with a better result than I would have otherwise. We use Qualtrics for other surveys at Stack Overflow throughout the year, so I am not just a package maintainer but also a year-round, real-life user of this package.</p>
+<p>After the bulk of my analysis work was done for the survey, I turned to <a href="https://cran.r-project.org/web/packages/policies.html">getting qualtRics back on CRAN</a>. The previous maintainer, who has been unfailingly helpful throughout this process, sent an email to CRAN with the details involved (his name, my name, the fact of the package’s archiving). Then I submitted the package to CRAN, basically as if it were a new package. I got some feedback back from CRAN initially, to use more single quotes in <code>Description</code> around the word “Qualtrics” and also some remarks about how my examples were surrounded by <code>\dontrun{}</code> as well as a reminder not to have my package write to the user’s home filespace. I was somewhat puzzled by the last items, because nothing in this package does write to the user’s home filespace and the examples all are calling the API and thus need authentication (which is clearly explained in the documentation/examples). I was somewhat worried 😩 but I ended up responding via email and submitting again with the same text in CRAN comments, explaining those points. Fortunately, the package was accepted to CRAN that time!</p>
+</div>
+<div id="good-ideabad-idea" class="section level2">
+<h2>GOOD IDEA/BAD IDEA</h2>
+<p>Changing the names of all the functions in a package already being used in the real world is, generally, a bad idea. <strong>I did it anyway, everybody.</strong> Let me try to convince you that this was the right call.</p>
+<ul>
+<li>When I took over as package maintainer, the qualtRics package had been off CRAN for about nine months. If ever there is an appropriate time for a revamp in user-facing function names, it’s a time like this, when there is a long absence from a centralized repository.</li>
+<li>The most important user-facing functions in this package previously had names like <code>getSurvey()</code> and <code>getSurveys()</code>, which users (including me) found difficult to distinguish between. These functions called the Qualtrics API, but <strong>not</strong> the part of the API that Qualtrics has named <code>getSurvey</code>. It was a confusing situation.</li>
+<li>When this package was <a href="https://github.com/ropensci/software-review/issues/192">first reviewed by rOpenSci</a>, the original maintainer noted that the function names did not conform to rOpenSci standards but he preferred to keep them as is since the package was already on CRAN. Opening up the possibility of this kind of more drastic change now allowed me to bring the function and argument names within <a href="https://ropensci.github.io/dev_guide/building.html#function-and-argument-naming">rOpenSci standards</a>.</li>
+</ul>
+<p>The old versions of the functions currently still work but give a warning, suggesting that the user try out the new versions. If this change causes more than a passing inconvenience to you as a user, I AM SO SORRY. I believe this decision will set up the qualtRics package for improved usability in the long term.</p>
+</div>
+<div id="explore-the-new-qualtrics" class="section level2">
+<h2>Explore the new qualtRics!</h2>
+<p>Another change with this release is a <a href="https://ropensci.github.io/qualtRics/">pkgdown site for qualtRics</a>. I used the custom pkgdown template <a href="https://ropensci.github.io/rotemplate/">rotemplate</a> created for rOpenSci packages to style the site, and I am so pleased with the results! If you are a new user for the qualtRics package, or someone who wants to poke around and see what’s changed and how to get up to speed with the update, I recommend checking out this <a href="https://ropensci.github.io/qualtRics/">spiffy new site</a> for all the details. 🚀</p>
+</div>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 30, 2019</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 1049 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/sentiment-lexicons/">&larr; Fixing your mistakes: sentiment analysis edition</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/datacamp-misconduct/">Writing a letter to DataCamp &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

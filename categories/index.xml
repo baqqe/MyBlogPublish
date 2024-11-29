@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on Lucas Bagge</title>
+    <link>https://juliasilge.com/categories/</link>
+    <description>Recent content in Categories on Lucas Bagge</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Thu, 29 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://juliasilge.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Analytical Engineer</title>
+      <link>https://juliasilge.com/categories/analytical-engineer/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/categories/analytical-engineer/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>dbt</title>
+      <link>https://juliasilge.com/categories/dbt/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/categories/dbt/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>rstats</title>
+      <link>https://juliasilge.com/categories/rstats/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/categories/rstats/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>tidymodels</title>
+      <link>https://juliasilge.com/categories/tidymodels/</link>
+      <pubDate>Thu, 29 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://juliasilge.com/categories/tidymodels/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>If I Loved Natural Language Processing Less, I Might Be Able to Talk About It More | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="An R Package for Jane Austen&#39;s Complete Novels">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="If I Loved Natural Language Processing Less, I Might Be Able to Talk About It More | Julia Silge">
+<meta property="og:description" content="An R Package for Jane Austen&#39;s Complete Novels" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/if-i-loved-nlp-less/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="If I Loved Natural Language Processing Less, I Might Be Able to Talk About It More">
+<meta itemprop="description" content="In my last post, I did some natural language processing and sentiment analysis for Jane Austen&rsquo;s most well-known novel, Pride and Prejudice. It was just so much fun that I wanted to extend some of that work and compare across her body of writing.
+I decided to make an R package for her texts, for easy access for myself and anybody else who would like to do some text analysis on a nice sample of prose."><meta itemprop="datePublished" content="2016-03-18T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-03-18T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2194">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">If I Loved Natural Language Processing Less, I Might Be Able to Talk About It More</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">March 18, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>In 
+<a href="http://juliasilge.com/blog/You-Must-Allow-Me/" target="_blank" rel="noopener">my last post</a>, I did some natural language processing and sentiment analysis for Jane Austen&rsquo;s most well-known novel, <em>Pride and Prejudice</em>. It was just so much fun that I wanted to extend some of that work and compare across her body of writing.</p>
+<p>I decided to make an R package for her texts, for easy access for myself and anybody else who would like to do some text analysis on a nice sample of prose. The package is 
+<a href="https://github.com/juliasilge/janeaustenr" target="_blank" rel="noopener">available on Github</a> and can be installed via <code>devtools</code>.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(devtools)
+install_github(&quot;juliasilge/janeaustenr&quot;)
+library(janeaustenr)
+</code></pre><p>You can read more details in the documentation and README, but the package contains the full text of the 6 completed, published novels of Jane Austen. The UTF-8 plain text for each novel was sourced from 
+<a href="https://www.gutenberg.org/" target="_blank" rel="noopener">Project Gutenberg</a> and then I processed them a bit to remove the Project Gutenberg headers and footers as well as blank lines and <code>NA</code> lines, etc. Now they are all ready for text analysis. Each text is in a character vector with elements of about 70 characters. Let&rsquo;s load them, along with the libraries we&rsquo;ll need for this analysis.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(dplyr)
+library(stringr)
+library(syuzhet)
+library(ggplot2)
+library(viridis)
+data(sensesensibility)
+data(prideprejudice)
+data(mansfieldpark)
+data(emma)
+data(northangerabbey)
+data(persuasion)
+</code></pre><p>As I was working on this package, I discovered that three of the novels are already available within the 
+<a href="https://cran.r-project.org/web/packages/stylo/index.html" target="_blank" rel="noopener"><code>stylo</code> package</a>; this package was built for stylometric analysis of text (that sounds SO FUN&hellip;) and the texts for three of Jane Austen&rsquo;s books are in the <code>novels</code> data set in that package, along with 6 novels by the Brontë sisters. Undeterred, I decided to put together this package anyway with all of Jane Austen&rsquo;s completed published works. The data objects appear to be <em>quite</em> similar, however, as we both used the Project Gutenberg UTF-8 plain text files and performed similar processing.</p>
+<p>I have been pondering doing something more ambitious along these lines. Wouldn&rsquo;t it be great to have a really big sample of books easily accessible in R? I am still considering how to implement such a thing, though. Some of the processing to get these texts into an R package is easy to automate, but some of it isn&rsquo;t; the Project Gutenberg headers and footers seem to not be standard in length, etc. Matthew Jockers talks about 
+<a href="http://www.matthewjockers.net/2015/02/25/the-rest-of-the-story/" target="_blank" rel="noopener">using a corpus of tens of thousands of novels</a>, but doesn&rsquo;t give information on how to access a publicly available version of this corpus. We&rsquo;ll see!</p>
+
+
+
+
+<h2 id="options-for-sentiment-analysis">Options for Sentiment Analysis
+  <a href="#options-for-sentiment-analysis"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now that we have the texts for Jane Austen&rsquo;s novels, let&rsquo;s concatenate the ~70-character lines into larger chunks. I got a couple of suggestions to avoid my use of a for loop for chunking the text in my last post. My favorite is probably the <code>dplyr</code> one shared by the 
+<a href="https://twitter.com/drob/status/707401599325507584" target="_blank" rel="noopener">knowledgeable/generous David Robinson</a>. Much nicer! Then let&rsquo;s calculate the sentiment for each chunk of text. This is in a function because we are going to use this a bunch of times.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">process_sentiment &lt;- function (rawtext, mymethod) {
+        chunkedtext &lt;- data_frame(x = rawtext) %&gt;% 
+                group_by(linenumber = ceiling(row_number() / 10)) %&gt;% 
+                summarize(text = str_c(x, collapse = &quot; &quot;))
+        mySentiment &lt;- data.frame(cbind(linenumber = chunkedtext$linenumber, 
+                                   sentiment = get_sentiment(chunkedtext$text, method = mymethod)))
+}
+</code></pre><p>There are a number of lexicons/dictionaries/methods for calculating sentiment in text out there. In my last post, I used the NRC lexicon because it is the only one (that I am aware of) that includes scores for various emotions like anger, joy, sadness, etc. Today we are just going to look at the overall sentiment (positive - negative) so we have some more options. There are three lexicons that we&rsquo;ll look at in this post:</p>
+<ul>
+<li><code>afinn</code> from 
+<a href="http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010" target="_blank" rel="noopener">Finn Årup Nielsen</a></li>
+<li><code>bing</code> from 
+<a href="https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html" target="_blank" rel="noopener">Bing Liu and collaborators</a></li>
+<li><code>nrc</code> from 
+<a href="http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm" target="_blank" rel="noopener">Saif Mohammad and Peter Turney</a></li>
+</ul>
+<p>There is another sentiment analysis tool in the 
+<a href="http://stanfordnlp.github.io/CoreNLP/" target="_blank" rel="noopener">Stanford CoreNLP tools</a>, but I have not gotten that one up and running yet (it is written in Java and separate from the R ecosystem). We will stick to the three sentiment tools above; let&rsquo;s look at sentiment throughout <em>Sense and Sensibility</em> as measured with these three.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">SandS &lt;- rbind(process_sentiment(sensesensibility,&quot;afinn&quot;) %&gt;% mutate(method = &quot;AFINN&quot;),
+               process_sentiment(sensesensibility,&quot;bing&quot;) %&gt;% mutate(method = &quot;Bing et al&quot;),
+               process_sentiment(sensesensibility,&quot;nrc&quot;) %&gt;% mutate(method = &quot;NRC&quot;))
+</code></pre><p>Now let&rsquo;s make a data frame for annotating the plot and then plot the three methods for sentiment analysis.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">caption &lt;- &quot;Text sourced from Project Gutenberg&quot;
+annotatetext &lt;- data.frame(x = c(108, 484, 851, 1005), y = rep(19.3, 4), 
+                           label = c(&quot;Marianne meets Willoughby&quot;, &quot;Willoughby is a jerk&quot;, 
+                                     &quot;Marianne's illness&quot;, &quot;Everyone engaged&quot;), 
+                           y1 = rep(17.5, 4), y2 = c(9.5, 4.5, 7.5, 8.5),
+                           method = factor(rep(&quot;Bing et al&quot;, 4),
+                                           levels = c(&quot;AFINN&quot;, &quot;Bing et al&quot;, &quot;NRC&quot;)))
+
+ggplot(data = SandS, aes(x = linenumber, y = sentiment, fill = method)) +
+        geom_bar(stat = &quot;identity&quot;) + 
+        facet_wrap(~method, nrow = 3) +
+        theme_minimal() +
+        ylab(&quot;Sentiment&quot;) +
+        labs(title = expression(paste(&quot;Sentiment in &quot;, italic(&quot;Sense and Sensibility&quot;))),
+             caption = caption) +
+        geom_label(data = annotatetext, aes(x, y, label=label), hjust = 0.5, 
+                  label.size = 0, size = 3, color=&quot;#2b2b2b&quot;, inherit.aes = FALSE) +
+        geom_segment(data = annotatetext, aes(x = x, y = y1, xend = x, yend = y2),
+                     arrow = arrow(length = unit(0.05, &quot;npc&quot;)), inherit.aes = FALSE) +
+        scale_fill_viridis(end = 0.4, discrete=TRUE) +
+        scale_x_discrete(expand=c(0.01,0)) +
+        theme(strip.text=element_text(hjust=0)) +
+        theme(axis.text.y=element_text(margin=margin(r=-10))) +
+        theme(plot.caption=element_text(size=9)) +
+        theme(legend.position=&quot;none&quot;) +
+        theme(axis.title.x=element_blank()) +
+        theme(axis.ticks.x=element_blank()) +
+        theme(axis.text.x=element_blank())
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-6-1.png" alt="center"></p>
+<iframe src="http://giphy.com/embed/HTLWYMFFV5Zza" width="320" height="328" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/alan-rickman-emma-thompson-HTLWYMFFV5Zza">via GIPHY</a></p>
+<p>I am using the development version of <code>ggplot2</code> version, available via Github. Hence the nice easy caption below the plot!</p>
+<p>The three different methods of calculating sentiment give results that are different in an absolute sense but have similar relative trajectories through the novel. The AFINN method has the largest absolute values, with high postive and negative values. The method of Bing et al. has lower absolute values and appears to label larger blocks of contiguous positive or negative text. The NRC results are shifted higher relative to the other two, labeling the text more positively, but detects similar relative changes in the text. I found similar differences between the methods when looking at the other Jane Austen novels; the NRC sentiment is high, the AFINN sentiment has a lot of variance, the Bing et al. sentiment appears to find longer stretches of similar text, but all three agree roughly on the overall trends in the sentiment through the story. There may be good reasons for picking one of these sentiment analysis tools over the others, but based on these results let&rsquo;s use the Bing et al. sentiment method for the rest of this post.</p>
+
+
+
+
+<h2 id="how-much-sooner-one-tires-of-any-thing-than-of-a-book">How Much Sooner One Tires of Any Thing Than of a Book
+  <a href="#how-much-sooner-one-tires-of-any-thing-than-of-a-book"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s look at the rest of Jane Austen&rsquo;s novels. First, let&rsquo;s define a plotting function to use.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">plot_sentiment &lt;- function (mySentiment, myAnnotate) {
+        g &lt;- ggplot(data = mySentiment, aes(x = linenumber, y = sentiment)) +
+                geom_bar(stat = &quot;identity&quot;, color = &quot;midnightblue&quot;) + 
+                geom_label(data = myAnnotate, aes(x, y, label=label), hjust = 0.5, 
+                          label.size = 0, size = 3, color=&quot;#2b2b2b&quot;, inherit.aes = FALSE) +
+                geom_segment(data = myAnnotate, aes(x = x, y = y1, xend = x, yend = y2),
+                             arrow = arrow(length = unit(0.04, &quot;npc&quot;)), inherit.aes = FALSE) +
+                theme_minimal() +
+                labs(y = &quot;Sentiment&quot;, caption = &quot;Text sourced from Project Gutenberg&quot;) +
+                scale_x_discrete(expand=c(0.02,0)) +
+                theme(plot.caption=element_text(size=8)) +
+                theme(axis.text.y=element_text(margin=margin(r=-10))) +
+                theme(axis.title.x=element_blank()) +
+                theme(axis.ticks.x=element_blank()) +
+                theme(axis.text.x=element_blank())
+}
+</code></pre><p>We already spent a good bit of time on <em>Pride and Prejudice</em> last time around, but here it is with the Bing et al. sentiment method.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PP_sentiment &lt;- process_sentiment(prideprejudice, &quot;bing&quot;)
+PandPannot &lt;- data.frame(x = c(243, 518, 747, 1005), y = rep(14.9, 4), 
+                           label = c(&quot;Ball at Netherfield&quot;, &quot;Mr. Darcy proposes&quot;, 
+                                     &quot;Lydia elopes&quot;, &quot;Mr. Darcy proposes again&quot;), 
+                           y1 = rep(13.5, 4), y2 = c(8.5, 7.5, 7.5, 8.5))
+p &lt;- plot_sentiment(PP_sentiment, PandPannot)
+p + labs(title = expression(paste(&quot;Sentiment in &quot;, italic(&quot;Pride and Prejudice&quot;))))
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-8-1.png" alt="center"></p>
+<iframe src="http://giphy.com/embed/ToMjGpGwtSBHZWL2jXa" width="480" height="323" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/pride-and-prejudice-mr-darcy-bbc-ToMjGpGwtSBHZWL2jXa">via GIPHY</a></p>
+<p>Next let&rsquo;s do <em>Mansfield Park</em>.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">MP_sentiment &lt;- process_sentiment(mansfieldpark, &quot;bing&quot;)
+MPannot &lt;- data.frame(x = c(345, 529, 849, 1224), y = rep(14.9, 4), 
+                           label = c(&quot;Preparing for the play&quot;, &quot;Sir Thomas returns&quot;, 
+                                     &quot;Mr. Crawford proposes&quot;, &quot;Mr. Crawford's scandal&quot;), 
+                           y1 = rep(13.5, 4), y2 = c(7.8, 10.2, 8.5, 7.5))
+p &lt;- plot_sentiment(MP_sentiment, MPannot)
+p + labs(title = expression(paste(&quot;Sentiment in &quot;, italic(&quot;Mansfield Park&quot;))))
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-9-1.png" alt="center"></p>
+<div class="tumblr-post" data-href="https://embed.tumblr.com/embed/post/XfXwhWmibKrqUBD9k7VaMg/103883603604" data-did="202d2666561eeb33abf242b9cec7928b1c530b7c"><a href="http://poebeau.tumblr.com/post/103883603604/hayley-atwell-as-mary-crawford-mansfield-park">http://poebeau.tumblr.com/post/103883603604/hayley-atwell-as-mary-crawford-mansfield-park</a></div><script async src="https://secure.assets.tumblr.com/post.js"></script>
+<p>I still feel like Billie Piper was a weird choice for Fanny, but Hayley Atwell as Mary Crawford was GENIUS.</p>
+<p>Next up, <em>Emma</em>!</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">Emma_sentiment &lt;- process_sentiment(emma, &quot;bing&quot;)
+Emmaannot &lt;- data.frame(x = c(95, 345, 772, 1085), y = rep(14.9, 4), 
+                           label = c(&quot;Harriet's portrait&quot;, &quot;Mr. Elton proposes&quot;, 
+                                     &quot;Emma in love with Frank?!&quot;, &quot;Emma is a jerk&quot;), 
+                           y1 = rep(13.5, 4), y2 = c(7.8, 8.5, 9.5, 8.2))
+p &lt;- plot_sentiment(Emma_sentiment, Emmaannot)
+p + labs(title = expression(paste(&quot;Sentiment in &quot;, italic(&quot;Emma&quot;))))
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-10-1.png" alt="center"></p>
+<iframe src="http://giphy.com/embed/v1dXgcX847CYo" width="480" height="288" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/emma-bbc-2009-v1dXgcX847CYo">via GIPHY</a></p>
+<p><em>Northanger Abbey</em> was written largely when Austen was quite young, but she revised it later in life and it was published posthumously.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">NA_sentiment &lt;- process_sentiment(northangerabbey, &quot;bing&quot;)
+NAannot &lt;- data.frame(x = c(33, 162, 347, 486), y = rep(14.9, 4), 
+                           label = c(&quot;Mr. Tilney introduced&quot;, &quot;Cotillion ball&quot;, 
+                                     &quot;Catherine invited to Northanger Abbey&quot;, &quot;Murder?!?!&quot;), 
+                           y1 = rep(13.5, 4), y2 = c(10.3, 8.5, 7.9, 9.1))
+p &lt;- plot_sentiment(NA_sentiment, NAannot)
+p + labs(title = expression(paste(&quot;Sentiment in &quot;, italic(&quot;Northanger Abbey&quot;))))
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-11-1.png" alt="center"></p>
+<iframe src="http://giphy.com/embed/12xjFzji4rQZPy" width="480" height="323" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/charles-downton-stevens-12xjFzji4rQZPy">via GIPHY</a></p>
+<p>And then there is Austen&rsquo;s gorgeous final novel, <em>Persuasion</em>.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">persuasion_sentiment &lt;- process_sentiment(persuasion, &quot;bing&quot;)
+Persannot &lt;- data.frame(x = c(142, 302, 449, 655), y = rep(14.9, 4), 
+                           label = c(&quot;Anne &amp; Captain Wentworth meet again&quot;, &quot;Louisa jumps/falls&quot;, 
+                                     &quot;Captain Wentworth NOT engaged!&quot;, &quot;Captain Wentworth's letter&quot;), 
+                           y1 = rep(13.5, 4), y2 = c(9.7, 8.5, 9.5, 8.9))
+p &lt;- plot_sentiment(persuasion_sentiment, Persannot)
+p + labs(title = expression(paste(&quot;Sentiment in &quot;, italic(&quot;Persuasion&quot;))))
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-12-1.png" alt="center"></p>
+<iframe src="http://giphy.com/embed/7hd76Qo1dkymk" width="480" height="192" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/sally-hawkins-persuasion-2007-7hd76Qo1dkymk">via GIPHY</a></p>
+
+
+
+
+<h2 id="i-am-in-half-agony-half-hope-that-this-is-a-good-idea">I Am in Half Agony, Half Hope That This Is a Good Idea
+  <a href="#i-am-in-half-agony-half-hope-that-this-is-a-good-idea"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let&rsquo;s filter and transform these sentiments using the low-pass Fourier transform. First, let&rsquo;s get the sentiment for <em>Sense and Sensibility</em> in the same kind of data frame as the rest of the novels.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">SS_sentiment &lt;- process_sentiment(sensesensibility, &quot;bing&quot;)
+</code></pre><p>Now let&rsquo;s make a function for finding the transformed values.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">fourier_sentiment &lt;- function (sentiment) {
+        as.numeric(get_transformed_values(sentiment[,2], 
+                                          low_pass_size = 3,
+                                          scale_vals = TRUE,
+                                          scale_range = FALSE))
+}
+</code></pre><p>We can now calculate the transformed sentiment plot shapes for all six novels.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">plotshape &lt;- rbind(data_frame(linenumber = 1:100, ft = fourier_sentiment(SS_sentiment)) %&gt;% 
+                           mutate(novel = &quot;Sense and Sensibility&quot;),
+      data_frame(linenumber = 1:100, ft = fourier_sentiment(PP_sentiment)) %&gt;% 
+              mutate(novel = &quot;Pride and Prejudice&quot;),
+      data_frame(linenumber = 1:100, ft = fourier_sentiment(MP_sentiment)) %&gt;% 
+              mutate(novel = &quot;Mansfield Park&quot;),
+      data_frame(linenumber = 1:100, ft = fourier_sentiment(Emma_sentiment)) %&gt;% 
+              mutate(novel = &quot;Emma&quot;),
+      data_frame(linenumber = 1:100, ft = fourier_sentiment(NA_sentiment)) %&gt;% 
+              mutate(novel = &quot;Northanger Abbey&quot;),
+      data_frame(linenumber = 1:100, ft = fourier_sentiment(persuasion_sentiment)) %&gt;% 
+              mutate(novel = &quot;Persuasion&quot;))
+plotshape$novel &lt;- factor(plotshape$novel, levels = c(&quot;Sense and Sensibility&quot;, 
+                                                      &quot;Pride and Prejudice&quot;, 
+                                                      &quot;Mansfield Park&quot;,
+                                                      &quot;Emma&quot;,
+                                                      &quot;Northanger Abbey&quot;,
+                                                      &quot;Persuasion&quot;))
+</code></pre><p>That&rsquo;s&hellip; maybe not the most elegant way to achieve this step, I admit. Anyway, let&rsquo;s see what these look like.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = plotshape, aes(x = linenumber, y = ft, fill = novel)) +
+        geom_area(alpha = 0.7) + 
+        facet_wrap(~novel, nrow = 3) +
+        theme_minimal() +
+        ylab(&quot;Transformed Sentiment Value&quot;) +
+        labs(title = &quot;Sentiment in Jane Austen's Novels&quot;,
+             caption = caption) +
+        scale_fill_viridis(end = 0.4, discrete=TRUE) +
+        scale_x_discrete(expand=c(0,0)) +
+        theme(strip.text=element_text(hjust=0)) +
+        theme(strip.text = element_text(face = &quot;italic&quot;)) +
+        theme(axis.text.y=element_text(margin=margin(r=-10))) +
+        theme(plot.caption=element_text(size=9)) +
+        theme(legend.position=&quot;none&quot;) +
+        theme(axis.title.x=element_blank()) +
+        theme(axis.ticks.x=element_blank()) +
+        theme(axis.text.x=element_blank())
+</code></pre><p><img src="/figs/2016-03-18-If-I-Loved-NLP-Less/unnamed-chunk-16-1.png" alt="center"></p>
+<p>This is super interesting to me. <em>Emma</em> and <em>Northanger Abbey</em> have the most similar plot trajectories, with their tales of immature women who come to understand their own folly and grow up a bit. <em>Mansfield Park</em> and <em>Persuasion</em> also have quite similar shapes, which also is absolutely reasonable; both of these are more serious, darker stories with main characters who are a little melancholic. <em>Persuasion</em> also appears unique in starting out with near-zero sentiment and then moving to more dramatic shifts in plot trajectory; it is a markedly different story from Austen&rsquo;s other works.</p>
+<p>All that said, I have been thinking more about using a Fourier transform in this way and I am not 100% convinced; I think there are some caveats. Making a model of plot shape in this way forces the plot trajectory to be periodic. This doesn&rsquo;t seem like too much of a problem as far as a general sinusoidal up-and-down pattern, and the shapes do make sense compared to the raw sentiment scores and my human reading of the trajectory of these novels. However, this modeling method forces the plot shape to begin and end at the same sentiment level. Whatever usefulness this method might have, we all have to admit that is a big drawback. It can&rsquo;t do a good job of modeling any plot shape that has a significantly terrible/wonderful ending compared to its beginning.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>It would be nice to think about other options for analyzing or modeling plot shapes beyond this low-pass filter approach. Aside from that, the <code>janeaustenr</code> package is now available and could be used for all sorts of text-y things; network analysis and term frequency (tf-idf) are just a couple of the things I would like to play around with. I am so delighted to be learning about natural language processing. The ideas involved in computational linguistics hit some real sweet spots for me. Heck, if I had known such things were possible ~15 years ago, I may well have gone a whole different direction educationally.</p>
+<p>Don&rsquo;t worry, though, space; you are still my first love.</p>
+<br>
+<blockquote class="instagram-media" data-instgrm-version="6" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:658px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:8px;"> <div style=" background:#F8F8F8; line-height:0; margin-top:40px; padding:50.0% 0; text-align:center; width:100%;"> <div style=" background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAMAAAApWqozAAAAGFBMVEUiIiI9PT0eHh4gIB4hIBkcHBwcHBwcHBydr+JQAAAACHRSTlMABA4YHyQsM5jtaMwAAADfSURBVDjL7ZVBEgMhCAQBAf//42xcNbpAqakcM0ftUmFAAIBE81IqBJdS3lS6zs3bIpB9WED3YYXFPmHRfT8sgyrCP1x8uEUxLMzNWElFOYCV6mHWWwMzdPEKHlhLw7NWJqkHc4uIZphavDzA2JPzUDsBZziNae2S6owH8xPmX8G7zzgKEOPUoYHvGz1TBCxMkd3kwNVbU0gKHkx+iZILf77IofhrY1nYFnB/lQPb79drWOyJVa/DAvg9B/rLB4cC+Nqgdz/TvBbBnr6GBReqn/nRmDgaQEej7WhonozjF+Y2I/fZou/qAAAAAElFTkSuQmCC); display:block; height:44px; margin:0 auto -44px; position:relative; top:-22px; width:44px;"></div></div><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="https://www.instagram.com/p/BCntbEZoaBx/" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_blank">A photo posted by NASA (@nasa)</a> on <time style=" font-family:Arial,sans-serif; font-size:14px; line-height:17px;" datetime="2016-03-06T17:46:20+00:00">Mar 6, 2016 at 9:46am PST</time></p></div></blockquote>
+<script async defer src="http://platform.instagram.com/en_US/embeds.js"></script>
+<br>
+<br>
+The R Markdown file used to make this blog post is available [here](https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-03-18-If-I-Loved-NLP-Less.Rmd). I am very happy to hear feedback or questions!
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">March 18, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">11 minute read, 2194 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/mapping-utah-caucus/">&larr; Trump Losing and Feeling the Bern in Utah</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/you-must-allow-me/">You Must Allow Me To Tell You How Ardently I Admire and Love Natural Language Processing &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Partial dependence plots with tidymodels and DALEX for #TidyTuesday Mario Kart world records | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Partial dependence plots with tidymodels and DALEX for #TidyTuesday Mario Kart world records | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/mario-kart/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/mario-kart/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/mario-kart/featured.png" >
+    
+    
+  <meta itemprop="name" content="Partial dependence plots with tidymodels and DALEX for #TidyTuesday Mario Kart world records">
+<meta itemprop="description" content="Tune a decision tree model to predict whether a Mario Kart world record used a shortcut, and explore partial dependence profiles for the world record times."><meta itemprop="datePublished" content="2021-05-28T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-05-28T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1280"><meta itemprop="image" content="https://juliasilge.com/blog/mario-kart/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Partial dependence plots with tidymodels and DALEX for #TidyTuesday Mario Kart world records</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">May 28, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just starting out to tuning more complex models with many hyperparameters. Today’s screencast walks through how to train and evalute a random forest model, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Mario Kart world records. 🍄</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/bn48fQ8aEDA" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict whether a 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-25/readme.md" target="_blank" rel="noopener">Mario Kart world record</a> was achieved using a shortcut or not.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+records <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-25/records.csv&#34;</span>)
+</code></pre></div><p>How are the world records distributed over time, for the various tracks?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">records <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(date, time, color <span style="color:#666">=</span> track)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_grid</span>(rows <span style="color:#666">=</span> <span style="color:#06287e">vars</span>(type), cols <span style="color:#666">=</span> <span style="color:#06287e">vars</span>(shortcut), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/mario-kart/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>The record times decreased at first but then have been more stable. The record times are different for the different tracks, and for three lap vs. one lap times.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start our modeling by setting up our “data budget.”</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+mario_split <span style="color:#666">&lt;-</span> records <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(shortcut, track, type, date, time) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.character, factor) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> shortcut)
+
+mario_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(mario_split)
+mario_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(mario_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+mario_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(mario_train, strata <span style="color:#666">=</span> shortcut)
+mario_folds
+</code></pre></div><pre><code>## # Bootstrap sampling using stratification 
+## # A tibble: 25 x 2
+##    splits             id         
+##    &lt;list&gt;             &lt;chr&gt;      
+##  1 &lt;split [1750/627]&gt; Bootstrap01
+##  2 &lt;split [1750/639]&gt; Bootstrap02
+##  3 &lt;split [1750/652]&gt; Bootstrap03
+##  4 &lt;split [1750/644]&gt; Bootstrap04
+##  5 &lt;split [1750/648]&gt; Bootstrap05
+##  6 &lt;split [1750/670]&gt; Bootstrap06
+##  7 &lt;split [1750/648]&gt; Bootstrap07
+##  8 &lt;split [1750/660]&gt; Bootstrap08
+##  9 &lt;split [1750/645]&gt; Bootstrap09
+## 10 &lt;split [1750/629]&gt; Bootstrap10
+## # … with 15 more rows
+</code></pre>
+<p>For this analysis, I am tuning a decision tree model. Tree-based models are very low-maintenance when it comes to data preprocessing, but single decision trees can be pretty easy to overfit.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tree_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">decision_tree</span>(
+  cost_complexity <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+  tree_depth <span style="color:#666">=</span> <span style="color:#06287e">tune</span>()
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;rpart&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>)
+
+tree_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">grid_regular</span>(<span style="color:#06287e">cost_complexity</span>(), <span style="color:#06287e">tree_depth</span>(), levels <span style="color:#666">=</span> <span style="color:#40a070">7</span>)
+
+mario_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(tree_spec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_formula</span>(shortcut <span style="color:#666">~</span> .)
+
+mario_wf
+</code></pre></div><pre><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Formula
+## Model: decision_tree()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## shortcut ~ .
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Decision Tree Model Specification (classification)
+## 
+## Main Arguments:
+##   cost_complexity = tune()
+##   tree_depth = tune()
+## 
+## Computational engine: rpart
+</code></pre>
+<p>Let’s tune the tree parameters to find the best decision tree for this Mario Kart data set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+tree_res <span style="color:#666">&lt;-</span> <span style="color:#06287e">tune_grid</span>(
+  mario_wf,
+  resamples <span style="color:#666">=</span> mario_folds,
+  grid <span style="color:#666">=</span> tree_grid,
+  control <span style="color:#666">=</span> <span style="color:#06287e">control_grid</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+)
+
+tree_res
+</code></pre></div><pre><code>## # Tuning results
+## # Bootstrap sampling using stratification 
+## # A tibble: 25 x 5
+##    splits           id         .metrics        .notes        .predictions       
+##    &lt;list&gt;           &lt;chr&gt;      &lt;list&gt;          &lt;list&gt;        &lt;list&gt;             
+##  1 &lt;split [1750/62… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [30,723 × …
+##  2 &lt;split [1750/63… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [31,311 × …
+##  3 &lt;split [1750/65… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [31,948 × …
+##  4 &lt;split [1750/64… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [31,556 × …
+##  5 &lt;split [1750/64… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [31,752 × …
+##  6 &lt;split [1750/67… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [32,830 × …
+##  7 &lt;split [1750/64… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [31,752 × …
+##  8 &lt;split [1750/66… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [32,340 × …
+##  9 &lt;split [1750/64… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [31,605 × …
+## 10 &lt;split [1750/62… Bootstrap… &lt;tibble [98 × … &lt;tibble [0 ×… &lt;tibble [30,821 × …
+## # … with 15 more rows
+</code></pre>
+<p>All done! We tried all the possible combinations of tree parameters for each resample.</p>
+
+
+
+
+<h2 id="choose-and-evaluate-final-model">Choose and evaluate final model
+  <a href="#choose-and-evaluate-final-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now we can explore our tuning results.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(tree_res)
+</code></pre></div><pre><code>## # A tibble: 98 x 8
+##    cost_complexity tree_depth .metric  .estimator  mean     n std_err .config   
+##              &lt;dbl&gt;      &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;     
+##  1   0.0000000001           1 accuracy binary     0.637    25 0.00371 Preproces…
+##  2   0.0000000001           1 roc_auc  binary     0.637    25 0.0109  Preproces…
+##  3   0.00000000316          1 accuracy binary     0.637    25 0.00371 Preproces…
+##  4   0.00000000316          1 roc_auc  binary     0.637    25 0.0109  Preproces…
+##  5   0.0000001              1 accuracy binary     0.637    25 0.00371 Preproces…
+##  6   0.0000001              1 roc_auc  binary     0.637    25 0.0109  Preproces…
+##  7   0.00000316             1 accuracy binary     0.637    25 0.00371 Preproces…
+##  8   0.00000316             1 roc_auc  binary     0.637    25 0.0109  Preproces…
+##  9   0.0001                 1 accuracy binary     0.637    25 0.00371 Preproces…
+## 10   0.0001                 1 roc_auc  binary     0.637    25 0.0109  Preproces…
+## # … with 88 more rows
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">show_best</span>(tree_res, metric <span style="color:#666">=</span> <span style="color:#4070a0">&#34;accuracy&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 5 x 8
+##   cost_complexity tree_depth .metric  .estimator  mean     n std_err .config    
+##             &lt;dbl&gt;      &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;      
+## 1   0.00316                8 accuracy binary     0.738    25 0.00248 Preprocess…
+## 2   0.0000000001           8 accuracy binary     0.736    25 0.00249 Preprocess…
+## 3   0.00000000316          8 accuracy binary     0.736    25 0.00249 Preprocess…
+## 4   0.0000001              8 accuracy binary     0.736    25 0.00249 Preprocess…
+## 5   0.00000316             8 accuracy binary     0.736    25 0.00249 Preprocess…
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(tree_res)
+</code></pre></div><img src="https://juliasilge.com/blog/mario-kart/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<p>Looks like a tree depth of 8 is best. How do the ROC curves look for the resampled training set?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(tree_res) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(id) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">roc_curve</span>(shortcut, .pred_No) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;none&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/mario-kart/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>Let’s choose the tree parameters we want to use, finalize our (tuneable) workflow with this choice, and then <strong>fit</strong> one last time to the training data and <strong>evaluate</strong> on the testing data. This is the first time we have used the test set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">choose_tree <span style="color:#666">&lt;-</span> <span style="color:#06287e">select_best</span>(tree_res, metric <span style="color:#666">=</span> <span style="color:#4070a0">&#34;accuracy&#34;</span>)
+
+final_res <span style="color:#666">&lt;-</span> mario_wf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">finalize_workflow</span>(choose_tree) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">last_fit</span>(mario_split)
+
+<span style="color:#06287e">collect_metrics</span>(final_res)
+</code></pre></div><pre><code>## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.721 Preprocessor1_Model1
+## 2 roc_auc  binary         0.847 Preprocessor1_Model1
+</code></pre>
+<p>One of the objects contained in <code>final_res</code> is a fitted workflow that we can save for future use or deployment (perhaps via <code>readr::write_rds()</code>) and use for prediction on new data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_fitted <span style="color:#666">&lt;-</span> final_res<span style="color:#666">$</span>.workflow[[1]]
+<span style="color:#06287e">predict</span>(final_fitted, mario_test[10<span style="color:#666">:</span><span style="color:#40a070">12</span>, ])
+</code></pre></div><pre><code>## # A tibble: 3 x 1
+##   .pred_class
+##   &lt;fct&gt;      
+## 1 No         
+## 2 No         
+## 3 Yes
+</code></pre>
+<p>We can use this fitted workflow to explore model explainability as well. Decision trees are pretty explainable already, but we might, for example, want to see a partial dependence plot for the shortcut probability and time. I like using the 
+<a href="https://dalex.drwhy.ai/" target="_blank" rel="noopener">DALEX</a> package for tasks like this, because it is very fully featured and has 
+<a href="https://modeloriented.github.io/DALEXtra/reference/explain_tidymodels.html" target="_blank" rel="noopener">good support for tidymodels</a>. To use DALEX with tidymodels, first you create an explainer and then you use that explainer for the task you want, like computing a PDP or Shapley explanations.</p>
+<p>Let’s start by creating our “explainer.”</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(DALEXtra)
+
+mario_explainer <span style="color:#666">&lt;-</span> <span style="color:#06287e">explain_tidymodels</span>(
+  final_fitted,
+  data <span style="color:#666">=</span> dplyr<span style="color:#666">::</span><span style="color:#06287e">select</span>(mario_train, <span style="color:#666">-</span>shortcut),
+  y <span style="color:#666">=</span> <span style="color:#06287e">as.integer</span>(mario_train<span style="color:#666">$</span>shortcut),
+  verbose <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>
+)
+</code></pre></div><p>Then let’s compute a partial dependence profile for time, grouped by <code>type</code>, which is three laps vs. one lap.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">pdp_time <span style="color:#666">&lt;-</span> <span style="color:#06287e">model_profile</span>(
+  mario_explainer,
+  variables <span style="color:#666">=</span> <span style="color:#4070a0">&#34;time&#34;</span>,
+  N <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>,
+  groups <span style="color:#666">=</span> <span style="color:#4070a0">&#34;type&#34;</span>
+)
+</code></pre></div><p>You can use the default plotting from DALEX by calling <code>plot(pdp_time)</code>, but if you like to customize your plots, you can access the underlying data via <code>pdp_time$agr_profiles</code> and <code>pdp_time$cp_profiles</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">as_tibble</span>(pdp_time<span style="color:#666">$</span>agr_profiles) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(`_label_` <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(`_label_`, <span style="color:#4070a0">&#34;workflow_&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(`_x_`, `_yhat_`, color <span style="color:#666">=</span> `_label_`)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Time to complete track&#34;</span>,
+    y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Predicted probability of shortcut&#34;</span>,
+    color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Partial dependence plot for Mario Kart world records&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Predictions from a decision tree model&#34;</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/mario-kart/index_files/figure-html/unnamed-chunk-13-1.png" width="2400" />
+<p>The shapes that we see here reflect how the decision tree model makes decisions along the time variable.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 28, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1280 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/sliced-aircraft/">&larr; Class imbalance and classification metrics with aircraft wildlife strikes</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/water-sources/">Predict availability in #TidyTuesday water sources with random forest models &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

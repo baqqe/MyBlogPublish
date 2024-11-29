@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Resampling to understand gender in #TidyTuesday art history data | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Resampling to understand gender in #TidyTuesday art history data | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/art-history/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/art-history/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/art-history/featured.png" >
+    
+    
+  <meta itemprop="name" content="Resampling to understand gender in #TidyTuesday art history data">
+<meta itemprop="description" content="Artists who are women are underrepresented in art history textbooks, and we can use resampling to robustly understand more about this imbalance."><meta itemprop="datePublished" content="2023-02-08T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-02-08T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1688"><meta itemprop="image" content="https://juliasilge.com/blog/art-history/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Resampling to understand gender in #TidyTuesday art history data</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">February 8, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to use resampling for an 
+<a href="https://www.tmwr.org/software-modeling.html#inferential-models" target="_blank" rel="noopener">inferential</a> type of question, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on art history textbooks. This dataset was created by Holland Stam for her 
+<a href="https://doi.org/10.7924/r4dn48h0w" target="_blank" rel="noopener">excellent undergraduate thesis</a>. 🖼️</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/Ac7V848uBuo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Art history textbooks have a lot of, well, art in them, and 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-01-17/readme.md" target="_blank" rel="noopener">this dataset</a> contains information on how much physical space each artwork is given across many editions of some of the most important art history textbooks. Artists who are women have been historically underrepresented, both where art is displayed and where it is studied like textbooks, and this dataset lets us understand more about in what ways this is true. Let’s start by reading in the data for one specific textbook, Gardner’s <em>Art Through the Ages</em>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+<span style="color:#06287e">library</span>(arthistory)
+<span style="color:#06287e">data</span>(worksgardner)
+<span style="color:#06287e">glimpse</span>(worksgardner)
+</code></pre></div><pre><code>## Rows: 2,325
+## Columns: 24
+## $ artist_name            &lt;chr&gt; &quot;Aaron Douglas&quot;, &quot;Aaron Douglas&quot;, &quot;Aaron Dougla…
+## $ edition_number         &lt;dbl&gt; 9, 10, 11, 12, 13, 14, 15, 16, 14, 15, 16, 5, 6…
+## $ title_of_work          &lt;chr&gt; &quot;Noah's Ark&quot;, &quot;Noah's Ark&quot;, &quot;Noah's Ark&quot;, &quot;Noah…
+## $ publication_year       &lt;dbl&gt; 1991, 1996, 2001, 2005, 2009, 2013, 2016, 2020,…
+## $ page_number_of_image   &lt;chr&gt; &quot;965&quot;, &quot;1053&quot;, &quot;1030&quot;, &quot;990&quot;, &quot;937&quot;, &quot;867&quot;, &quot;91…
+## $ artist_unique_id       &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3,…
+## $ artist_nationality     &lt;chr&gt; &quot;American&quot;, &quot;American&quot;, &quot;American&quot;, &quot;American&quot;,…
+## $ artist_gender          &lt;chr&gt; &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;,…
+## $ artist_race            &lt;chr&gt; &quot;Black or African American&quot;, &quot;Black or African …
+## $ artist_ethnicity       &lt;chr&gt; &quot;Not Hispanic or Latinx&quot;, &quot;Not Hispanic or Lati…
+## $ height_of_work_in_book &lt;dbl&gt; 11.3, 12.1, 12.3, 12.3, 12.8, 12.8, 12.7, 7.9, …
+## $ width_of_work_in_book  &lt;dbl&gt; 8.5, 8.9, 8.8, 8.8, 9.3, 9.3, 9.2, 19.0, 10.2, …
+## $ height_of_text         &lt;dbl&gt; 14.5, 12.4, 10.8, 15.7, 15.0, 18.8, 21.2, 14.7,…
+## $ width_of_text          &lt;dbl&gt; 8.4, 9.0, 9.0, 8.9, 9.3, 9.3, 9.2, 13.9, 9.3, 9…
+## $ extra_text_height      &lt;dbl&gt; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.2, 0.…
+## $ extra_text_width       &lt;dbl&gt; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.8, 0.…
+## $ area_of_work_in_book   &lt;dbl&gt; 96.05, 107.69, 108.24, 108.24, 119.04, 119.04, …
+## $ area_of_text           &lt;dbl&gt; 121.80, 111.60, 97.20, 139.73, 139.50, 174.84, …
+## $ extra_text_area        &lt;dbl&gt; 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,…
+## $ total_area_text        &lt;dbl&gt; 121.80, 111.60, 97.20, 139.73, 139.50, 174.84, …
+## $ total_space            &lt;dbl&gt; 217.85, 219.29, 205.44, 247.97, 258.54, 293.88,…
+## $ page_area              &lt;dbl&gt; 616.500, 586.420, 677.440, 657.660, 648.930, 64…
+## $ space_ratio_per_page   &lt;dbl&gt; 0.3533658, 0.3739470, 0.3032593, 0.3770489, 0.3…
+## $ book                   &lt;chr&gt; &quot;gardner&quot;, &quot;gardner&quot;, &quot;gardner&quot;, &quot;gardner&quot;, &quot;ga…
+</code></pre>
+<p>There is another art history textbook in this dataset as well, but let’s focus on just this one.</p>
+<p>How is gender recorded?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">worksgardner <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(artist_gender)
+</code></pre></div><pre><code>## # A tibble: 3 × 2
+##   artist_gender     n
+##   &lt;chr&gt;         &lt;int&gt;
+## 1 Female          214
+## 2 Male           2047
+## 3 N/A              64
+</code></pre>
+<p>There are about 10 times as many men as women, with a few artists whose gender was not identified. How did the number of works change across editions of this textbook?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">worksgardner <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(publication_year, artist_gender) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(publication_year, n, fill <span style="color:#666">=</span> artist_gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of works&#34;</span>, fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/art-history/index_files/figure-html/unnamed-chunk-4-1.png" width="1260" />
+<p>This textbook went through some drastic changes in how many works are included! How did the proportion by gender change?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">worksgardner <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(publication_year, artist_gender) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(publication_year) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(proportion <span style="color:#666">=</span> n <span style="color:#666">/</span> <span style="color:#06287e">sum</span>(n)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(publication_year, proportion, fill <span style="color:#666">=</span> artist_gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of works&#34;</span>, fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/art-history/index_files/figure-html/unnamed-chunk-5-1.png" width="1260" />
+<p>There were literally no confirmed women at all in the first edition and then there has been a move to include more women in later editions, but the proportion is maxing out at about 15% of the works included. (This plot is almost exactly the same as one in Holland Stam’s thesis.)</p>
+<p>What about the area on the page allotted to each work? Is this different across gender?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">worksgardner <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(x <span style="color:#666">=</span> area_of_work_in_book, fill <span style="color:#666">=</span> artist_gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">15</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(artist_gender), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>, ncol <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/art-history/index_files/figure-html/unnamed-chunk-6-1.png" width="900" />
+<p>There is more mass below the most common value for women compared to men, so women are allotted less area per artwork. Is this changing over time?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">worksgardner <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(publication_year <span style="color:#666">=</span> <span style="color:#40a070">10</span> <span style="color:#666">*</span> (publication_year <span style="color:#666">%/%</span> <span style="color:#40a070">10</span>),
+         publication_year <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(publication_year)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(publication_year, area_of_work_in_book, fill <span style="color:#666">=</span> artist_gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(artist_gender), ncol <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/art-history/index_files/figure-html/unnamed-chunk-7-1.png" width="1260" />
+<p>It looks to me like the artworks got bigger on the page as time went on, although this has mostly flattened out now. Given how many more artworks are included in the later editions, the number of pages must have grown enormously!</p>
+
+
+
+
+<h2 id="resampling-to-understand-relationships">Resampling to understand relationships
+  <a href="#resampling-to-understand-relationships"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s use resampling to understand how much evidence there is for change with time and/or gender. We can start by subsetting the data down to only those works identified as created by a man or woman and only those which were included with some area (i.e. shown on a page).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">works_subset <span style="color:#666">&lt;-</span>
+  worksgardner <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(artist_gender <span style="color:#666">%in%</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Male&#34;</span>, <span style="color:#4070a0">&#34;Female&#34;</span>),
+         area_of_work_in_book <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(area_of_work_in_book <span style="color:#666">=</span> <span style="color:#06287e">log10</span>(area_of_work_in_book))
+</code></pre></div><p>If I wanted to fit a linear model one time, I could do this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">single_model <span style="color:#666">&lt;-</span> <span style="color:#06287e">lm</span>(area_of_work_in_book <span style="color:#666">~</span> artist_gender <span style="color:#666">+</span> publication_year,
+                   data <span style="color:#666">=</span> works_subset)
+<span style="color:#06287e">summary</span>(single_model)
+</code></pre></div><pre><code>##
+## Call:
+## lm(formula = area_of_work_in_book ~ artist_gender + publication_year,
+##     data = works_subset)
+##
+## Residuals:
+##      Min       1Q   Median       3Q      Max
+## -0.56303 -0.10616 -0.01543  0.08998  0.65367
+##
+## Coefficients:
+##                     Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)       -5.4720296  0.3437408 -15.919  &lt; 2e-16 ***
+## artist_genderMale  0.0468432  0.0126179   3.712  0.00021 ***
+## publication_year   0.0037704  0.0001713  22.006  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##
+## Residual standard error: 0.1732 on 2242 degrees of freedom
+## Multiple R-squared:  0.1776,	Adjusted R-squared:  0.1769
+## F-statistic: 242.1 on 2 and 2242 DF,  p-value: &lt; 2.2e-16
+</code></pre>
+<p>This says that with a single linear model, we see evidence that men are allotted larger areas and the area per work is increasing with time. (It’s modeling a linear relationship, which is probably not 100% right; we could try options like a low-rank spline for the relationship between area and year if we wanted to check that out.)</p>
+<p>Often with questions like this, I prefer to use resampling instead of fitting a model one single time, so I can get a better understanding of what’s going with the relationships. We can start by creating a set of bootstrap resamples:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(works_subset, times <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>)
+folds
+</code></pre></div><pre><code>## # Bootstrap sampling
+## # A tibble: 1,000 × 2
+##    splits             id
+##    &lt;list&gt;             &lt;chr&gt;
+##  1 &lt;split [2245/825]&gt; Bootstrap0001
+##  2 &lt;split [2245/821]&gt; Bootstrap0002
+##  3 &lt;split [2245/827]&gt; Bootstrap0003
+##  4 &lt;split [2245/841]&gt; Bootstrap0004
+##  5 &lt;split [2245/808]&gt; Bootstrap0005
+##  6 &lt;split [2245/823]&gt; Bootstrap0006
+##  7 &lt;split [2245/833]&gt; Bootstrap0007
+##  8 &lt;split [2245/825]&gt; Bootstrap0008
+##  9 &lt;split [2245/823]&gt; Bootstrap0009
+## 10 &lt;split [2245/840]&gt; Bootstrap0010
+## # … with 990 more rows
+</code></pre>
+<p>Now we can iterate through the resamples, fitting the same linear model to each resample. Let’s also <code>tidy()</code> the models to get the coefficients.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">linear_coefs <span style="color:#666">&lt;-</span>
+  folds <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    model <span style="color:#666">=</span> <span style="color:#06287e">map</span>(
+      splits,
+      <span style="color:#666">~</span> <span style="color:#06287e">lm</span>(area_of_work_in_book <span style="color:#666">~</span> artist_gender <span style="color:#666">+</span> publication_year,
+           data <span style="color:#666">=</span> <span style="color:#06287e">analysis</span>(.x))
+    ),
+    coef_info <span style="color:#666">=</span> <span style="color:#06287e">map</span>(model, tidy))
+
+linear_coefs
+</code></pre></div><pre><code>## # Bootstrap sampling
+## # A tibble: 1,000 × 4
+##    splits             id            model  coef_info
+##    &lt;list&gt;             &lt;chr&gt;         &lt;list&gt; &lt;list&gt;
+##  1 &lt;split [2245/825]&gt; Bootstrap0001 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  2 &lt;split [2245/821]&gt; Bootstrap0002 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  3 &lt;split [2245/827]&gt; Bootstrap0003 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  4 &lt;split [2245/841]&gt; Bootstrap0004 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  5 &lt;split [2245/808]&gt; Bootstrap0005 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  6 &lt;split [2245/823]&gt; Bootstrap0006 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  7 &lt;split [2245/833]&gt; Bootstrap0007 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  8 &lt;split [2245/825]&gt; Bootstrap0008 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+##  9 &lt;split [2245/823]&gt; Bootstrap0009 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+## 10 &lt;split [2245/840]&gt; Bootstrap0010 &lt;lm&gt;   &lt;tibble [3 × 5]&gt;
+## # … with 990 more rows
+</code></pre>
+<p>How did this turn out?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">linear_coefs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(coef_info)
+</code></pre></div><pre><code>## # A tibble: 3,000 × 8
+##    splits             id          model term  estimate std.e…¹ stati…²   p.value
+##    &lt;list&gt;             &lt;chr&gt;       &lt;lis&gt; &lt;chr&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+##  1 &lt;split [2245/825]&gt; Bootstrap0… &lt;lm&gt;  (Int… -5.41    3.45e-1  -15.7  1.18e- 52
+##  2 &lt;split [2245/825]&gt; Bootstrap0… &lt;lm&gt;  arti…  0.0270  1.28e-2    2.11 3.47e-  2
+##  3 &lt;split [2245/825]&gt; Bootstrap0… &lt;lm&gt;  publ…  0.00374 1.72e-4   21.8  1.67e- 95
+##  4 &lt;split [2245/821]&gt; Bootstrap0… &lt;lm&gt;  (Int… -5.97    3.35e-1  -17.8  1.63e- 66
+##  5 &lt;split [2245/821]&gt; Bootstrap0… &lt;lm&gt;  arti…  0.0574  1.33e-2    4.32 1.62e-  5
+##  6 &lt;split [2245/821]&gt; Bootstrap0… &lt;lm&gt;  publ…  0.00402 1.67e-4   24.0  1.06e-113
+##  7 &lt;split [2245/827]&gt; Bootstrap0… &lt;lm&gt;  (Int… -5.43    3.27e-1  -16.6  1.22e- 58
+##  8 &lt;split [2245/827]&gt; Bootstrap0… &lt;lm&gt;  arti…  0.0516  1.21e-2    4.26 2.13e-  5
+##  9 &lt;split [2245/827]&gt; Bootstrap0… &lt;lm&gt;  publ…  0.00375 1.63e-4   23.0  1.92e-105
+## 10 &lt;split [2245/841]&gt; Bootstrap0… &lt;lm&gt;  (Int… -5.80    3.39e-1  -17.1  1.14e- 61
+## # … with 2,990 more rows, and abbreviated variable names ¹​std.error, ²​statistic
+</code></pre>
+<p>The effect of gender is on the order of 10 times as large as the effect of a single year; you could say that an artwork gets as much of a bump in area from being created by a man as an additional decade or so of new editions. What I really find helpful about using resampling is to make visualizations like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">linear_coefs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_sample</span>(n <span style="color:#666">=</span> <span style="color:#40a070">200</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(augmented <span style="color:#666">=</span> <span style="color:#06287e">map</span>(model, augment)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(augmented) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(publication_year, .fitted, color <span style="color:#666">=</span> artist_gender, group <span style="color:#666">=</span> id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.1</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(artist_gender))
+</code></pre></div><img src="https://juliasilge.com/blog/art-history/index_files/figure-html/unnamed-chunk-13-1.png" width="1260" />
+<p>What I like about this is that we can see how there is much more uncertainty in the relationship for women than for men, and also in early years compared to later years. This makes sense given where we have more data in the gender-year space, but it really helps me to see it visually.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 8, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1688 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/horror-embeddings/">&larr; Use OpenAI text embeddings with #TidyTuesday horror movie descriptions</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/project-feederwatch/">To downsample imbalanced data or not, with #TidyTuesday bird feeders &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

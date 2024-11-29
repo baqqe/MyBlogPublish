@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Modeling #TidyTuesday NCAA women&#39;s basketball tournament seeds | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Modeling #TidyTuesday NCAA women&#39;s basketball tournament seeds | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/ncaa-tuning/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/ncaa-tuning/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/ncaa-tuning/featured.png" >
+    
+    
+  <meta itemprop="name" content="Modeling #TidyTuesday NCAA women&#39;s basketball tournament seeds">
+<meta itemprop="description" content="Tune a hyperparameter and then understand how to choose the best value afterward, using tidymodels for modeling the relationship between expected wins and tournament seed."><meta itemprop="datePublished" content="2020-10-07T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-10-07T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1960"><meta itemprop="image" content="https://juliasilge.com/blog/ncaa-tuning/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Modeling #TidyTuesday NCAA women&#39;s basketball tournament seeds</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">October 7, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Lately I&rsquo;ve been publishing 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> framework, from starting out with first modeling steps to tuning more complex models. Today&rsquo;s screencast walks through how to tune and choose hyperparameters using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on NCAA women&rsquo;s basketball tournaments. 🏀</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/krw7OkUCk84" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to estimate the relationship of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-10-06/readme.md" target="_blank" rel="noopener">expected tournament wins by seed from this week&rsquo;s #TidyTuesday dataset</a>. This is similar to the 
+<a href="https://fivethirtyeight.com/features/tom-izzo-is-the-best-coach-in-modern-ncaa-tournament-history-by-far/" target="_blank" rel="noopener">&ldquo;average&rdquo; column in the FiveThirtyEight table in this article</a>. This was what I was most interested in when I saw this data, but I was pretty confused about what was going on this table at first! Many thanks to 
+<a href="https://themockup.blog/" target="_blank" rel="noopener">Tom Mock</a> for helping out my understanding.</p>
+<p>Let&rsquo;s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+tournament <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-06/tournament.csv&#34;</span>)
+
+tournament
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2,092 x 19
+##     year school  seed conference conf_w conf_l conf_percent conf_place reg_w
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt; &lt;chr&gt;       &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt; &lt;chr&gt;      &lt;dbl&gt;
+##  1  1982 Arizo…     4 Western C…     NA     NA         NA   -             23
+##  2  1982 Auburn     7 Southeast…     NA     NA         NA   -             24
+##  3  1982 Cheyn…     2 Independe…     NA     NA         NA   -             24
+##  4  1982 Clems…     5 Atlantic …      6      3         66.7 4th           20
+##  5  1982 Drake      4 Missouri …     NA     NA         NA   -             26
+##  6  1982 East …     6 Independe…     NA     NA         NA   -             19
+##  7  1982 Georg…     5 Southeast…     NA     NA         NA   -             21
+##  8  1982 Howard     8 Mid-Easte…     NA     NA         NA   -             14
+##  9  1982 Illin…     7 Big Ten        NA     NA         NA   -             21
+## 10  1982 Jacks…     7 Southwest…     NA     NA         NA   -             28
+## # … with 2,082 more rows, and 10 more variables: reg_l &lt;dbl&gt;,
+## #   reg_percent &lt;dbl&gt;, how_qual &lt;chr&gt;, x1st_game_at_home &lt;chr&gt;,
+## #   tourney_w &lt;dbl&gt;, tourney_l &lt;dbl&gt;, tourney_finish &lt;chr&gt;, full_w &lt;dbl&gt;,
+## #   full_l &lt;dbl&gt;, full_percent &lt;dbl&gt;
+</code></pre><p>We can look at the mean wins by seed.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tournament <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(seed) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(exp_wins <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(tourney_w, na.rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(seed, exp_wins)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, size <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;tournament wins (mean)&#34;</span>)
+</code></pre></div><img src="/blog/ncaa-tuning/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Let&rsquo;s visualize all the tournament results, not just the averages.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tournament <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(seed, tourney_w)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bin2d</span>(binwidth <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">1</span>, <span style="color:#40a070">1</span>), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_gradient</span>(low <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray85&#34;</span>, high <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;number of\nteams&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;tournament wins&#34;</span>)
+</code></pre></div><img src="/blog/ncaa-tuning/index_files/figure-html/unnamed-chunk-4-1.png" width="2100" />
+<p>We have a lot of options to deal with data like this (curvy, integers, all greater than zero) but one straightforward option are 
+<a href="https://www.tmwr.org/recipes.html#spline-functions" target="_blank" rel="noopener">splines</a>. Splines aren&rsquo;t perfect for this because they aren&rsquo;t constrained to stay greater than zero or to always decrease, but they work pretty well and can be used in lots of situations. We have to choose the <strong>degrees of freedom</strong> for the splines.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(splines)
+
+plot_smoother <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(deg_free) {
+  p <span style="color:#666">&lt;-</span> <span style="color:#06287e">ggplot</span>(tournament, <span style="color:#06287e">aes</span>(seed, tourney_w)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_bin2d</span>(binwidth <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">1</span>, <span style="color:#40a070">1</span>), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_fill_gradient</span>(low <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray85&#34;</span>, high <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_smooth</span>(
+      method <span style="color:#666">=</span> lm, se <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;black&#34;</span>,
+      formula <span style="color:#666">=</span> y <span style="color:#666">~</span> <span style="color:#06287e">ns</span>(x, df <span style="color:#666">=</span> deg_free)
+    ) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(
+      fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;number of\nteams&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;tournament wins&#34;</span>,
+      title <span style="color:#666">=</span> <span style="color:#06287e">paste</span>(deg_free, <span style="color:#4070a0">&#34;spline terms&#34;</span>)
+    )
+
+  <span style="color:#06287e">print</span>(p)
+}
+
+<span style="color:#06287e">walk</span>(<span style="color:#06287e">c</span>(<span style="color:#40a070">2</span>, <span style="color:#40a070">4</span>, <span style="color:#40a070">6</span>, <span style="color:#40a070">8</span>, <span style="color:#40a070">10</span>, <span style="color:#40a070">15</span>), plot_smoother)
+</code></pre></div><img src="/blog/ncaa-tuning/index_files/figure-html/unnamed-chunk-5-.gif" width="2100" />
+<p>As the number of degrees of freedom goes up, the curves get more wiggly. This would allow the model to fit a more complex relationship, perhaps too much so give our data. We can <em>tune</em> this hyperparameter to find the best value.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, and splitting our data into training and testing sets.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+tourney_split <span style="color:#666">&lt;-</span> tournament <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(seed)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> seed)
+
+tourney_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(tourney_split)
+tourney_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(tourney_split)
+</code></pre></div><p>We are going to use 
+<a href="https://www.tmwr.org/resampling.html" target="_blank" rel="noopener">resampling</a> to evaluate model performance, so let&rsquo;s get those resampled sets ready.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+tourney_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(tourney_train)
+tourney_folds
+</code></pre></div><pre tabindex="0"><code>## # Bootstrap sampling 
+## # A tibble: 25 x 2
+##    splits             id         
+##    &lt;list&gt;             &lt;chr&gt;      
+##  1 &lt;split [1.6K/545]&gt; Bootstrap01
+##  2 &lt;split [1.6K/587]&gt; Bootstrap02
+##  3 &lt;split [1.6K/597]&gt; Bootstrap03
+##  4 &lt;split [1.6K/581]&gt; Bootstrap04
+##  5 &lt;split [1.6K/581]&gt; Bootstrap05
+##  6 &lt;split [1.6K/597]&gt; Bootstrap06
+##  7 &lt;split [1.6K/570]&gt; Bootstrap07
+##  8 &lt;split [1.6K/572]&gt; Bootstrap08
+##  9 &lt;split [1.6K/598]&gt; Bootstrap09
+## 10 &lt;split [1.6K/576]&gt; Bootstrap10
+## # … with 15 more rows
+</code></pre><p>Next we build a recipe for data preprocessing. It only has one step!</p>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what our model is going to be (using a formula here) and what our training data is.</li>
+<li>For our first and only step, we create new spline terms from the original <code>seed</code> variable. We don&rsquo;t know what the best value for the degrees of freedom is, so we will <code>tune()</code> it. We can set an <code>id</code> value for the tuneable parameter to more easily keep track of it, if we want.</li>
+</ul>
+<p>The object <code>tourney_rec</code> is a recipe that has <strong>not</strong> been trained on data yet, and in fact, we can&rsquo;t do this because we haven&rsquo;t decided on a value for <code>deg_free</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tourney_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(tourney_w <span style="color:#666">~</span> seed, data <span style="color:#666">=</span> tourney_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_ns</span>(seed, deg_free <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(<span style="color:#4070a0">&#34;seed_splines&#34;</span>))
+
+tourney_rec
+</code></pre></div><pre tabindex="0"><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##    outcome          1
+##  predictor          1
+## 
+## Operations:
+## 
+## Natural Splines on seed
+</code></pre><p>Next, let&rsquo;s create a model specification for a linear regression model, and the combine the recipe and model together in a 
+<a href="https://www.tmwr.org/workflows.html" target="_blank" rel="noopener">workflow</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lm_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">linear_reg</span>() <span style="color:#666">%&gt;%</span> <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;lm&#34;</span>)
+
+tourney_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(tourney_rec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(lm_spec)
+
+tourney_wf
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow ════════════════════════════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────────────────────────────
+## 1 Recipe Step
+## 
+## ● step_ns()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────────────────────────────
+## Linear Regression Model Specification (regression)
+## 
+## Computational engine: lm
+</code></pre><p>This workflow is almost ready to go, but we need to decide what values to try for the splines. There are several different ways to 
+<a href="https://dials.tidymodels.org/" target="_blank" rel="noopener">create tuning grids</a>, but if the grid you need is very simple, you might prefer to create it by hand.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">spline_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">tibble</span>(seed_splines <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">3</span>, <span style="color:#40a070">5</span>, <span style="color:#40a070">7</span>, <span style="color:#40a070">10</span>))
+spline_grid
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 6 x 1
+##   seed_splines
+##          &lt;dbl&gt;
+## 1            1
+## 2            2
+## 3            3
+## 4            5
+## 5            7
+## 6           10
+</code></pre><p>Now we can put this all together! When we use <code>tune_grid()</code>, we will fit each of the options in the grid to each of the resamples.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+save_preds <span style="color:#666">&lt;-</span> <span style="color:#06287e">control_grid</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+
+spline_rs <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">tune_grid</span>(
+    tourney_wf,
+    resamples <span style="color:#666">=</span> tourney_folds,
+    grid <span style="color:#666">=</span> spline_grid,
+    control <span style="color:#666">=</span> save_preds
+  )
+
+spline_rs
+</code></pre></div><pre tabindex="0"><code>## # Tuning results
+## # Bootstrap sampling 
+## # A tibble: 25 x 5
+##    splits           id         .metrics        .notes         .predictions      
+##    &lt;list&gt;           &lt;chr&gt;      &lt;list&gt;          &lt;list&gt;         &lt;list&gt;            
+##  1 &lt;split [1.6K/54… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,270 × …
+##  2 &lt;split [1.6K/58… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,522 × …
+##  3 &lt;split [1.6K/59… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,582 × …
+##  4 &lt;split [1.6K/58… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,486 × …
+##  5 &lt;split [1.6K/58… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,486 × …
+##  6 &lt;split [1.6K/59… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,582 × …
+##  7 &lt;split [1.6K/57… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,420 × …
+##  8 &lt;split [1.6K/57… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,432 × …
+##  9 &lt;split [1.6K/59… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,588 × …
+## 10 &lt;split [1.6K/57… Bootstrap… &lt;tibble [12 × … &lt;tibble [0 × … &lt;tibble [3,456 × …
+## # … with 15 more rows
+</code></pre><p>We have now fit each of our candidate set of spline features to our resampled training set!</p>
+
+
+
+
+<h2 id="evaluate-model">Evaluate model
+  <a href="#evaluate-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let&rsquo;s check out how we did.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(spline_rs)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 12 x 7
+##    seed_splines .metric .estimator  mean     n std_err .config
+##           &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;  
+##  1            1 rmse    standard   0.982    25 0.00741 Recipe1
+##  2            1 rsq     standard   0.432    25 0.00372 Recipe1
+##  3            2 rmse    standard   0.896    25 0.00749 Recipe2
+##  4            2 rsq     standard   0.528    25 0.00486 Recipe2
+##  5            3 rmse    standard   0.871    25 0.00727 Recipe3
+##  6            3 rsq     standard   0.554    25 0.00518 Recipe3
+##  7            5 rmse    standard   0.869    25 0.00730 Recipe4
+##  8            5 rsq     standard   0.556    25 0.00541 Recipe4
+##  9            7 rmse    standard   0.868    25 0.00718 Recipe5
+## 10            7 rsq     standard   0.557    25 0.00537 Recipe5
+## 11           10 rmse    standard   0.868    25 0.00693 Recipe6
+## 12           10 rsq     standard   0.557    25 0.00538 Recipe6
+</code></pre><p>Looks like the model got better and better as we added more degrees of freedom, which isn&rsquo;t too shocking. In what way did it change?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(spline_rs) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(seed_splines, mean, color <span style="color:#666">=</span> .metric)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">3</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>.metric, ncol <span style="color:#666">=</span> <span style="color:#40a070">1</span>, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;degrees of freedom&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;none&#34;</span>)
+</code></pre></div><img src="/blog/ncaa-tuning/index_files/figure-html/unnamed-chunk-13-1.png" width="2400" />
+<p>The model improved a lot as we increased the degrees of freedom at the beginning, but then continuing to add more didn&rsquo;t make much difference. We could choose the numerically optimal hyperparameter with <code>select_best()</code> but that would choose a more wiggly, complex model than we probably want. We can choose a <em>simpler</em> model that performs well, within some limits around the numerically optimal result. We could choose either by percent loss in performance or within one standard error in performance.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">select_by_pct_loss</span>(spline_rs, metric <span style="color:#666">=</span> <span style="color:#4070a0">&#34;rmse&#34;</span>, limit <span style="color:#666">=</span> <span style="color:#40a070">5</span>, seed_splines)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 9
+##   seed_splines .metric .estimator  mean     n std_err .config .best .loss
+##          &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;
+## 1            2 rmse    standard   0.896    25 0.00749 Recipe2 0.868  3.27
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">select_by_one_std_err</span>(spline_rs, metric <span style="color:#666">=</span> <span style="color:#4070a0">&#34;rmse&#34;</span>, seed_splines)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 9
+##   seed_splines .metric .estimator  mean     n std_err .config .best .bound
+##          &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+## 1            3 rmse    standard   0.871    25 0.00727 Recipe3 0.868  0.875
+</code></pre><p>Looks like 2 or 3 degrees of freedom is a good option. Let&rsquo;s go with 3, and update our tuneable workflow with this information and then fit it to our training data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">finalize_workflow</span>(tourney_wf, <span style="color:#06287e">tibble</span>(seed_splines <span style="color:#666">=</span> <span style="color:#40a070">3</span>))
+tourney_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(final_wf, tourney_train)
+tourney_fit
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow [trained] ══════════════════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────────────────────────────
+## 1 Recipe Step
+## 
+## ● step_ns()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────────────────────────────
+## 
+## Call:
+## stats::lm(formula = ..y ~ ., data = data)
+## 
+## Coefficients:
+## (Intercept)    seed_ns_1    seed_ns_2    seed_ns_3  
+##       3.272       -1.855       -5.590       -1.822
+</code></pre><p>We can predict from this fitted workflow. For example, we can predict on the testing data and compute model performance.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tourney_test <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_cols</span>(<span style="color:#06287e">predict</span>(tourney_fit, tourney_test)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">metrics</span>(tourney_w, .pred)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 3 x 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 rmse    standard       0.877
+## 2 rsq     standard       0.545
+## 3 mae     standard       0.609
+</code></pre><p>Pretty good! We can also predict on other kinds of new data. For example, let&rsquo;s recreate the 
+<a href="https://fivethirtyeight.com/features/tom-izzo-is-the-best-coach-in-modern-ncaa-tournament-history-by-far/" target="_blank" rel="noopener">&ldquo;average&rdquo; column in the FiveThirtyEight table on expected wins</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">predict</span>(tourney_fit, new_data <span style="color:#666">=</span> <span style="color:#06287e">tibble</span>(seed <span style="color:#666">=</span> <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">16</span>))
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 16 x 1
+##       .pred
+##       &lt;dbl&gt;
+##  1  3.27   
+##  2  2.61   
+##  3  1.99   
+##  4  1.45   
+##  5  1.02   
+##  6  0.738  
+##  7  0.574  
+##  8  0.492  
+##  9  0.456  
+## 10  0.429  
+## 11  0.380  
+## 12  0.307  
+## 13  0.216  
+## 14  0.110  
+## 15 -0.00482
+## 16 -0.125
+</code></pre><p>It&rsquo;s close! This isn&rsquo;t a huge surprise, since we&rsquo;re fitting curves to data in a straightforward way here, but it&rsquo;s still good to see. You can also see why splines aren&rsquo;t perfect for this task, because the prediction isn&rsquo;t constrained to positive values.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 7, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">10 minute read, 1960 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/datasaurus-multiclass/">&larr; Predicting class membership for the #TidyTuesday Datasaurus Dozen </a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/himalayan-climbing/">Handle class imbalance in #TidyTuesday climbing expedition data with tidymodels &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

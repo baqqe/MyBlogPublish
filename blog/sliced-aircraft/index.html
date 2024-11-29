@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Class imbalance and classification metrics with aircraft wildlife strikes | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Class imbalance and classification metrics with aircraft wildlife strikes | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/sliced-aircraft/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/sliced-aircraft/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/sliced-aircraft/featured.png" >
+    
+    
+  <meta itemprop="name" content="Class imbalance and classification metrics with aircraft wildlife strikes">
+<meta itemprop="description" content="Handling class imbalance in modeling affects classification metrics in different ways. Learn how to use tidymodels to subsample for class imbalance, and how to estimate model performance using resampling."><meta itemprop="datePublished" content="2021-06-21T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-06-21T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1598"><meta itemprop="image" content="https://juliasilge.com/blog/sliced-aircraft/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Class imbalance and classification metrics with aircraft wildlife strikes</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">June 21, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just starting out to tuning more complex models with many hyperparameters. I recently participated in 
+<a href="https://www.notion.so/SLICED-Show-c7bd26356e3a42279e2dfbafb0480073" target="_blank" rel="noopener">SLICED</a>, a competitive data science prediction challenge. I did not necessarily cover myself in glory but in today’s screencast, I walk through the data set on aircraft wildlife strikes we used and how different choices around handling class imbalance affect different classification metrics. ✈️</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/7qIg-40rNbo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict whether an 
+<a href="https://www.kaggle.com/c/sliced-s01e02-xunyc5/" target="_blank" rel="noopener">aircraft strike with wildlife</a> resulted in damage to the aircraft. There are two data sets provided, training (which has the label <code>damaged</code>) and testing (which does not).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+train_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;train.csv&#34;</span>, guess_max <span style="color:#666">=</span> <span style="color:#40a070">1e5</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(damaged <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    damaged <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;damage&#34;</span>,
+    <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;no damage&#34;</span>
+  ))
+test_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;test.csv&#34;</span>, guess_max <span style="color:#666">=</span> <span style="color:#40a070">1e5</span>)
+</code></pre></div><p>There is lots available in the data!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">skimr<span style="color:#666">::</span><span style="color:#06287e">skim</span>(train_raw)
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left"></th>
+<th style="text-align:left"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Name</td>
+<td style="text-align:left">train_raw</td>
+</tr>
+<tr>
+<td style="text-align:left">Number of rows</td>
+<td style="text-align:left">21000</td>
+</tr>
+<tr>
+<td style="text-align:left">Number of columns</td>
+<td style="text-align:left">34</td>
+</tr>
+<tr>
+<td style="text-align:left">_______________________</td>
+<td style="text-align:left"></td>
+</tr>
+<tr>
+<td style="text-align:left">Column type frequency:</td>
+<td style="text-align:left"></td>
+</tr>
+<tr>
+<td style="text-align:left">character</td>
+<td style="text-align:left">20</td>
+</tr>
+<tr>
+<td style="text-align:left">numeric</td>
+<td style="text-align:left">14</td>
+</tr>
+<tr>
+<td style="text-align:left">________________________</td>
+<td style="text-align:left"></td>
+</tr>
+<tr>
+<td style="text-align:left">Group variables</td>
+<td style="text-align:left">None</td>
+</tr>
+</tbody>
+</table>
+<p>Table 1: Data summary</p>
+<p><strong>Variable type: character</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">skim_variable</th>
+<th style="text-align:right">n_missing</th>
+<th style="text-align:right">complete_rate</th>
+<th style="text-align:right">min</th>
+<th style="text-align:right">max</th>
+<th style="text-align:right">empty</th>
+<th style="text-align:right">n_unique</th>
+<th style="text-align:right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">operator_id</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">276</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">operator</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">33</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">275</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">aircraft</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">20</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">424</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">aircraft_type</td>
+<td style="text-align:right">4992</td>
+<td style="text-align:right">0.76</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">aircraft_make</td>
+<td style="text-align:right">5231</td>
+<td style="text-align:right">0.75</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">62</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">engine_model</td>
+<td style="text-align:right">6334</td>
+<td style="text-align:right">0.70</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">39</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">engine_type</td>
+<td style="text-align:right">5703</td>
+<td style="text-align:right">0.73</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">8</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">engine3_position</td>
+<td style="text-align:right">19671</td>
+<td style="text-align:right">0.06</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">11</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">airport_id</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1039</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">airport</td>
+<td style="text-align:right">34</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">53</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1038</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">state</td>
+<td style="text-align:right">2664</td>
+<td style="text-align:right">0.87</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">60</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">faa_region</td>
+<td style="text-align:right">2266</td>
+<td style="text-align:right">0.89</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">14</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">flight_phase</td>
+<td style="text-align:right">6728</td>
+<td style="text-align:right">0.68</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">12</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">12</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">visibility</td>
+<td style="text-align:right">7699</td>
+<td style="text-align:right">0.63</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">7</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">precipitation</td>
+<td style="text-align:right">10327</td>
+<td style="text-align:right">0.51</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">15</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">8</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">species_id</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">6</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">447</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">species_name</td>
+<td style="text-align:right">7</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">50</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">445</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">species_quantity</td>
+<td style="text-align:right">532</td>
+<td style="text-align:right">0.97</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">8</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">flight_impact</td>
+<td style="text-align:right">8944</td>
+<td style="text-align:right">0.57</td>
+<td style="text-align:right">4</td>
+<td style="text-align:right">21</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">6</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">damaged</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">6</td>
+<td style="text-align:right">9</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">skim_variable</th>
+<th style="text-align:right">n_missing</th>
+<th style="text-align:right">complete_rate</th>
+<th style="text-align:right">mean</th>
+<th style="text-align:right">sd</th>
+<th style="text-align:right">p0</th>
+<th style="text-align:right">p25</th>
+<th style="text-align:right">p50</th>
+<th style="text-align:right">p75</th>
+<th style="text-align:right">p100</th>
+<th style="text-align:left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">id</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">14980.94</td>
+<td style="text-align:right">8663.24</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">7458.75</td>
+<td style="text-align:right">14978.5</td>
+<td style="text-align:right">22472.25</td>
+<td style="text-align:right">30000</td>
+<td style="text-align:left">▇▇▇▇▇</td>
+</tr>
+<tr>
+<td style="text-align:left">incident_year</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">2006.06</td>
+<td style="text-align:right">6.72</td>
+<td style="text-align:right">1990</td>
+<td style="text-align:right">2001.00</td>
+<td style="text-align:right">2007.0</td>
+<td style="text-align:right">2012.00</td>
+<td style="text-align:right">2015</td>
+<td style="text-align:left">▂▃▅▆▇</td>
+</tr>
+<tr>
+<td style="text-align:left">incident_month</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">7.19</td>
+<td style="text-align:right">2.79</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">5.00</td>
+<td style="text-align:right">8.0</td>
+<td style="text-align:right">9.00</td>
+<td style="text-align:right">12</td>
+<td style="text-align:left">▃▅▆▇▆</td>
+</tr>
+<tr>
+<td style="text-align:left">incident_day</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">15.63</td>
+<td style="text-align:right">8.82</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">8.00</td>
+<td style="text-align:right">15.0</td>
+<td style="text-align:right">23.00</td>
+<td style="text-align:right">31</td>
+<td style="text-align:left">▇▇▇▇▆</td>
+</tr>
+<tr>
+<td style="text-align:left">aircraft_model</td>
+<td style="text-align:right">6259</td>
+<td style="text-align:right">0.70</td>
+<td style="text-align:right">24.65</td>
+<td style="text-align:right">21.70</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">10.00</td>
+<td style="text-align:right">22.0</td>
+<td style="text-align:right">37.00</td>
+<td style="text-align:right">98</td>
+<td style="text-align:left">▇▆▂▁▁</td>
+</tr>
+<tr>
+<td style="text-align:left">aircraft_mass</td>
+<td style="text-align:right">5694</td>
+<td style="text-align:right">0.73</td>
+<td style="text-align:right">3.50</td>
+<td style="text-align:right">0.89</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">3.00</td>
+<td style="text-align:right">4.0</td>
+<td style="text-align:right">4.00</td>
+<td style="text-align:right">5</td>
+<td style="text-align:left">▁▁▂▇▁</td>
+</tr>
+<tr>
+<td style="text-align:left">engine_make</td>
+<td style="text-align:right">6155</td>
+<td style="text-align:right">0.71</td>
+<td style="text-align:right">21.22</td>
+<td style="text-align:right">11.04</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">10.00</td>
+<td style="text-align:right">22.0</td>
+<td style="text-align:right">34.00</td>
+<td style="text-align:right">47</td>
+<td style="text-align:left">▇▂▆▇▁</td>
+</tr>
+<tr>
+<td style="text-align:left">engines</td>
+<td style="text-align:right">5696</td>
+<td style="text-align:right">0.73</td>
+<td style="text-align:right">2.05</td>
+<td style="text-align:right">0.46</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">2.00</td>
+<td style="text-align:right">2.0</td>
+<td style="text-align:right">2.00</td>
+<td style="text-align:right">4</td>
+<td style="text-align:left">▁▇▁▁▁</td>
+</tr>
+<tr>
+<td style="text-align:left">engine1_position</td>
+<td style="text-align:right">5838</td>
+<td style="text-align:right">0.72</td>
+<td style="text-align:right">2.99</td>
+<td style="text-align:right">2.09</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">1.0</td>
+<td style="text-align:right">5.00</td>
+<td style="text-align:right">7</td>
+<td style="text-align:left">▇▁▂▅▁</td>
+</tr>
+<tr>
+<td style="text-align:left">engine2_position</td>
+<td style="text-align:right">6776</td>
+<td style="text-align:right">0.68</td>
+<td style="text-align:right">2.91</td>
+<td style="text-align:right">2.01</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">1.0</td>
+<td style="text-align:right">5.00</td>
+<td style="text-align:right">7</td>
+<td style="text-align:left">▇▁▂▅▁</td>
+</tr>
+<tr>
+<td style="text-align:left">engine4_position</td>
+<td style="text-align:right">20650</td>
+<td style="text-align:right">0.02</td>
+<td style="text-align:right">2.02</td>
+<td style="text-align:right">1.43</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1.00</td>
+<td style="text-align:right">1.0</td>
+<td style="text-align:right">4.00</td>
+<td style="text-align:right">5</td>
+<td style="text-align:left">▇▁▁▃▁</td>
+</tr>
+<tr>
+<td style="text-align:left">height</td>
+<td style="text-align:right">8469</td>
+<td style="text-align:right">0.60</td>
+<td style="text-align:right">819.24</td>
+<td style="text-align:right">1772.53</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0.00</td>
+<td style="text-align:right">50.0</td>
+<td style="text-align:right">800.00</td>
+<td style="text-align:right">24000</td>
+<td style="text-align:left">▇▁▁▁▁</td>
+</tr>
+<tr>
+<td style="text-align:left">speed</td>
+<td style="text-align:right">12358</td>
+<td style="text-align:right">0.41</td>
+<td style="text-align:right">141.39</td>
+<td style="text-align:right">52.25</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">120.00</td>
+<td style="text-align:right">137.0</td>
+<td style="text-align:right">160.00</td>
+<td style="text-align:right">2500</td>
+<td style="text-align:left">▇▁▁▁▁</td>
+</tr>
+<tr>
+<td style="text-align:left">distance</td>
+<td style="text-align:right">8913</td>
+<td style="text-align:right">0.58</td>
+<td style="text-align:right">0.66</td>
+<td style="text-align:right">3.33</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0.00</td>
+<td style="text-align:right">0.0</td>
+<td style="text-align:right">0.00</td>
+<td style="text-align:right">100</td>
+<td style="text-align:left">▇▁▁▁▁</td>
+</tr>
+</tbody>
+</table>
+<p>The data is imbalanced, with not many incidents resulting in damage.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(damaged)
+</code></pre></div><pre><code>## # A tibble: 2 x 2
+##   damaged       n
+##   &lt;chr&gt;     &lt;int&gt;
+## 1 damage     1799
+## 2 no damage 19201
+</code></pre>
+<p>For numeric predictors, I often like to make a pairs plot for EDA.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(GGally)
+
+train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(damaged, incident_year, height, speed, distance) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggpairs</span>(columns <span style="color:#666">=</span> <span style="color:#40a070">2</span><span style="color:#666">:</span><span style="color:#40a070">5</span>, <span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> damaged, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>))
+</code></pre></div><img src="https://juliasilge.com/blog/sliced-aircraft/index_files/figure-html/unnamed-chunk-5-1.png" width="3000" />
+<p>For categorical predictors, plots like these can be useful. Notice especially that <code>NA</code> values look like they may be informative so we likely don’t want to throw them out.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(
+    damaged, precipitation, visibility, engine_type,
+    flight_impact, flight_phase, species_quantity
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(precipitation<span style="color:#666">:</span>species_quantity) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(y <span style="color:#666">=</span> value, fill <span style="color:#666">=</span> damaged)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bar</span>(position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;fill&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(name), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>, ncol <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/sliced-aircraft/index_files/figure-html/unnamed-chunk-6-1.png" width="2400" />
+<p>Let’s use the following variables for this post.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_df <span style="color:#666">&lt;-</span> train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(
+    damaged, flight_impact, precipitation,
+    visibility, flight_phase, engines, incident_year,
+    incident_month, species_id, engine_type,
+    aircraft_model, species_quantity, height, speed
+  )
+</code></pre></div>
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If I had enough time to try many models, I would 
+<a href="https://www.tmwr.org/splitting.html" target="_blank" rel="noopener">split the provided training data via <code>initial_split()</code></a>, but I learned that two hours isn’t really enough time for me to try that many models. Let’s just create resampling folds from the provided training data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+bird_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(train_raw, v <span style="color:#666">=</span> <span style="color:#40a070">5</span>, strata <span style="color:#666">=</span> damaged)
+bird_folds
+</code></pre></div><pre><code>## #  5-fold cross-validation using stratification 
+## # A tibble: 5 x 2
+##   splits               id   
+##   &lt;list&gt;               &lt;chr&gt;
+## 1 &lt;split [16800/4200]&gt; Fold1
+## 2 &lt;split [16800/4200]&gt; Fold2
+## 3 &lt;split [16800/4200]&gt; Fold3
+## 4 &lt;split [16800/4200]&gt; Fold4
+## 5 &lt;split [16800/4200]&gt; Fold5
+</code></pre>
+<p>The SLICED prediction problem was evaluate on a single metric, 
+<a href="https://yardstick.tidymodels.org/reference/mn_log_loss.html" target="_blank" rel="noopener">log loss</a>, so let’s create a metric set for that metric plus a few others for demonstration purposes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_metrics <span style="color:#666">&lt;-</span> <span style="color:#06287e">metric_set</span>(mn_log_loss, accuracy, sensitivity, specificity)
+</code></pre></div><p>This data requires lots of preprocessing, such as handling new levels in the test set, pooling infrequent factor levels, and imputing or replacing the <code>NA</code> values.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bird_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(damaged <span style="color:#666">~</span> ., data <span style="color:#666">=</span> bird_df) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_novel</span>(<span style="color:#06287e">all_nominal_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_other</span>(<span style="color:#06287e">all_nominal_predictors</span>(), threshold <span style="color:#666">=</span> <span style="color:#40a070">0.01</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_unknown</span>(<span style="color:#06287e">all_nominal_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_impute_median</span>(<span style="color:#06287e">all_numeric_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_zv</span>(<span style="color:#06287e">all_predictors</span>())
+
+bird_rec
+</code></pre></div><pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##    outcome          1
+##  predictor         13
+## 
+## Operations:
+## 
+## Novel factor level assignment for all_nominal_predictors()
+## Collapsing factor levels for all_nominal_predictors()
+## Unknown factor level assignment for all_nominal_predictors()
+## Median Imputation for all_numeric_predictors()
+## Zero variance filter on all_predictors()
+</code></pre>
+<p>For this post, let’s use a model I didn’t try out during the stream, a 
+<a href="https://baguette.tidymodels.org/" target="_blank" rel="noopener">bagged tree model</a>. It’s similar to the kinds of models that perform well in SLICED-like situations but it is easy to set up and very fast to fit.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(baguette)
+
+bag_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">bag_tree</span>(min_n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;rpart&#34;</span>, times <span style="color:#666">=</span> <span style="color:#40a070">25</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>)
+
+imb_wf <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(bird_rec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(bag_spec)
+
+imb_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(imb_wf, data <span style="color:#666">=</span> bird_df)
+imb_fit
+</code></pre></div><pre><code>## ══ Workflow [trained] ══════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: bag_tree()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 5 Recipe Steps
+## 
+## • step_novel()
+## • step_other()
+## • step_unknown()
+## • step_impute_median()
+## • step_zv()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Bagged CART (classification with 25 members)
+## 
+## Variable importance scores include:
+## 
+## # A tibble: 13 x 4
+##    term             value std.error  used
+##    &lt;chr&gt;            &lt;dbl&gt;     &lt;dbl&gt; &lt;int&gt;
+##  1 flight_impact    480.       6.81    25
+##  2 aircraft_model   363.       4.97    25
+##  3 incident_year    354.       5.51    25
+##  4 species_id       337.       4.62    25
+##  5 height           332.       5.45    25
+##  6 speed            297.       4.82    25
+##  7 incident_month   285.       6.18    25
+##  8 flight_phase     246.       4.41    25
+##  9 engine_type      213.       3.31    25
+## 10 visibility       196.       3.82    25
+## 11 precipitation    136.       3.23    25
+## 12 engines          117.       2.67    25
+## 13 species_quantity  83.7      3.12    25
+</code></pre>
+<p>We automatically get out some variable importance too, which is nice! We see that <code>flight_impact</code> and <code>aircraft_model</code> are very important for this model.</p>
+
+
+
+
+<h2 id="resample-and-compare-models">Resample and compare models
+  <a href="#resample-and-compare-models"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let’s evaluate 
+<a href="https://www.tmwr.org/resampling.html" target="_blank" rel="noopener">how this model performs using resampling</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+imb_rs <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">fit_resamples</span>(
+    imb_wf,
+    resamples <span style="color:#666">=</span> bird_folds,
+    metrics <span style="color:#666">=</span> bird_metrics
+  )
+
+<span style="color:#06287e">collect_metrics</span>(imb_rs)
+</code></pre></div><pre><code>## # A tibble: 4 x 6
+##   .metric     .estimator  mean     n  std_err .config             
+##   &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy    binary     0.925     5 0.00221  Preprocessor1_Model1
+## 2 mn_log_loss binary     0.212     5 0.00511  Preprocessor1_Model1
+## 3 sens        binary     0.278     5 0.00941  Preprocessor1_Model1
+## 4 spec        binary     0.986     5 0.000843 Preprocessor1_Model1
+</code></pre>
+<p>This is quite good compared to how other folks did with this data, especially for such a simple model. We could take this as a starting point and move to a similar but better performing model like xgboost.</p>
+<p>What happens, though, if we change the preprocessing recipe to account for the class imbalance?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(themis)
+
+bal_rec <span style="color:#666">&lt;-</span> bird_rec <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_dummy</span>(<span style="color:#06287e">all_nominal_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_smote</span>(damaged)
+
+bal_wf <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(bal_rec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(bag_spec)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+bal_rs <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">fit_resamples</span>(
+    bal_wf,
+    resamples <span style="color:#666">=</span> bird_folds,
+    metrics <span style="color:#666">=</span> bird_metrics
+  )
+
+<span style="color:#06287e">collect_metrics</span>(bal_rs)
+</code></pre></div><pre><code>## # A tibble: 4 x 6
+##   .metric     .estimator  mean     n std_err .config             
+##   &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy    binary     0.919     5 0.00215 Preprocessor1_Model1
+## 2 mn_log_loss binary     0.224     5 0.00559 Preprocessor1_Model1
+## 3 sens        binary     0.322     5 0.00967 Preprocessor1_Model1
+## 4 spec        binary     0.975     5 0.00103 Preprocessor1_Model1
+</code></pre>
+<p>Notice that the log loss and accuracy got <strong>worse</strong>, while the sensitivity got <strong>better</strong>. This is very common and expected, and frankly I wish I hadn’t been so laser focused on needing to get subsampling to work during the SLICED stream! In most real-world situations, a single metric is not adequate to measure how useful a model will be practically, and also unfortunately we often are most interested in detecting the minority class. This means that learning how to account for class imbalance is important in many real modeling scenarios. However, if you are ever in a situation where you are being evaluated on a single metric like log loss, you may want to stick with an imbalanced fit.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">test_df <span style="color:#666">&lt;-</span> test_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(
+    id, flight_impact, precipitation,
+    visibility, flight_phase, engines, incident_year,
+    incident_month, species_id, engine_type,
+    aircraft_model, species_quantity, height, speed
+  )
+
+<span style="color:#06287e">augment</span>(imb_fit, test_df) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(id, .pred_damage)
+</code></pre></div><pre><code>## # A tibble: 9,000 x 2
+##       id .pred_damage
+##    &lt;dbl&gt;        &lt;dbl&gt;
+##  1 11254     0.346   
+##  2 27716     0.00606 
+##  3 29066     0.000544
+##  4  3373     0.0406  
+##  5  1996     0.153   
+##  6 18061     0.000654
+##  7 22237     0.00489 
+##  8 25346     0.274   
+##  9 21554     0.348   
+## 10  4273     0.00390 
+## # … with 8,990 more rows
+</code></pre>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 21, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1598 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/nyc-airbnb/">&larr; Create a custom metric with tidymodels and NYC Airbnb prices</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/mario-kart/">Partial dependence plots with tidymodels and DALEX for #TidyTuesday Mario Kart world records &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

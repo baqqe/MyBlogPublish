@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Tune an xgboost model with early stopping and #TidyTuesday childcare costs | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Tune an xgboost model with early stopping and #TidyTuesday childcare costs | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/childcare-costs/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/childcare-costs/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/childcare-costs/featured.png" >
+    
+    
+  <meta itemprop="name" content="Tune an xgboost model with early stopping and #TidyTuesday childcare costs">
+<meta itemprop="description" content="Can we predict childcare costs in the US using an xgboost model? In this blog post, learn how to use early stopping for hyperparameter tuning."><meta itemprop="datePublished" content="2023-05-11T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-05-11T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1966"><meta itemprop="image" content="https://juliasilge.com/blog/childcare-costs/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Tune an xgboost model with early stopping and #TidyTuesday childcare costs</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">May 11, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to use tidymodels to tune an xgboost model with early stopping, using this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on childcare costs in the United States. 👩‍👧‍👦</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/OMn1WCNufo8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Mothers Day is coming up this weekend, and our modeling goal in this case is to predict the 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-05-09/" target="_blank" rel="noopener">cost of childcare</a> in US counties based on other characteristics of each county, like the poverty rate and labor force participation. Let’s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+childcare_costs <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-09/childcare_costs.csv&#39;</span>)
+
+<span style="color:#06287e">glimpse</span>(childcare_costs)
+</code></pre></div><pre><code>## Rows: 34,567
+## Columns: 61
+## $ county_fips_code          &lt;dbl&gt; 1001, 1001, 1001, 1001, 1001, 1001, 1001, 10…
+## $ study_year                &lt;dbl&gt; 2008, 2009, 2010, 2011, 2012, 2013, 2014, 20…
+## $ unr_16                    &lt;dbl&gt; 5.42, 5.93, 6.21, 7.55, 8.60, 9.39, 8.50, 7.…
+## $ funr_16                   &lt;dbl&gt; 4.41, 5.72, 5.57, 8.13, 8.88, 10.31, 9.18, 8…
+## $ munr_16                   &lt;dbl&gt; 6.32, 6.11, 6.78, 7.03, 8.29, 8.56, 7.95, 6.…
+## $ unr_20to64                &lt;dbl&gt; 4.6, 4.8, 5.1, 6.2, 6.7, 7.3, 6.8, 5.9, 4.4,…
+## $ funr_20to64               &lt;dbl&gt; 3.5, 4.6, 4.6, 6.3, 6.4, 7.6, 6.8, 6.1, 4.6,…
+## $ munr_20to64               &lt;dbl&gt; 5.6, 5.0, 5.6, 6.1, 7.0, 7.0, 6.8, 5.9, 4.3,…
+## $ flfpr_20to64              &lt;dbl&gt; 68.9, 70.8, 71.3, 70.2, 70.6, 70.7, 69.9, 68…
+## $ flfpr_20to64_under6       &lt;dbl&gt; 66.9, 63.7, 67.0, 66.5, 67.1, 67.5, 65.2, 66…
+## $ flfpr_20to64_6to17        &lt;dbl&gt; 79.59, 78.41, 78.15, 77.62, 76.31, 75.91, 75…
+## $ flfpr_20to64_under6_6to17 &lt;dbl&gt; 60.81, 59.91, 59.71, 59.31, 58.30, 58.00, 57…
+## $ mlfpr_20to64              &lt;dbl&gt; 84.0, 86.2, 85.8, 85.7, 85.7, 85.0, 84.2, 82…
+## $ pr_f                      &lt;dbl&gt; 8.5, 7.5, 7.5, 7.4, 7.4, 8.3, 9.1, 9.3, 9.4,…
+## $ pr_p                      &lt;dbl&gt; 11.5, 10.3, 10.6, 10.9, 11.6, 12.1, 12.8, 12…
+## $ mhi_2018                  &lt;dbl&gt; 58462.55, 60211.71, 61775.80, 60366.88, 5915…
+## $ me_2018                   &lt;dbl&gt; 32710.60, 34688.16, 34740.84, 34564.32, 3432…
+## $ fme_2018                  &lt;dbl&gt; 25156.25, 26852.67, 27391.08, 26727.68, 2796…
+## $ mme_2018                  &lt;dbl&gt; 41436.80, 43865.64, 46155.24, 45333.12, 4427…
+## $ total_pop                 &lt;dbl&gt; 49744, 49584, 53155, 53944, 54590, 54907, 55…
+## $ one_race                  &lt;dbl&gt; 98.1, 98.6, 98.5, 98.5, 98.5, 98.6, 98.7, 98…
+## $ one_race_w                &lt;dbl&gt; 78.9, 79.1, 79.1, 78.9, 78.9, 78.3, 78.0, 77…
+## $ one_race_b                &lt;dbl&gt; 17.7, 17.9, 17.9, 18.1, 18.1, 18.4, 18.6, 18…
+## $ one_race_i                &lt;dbl&gt; 0.4, 0.4, 0.3, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4,…
+## $ one_race_a                &lt;dbl&gt; 0.4, 0.6, 0.7, 0.7, 0.8, 1.0, 0.9, 1.0, 0.8,…
+## $ one_race_h                &lt;dbl&gt; 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1,…
+## $ one_race_other            &lt;dbl&gt; 0.7, 0.7, 0.6, 0.5, 0.4, 0.7, 0.7, 0.9, 1.4,…
+## $ two_races                 &lt;dbl&gt; 1.9, 1.4, 1.5, 1.5, 1.5, 1.4, 1.3, 1.6, 2.0,…
+## $ hispanic                  &lt;dbl&gt; 1.8, 2.0, 2.3, 2.4, 2.4, 2.5, 2.5, 2.6, 2.6,…
+## $ households                &lt;dbl&gt; 18373, 18288, 19718, 19998, 19934, 20071, 20…
+## $ h_under6_both_work        &lt;dbl&gt; 1543, 1475, 1569, 1695, 1714, 1532, 1557, 13…
+## $ h_under6_f_work           &lt;dbl&gt; 970, 964, 1009, 1060, 938, 880, 1191, 1258, …
+## $ h_under6_m_work           &lt;dbl&gt; 22, 16, 16, 106, 120, 161, 159, 211, 109, 10…
+## $ h_under6_single_m         &lt;dbl&gt; 995, 1099, 1110, 1030, 1095, 1160, 954, 883,…
+## $ h_6to17_both_work         &lt;dbl&gt; 4900, 5028, 5472, 5065, 4608, 4238, 4056, 40…
+## $ h_6to17_fwork             &lt;dbl&gt; 1308, 1519, 1541, 1965, 1963, 1978, 2073, 20…
+## $ h_6to17_mwork             &lt;dbl&gt; 114, 92, 113, 246, 284, 354, 373, 551, 322, …
+## $ h_6to17_single_m          &lt;dbl&gt; 1966, 2305, 2377, 2299, 2644, 2522, 2269, 21…
+## $ emp_m                     &lt;dbl&gt; 27.40, 29.54, 29.33, 31.17, 32.13, 31.74, 32…
+## $ memp_m                    &lt;dbl&gt; 24.41, 26.07, 25.94, 26.97, 28.59, 27.44, 28…
+## $ femp_m                    &lt;dbl&gt; 30.68, 33.40, 33.06, 35.96, 36.09, 36.61, 37…
+## $ emp_service               &lt;dbl&gt; 17.06, 15.81, 16.92, 16.18, 16.09, 16.72, 16…
+## $ memp_service              &lt;dbl&gt; 15.53, 14.16, 15.09, 14.21, 14.71, 13.92, 13…
+## $ femp_service              &lt;dbl&gt; 18.75, 17.64, 18.93, 18.42, 17.63, 19.89, 20…
+## $ emp_sales                 &lt;dbl&gt; 29.11, 28.75, 29.07, 27.56, 28.39, 27.22, 25…
+## $ memp_sales                &lt;dbl&gt; 15.97, 17.51, 17.82, 17.74, 17.79, 17.38, 15…
+## $ femp_sales                &lt;dbl&gt; 43.52, 41.25, 41.43, 38.76, 40.26, 38.36, 36…
+## $ emp_n                     &lt;dbl&gt; 13.21, 11.89, 11.57, 10.72, 9.02, 9.27, 9.38…
+## $ memp_n                    &lt;dbl&gt; 22.54, 20.30, 19.86, 18.28, 16.03, 16.79, 17…
+## $ femp_n                    &lt;dbl&gt; 2.99, 2.52, 2.45, 2.09, 1.19, 0.77, 0.58, 0.…
+## $ emp_p                     &lt;dbl&gt; 13.22, 14.02, 13.11, 14.38, 14.37, 15.04, 16…
+## $ memp_p                    &lt;dbl&gt; 21.55, 21.96, 21.28, 22.80, 22.88, 24.48, 24…
+## $ femp_p                    &lt;dbl&gt; 4.07, 5.19, 4.13, 4.77, 4.84, 4.36, 6.07, 7.…
+## $ mcsa                      &lt;dbl&gt; 80.92, 83.42, 85.92, 88.43, 90.93, 93.43, 95…
+## $ mfccsa                    &lt;dbl&gt; 81.40, 85.68, 89.96, 94.25, 98.53, 102.82, 1…
+## $ mc_infant                 &lt;dbl&gt; 104.95, 105.11, 105.28, 105.45, 105.61, 105.…
+## $ mc_toddler                &lt;dbl&gt; 104.95, 105.11, 105.28, 105.45, 105.61, 105.…
+## $ mc_preschool              &lt;dbl&gt; 85.92, 87.59, 89.26, 90.93, 92.60, 94.27, 95…
+## $ mfcc_infant               &lt;dbl&gt; 83.45, 87.39, 91.33, 95.28, 99.22, 103.16, 1…
+## $ mfcc_toddler              &lt;dbl&gt; 83.45, 87.39, 91.33, 95.28, 99.22, 103.16, 1…
+## $ mfcc_preschool            &lt;dbl&gt; 81.40, 85.68, 89.96, 94.25, 98.53, 102.82, 1…
+</code></pre>
+<p>There are a lot of variables to possibly use as predictors in this dataset. In situations like this where there are lots of variables in a big rectangular dataset, many of which are highly correlated with each other, I will often turn to xgboost as a modeling algorithm. It often works great!</p>
+<p>Before we get started with the modeling, let’s do a bit of exploratory data analysis. How have childcare costs as measured by <code>mcsa</code> (median weekly price for school-aged kids in childcare centers) changed over time?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">childcare_costs <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(study_year, mcsa, group <span style="color:#666">=</span> study_year, fill <span style="color:#666">=</span> study_year)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_distiller</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;RdPu&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/childcare-costs/index_files/figure-html/unnamed-chunk-3-1.png" width="1260" />
+<p>How are childcare costs related to <code>mhi_2018</code> (median household income) and <code>flfpr_20to64</code> (labor force participation for women)?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">childcare_costs <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(mhi_2018, mcsa, color <span style="color:#666">=</span> flfpr_20to64)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_viridis_c</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/childcare-costs/index_files/figure-html/unnamed-chunk-4-1.png" width="1260" />
+<p>It looks like childcare costs are mostly flat for low income counties but increase for high income counties, and labor force participation for women is higher in high income counties.</p>
+<p>What about the racial makeup of counties?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">childcare_costs <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">select</span>(mcsa, <span style="color:#06287e">starts_with</span>(<span style="color:#4070a0">&#34;one_race&#34;</span>), mhi_2018) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>one_race) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">pivot_longer</span>(<span style="color:#06287e">starts_with</span>(<span style="color:#4070a0">&#34;one_race&#34;</span>)) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(value, mcsa, color <span style="color:#666">=</span> mhi_2018)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(name), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_x&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_viridis_c</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of population&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/childcare-costs/index_files/figure-html/unnamed-chunk-5-1.png" width="1620" />
+<p>There’s a lot going on in this one! When a county has more Black population (<code>one_race_b</code>), household income is lower and childcare costs are lower; the opposite is true for the white population (<code>one_race_w</code>). There looks to be a trend for the Asian population (<code>one_race_a</code>) where a higher Asian population comes with higher childcare costs. None of these relationships are causal, of course, but related to complex relationships between race, class, and where people live in the US.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start our modeling by setting up our “data budget.” For this example, let’s predict <code>mcsa</code> (costs for school-age kids in childcare centers) and remove the other measures of childcare costs for babies or toddlers, family-based childcare, etc. Let’s remove the FIPS codes which literally encode location and instead focus on the characteristics of counties like household income, number of households with children, and similar. Since this dataset is quite big, let’s use a single 
+<a href="https://www.tmwr.org/resampling.html#validation" target="_blank" rel="noopener">validation set</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+childcare_split <span style="color:#666">&lt;-</span> childcare_costs <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span><span style="color:#06287e">matches</span>(<span style="color:#4070a0">&#34;^mc_|^mfc&#34;</span>)) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>county_fips_code) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">na.omit</span>() <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> mcsa)
+
+childcare_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(childcare_split)
+childcare_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(childcare_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+childcare_set <span style="color:#666">&lt;-</span> <span style="color:#06287e">validation_split</span>(childcare_train)
+childcare_set
+</code></pre></div><pre><code>## # Validation Set Split (0.75/0.25)
+## # A tibble: 1 × 2
+##   splits               id
+##   &lt;list&gt;               &lt;chr&gt;
+## 1 &lt;split [13269/4424]&gt; validation
+</code></pre>
+<p>All these predictors are already numeric so we don’t need any special feature engineering; we can just use a formula like <code>mcsa ~ .</code>. We do need to set up a tunable xgboost model specification with 
+<a href="https://en.wikipedia.org/wiki/Early_stopping" target="_blank" rel="noopener">early stopping</a>, like we planned. We will keep the number of trees as a constant (and not too terribly high), set <code>stop_iter</code> (the early stopping parameter) to <code>tune()</code>, and then tune a few other parameters. Notice that we need to set a validation set (which in this case is a proportion of the <em>training</em> set) to hold back to use for deciding when to stop.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">xgb_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">boost_tree</span>(
+    trees <span style="color:#666">=</span> <span style="color:#40a070">500</span>,
+    min_n <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    mtry <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    stop_iter <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+    learn_rate <span style="color:#666">=</span> <span style="color:#40a070">0.01</span>
+  ) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;xgboost&#34;</span>, validation <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>)
+
+xgb_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(mcsa <span style="color:#666">~</span> ., xgb_spec)
+xgb_wf
+</code></pre></div><pre><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Formula
+## Model: boost_tree()
+##
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## mcsa ~ .
+##
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Boosted Tree Model Specification (regression)
+##
+## Main Arguments:
+##   mtry = tune()
+##   trees = 500
+##   min_n = tune()
+##   learn_rate = 0.01
+##   stop_iter = tune()
+##
+## Engine-Specific Arguments:
+##   validation = 0.2
+##
+## Computational engine: xgboost
+</code></pre>
+<p>Our model is read to go! Let’s tune across possible hyperparameter configurations using our training set (with a subset that is held back for early stopping) plus our validation set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+xgb_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">tune_grid</span>(xgb_wf, childcare_set, grid <span style="color:#666">=</span> <span style="color:#40a070">15</span>)
+xgb_rs
+</code></pre></div><pre><code>## # Tuning results
+## # Validation Set Split (0.75/0.25)
+## # A tibble: 1 × 4
+##   splits               id         .metrics          .notes
+##   &lt;list&gt;               &lt;chr&gt;      &lt;list&gt;            &lt;list&gt;
+## 1 &lt;split [13269/4424]&gt; validation &lt;tibble [30 × 7]&gt; &lt;tibble [0 × 3]&gt;
+</code></pre>
+<p>All done!</p>
+
+
+
+
+<h2 id="evaluate-results">Evaluate results
+  <a href="#evaluate-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>How did these results turn out? We can visualize them.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(xgb_rs)
+</code></pre></div><img src="https://juliasilge.com/blog/childcare-costs/index_files/figure-html/unnamed-chunk-9-1.png" width="1530" />
+<p>Maybe we could consider going back to tune again with lower <code>min_n</code> and/or higher <code>mtry</code> to achieve better performance.</p>
+<p>We can look at the top results we got like this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">show_best</span>(xgb_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 5 × 9
+##    mtry min_n stop_iter .metric .estimator  mean     n std_err .config
+##   &lt;int&gt; &lt;int&gt;     &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;
+## 1    42     5        14 rmse    standard    21.8     1      NA Preprocessor1_Mo…
+## 2    38     7        20 rmse    standard    22.0     1      NA Preprocessor1_Mo…
+## 3    35     2         9 rmse    standard    22.0     1      NA Preprocessor1_Mo…
+## 4    25    17         8 rmse    standard    22.0     1      NA Preprocessor1_Mo…
+## 5    41    17        16 rmse    standard    22.1     1      NA Preprocessor1_Mo…
+</code></pre>
+<p>The best RMSE is a little more than $20, which is an estimate of how precisely we can predict the median childcare cost in a US county (remember that the median in this dataset was about $100).</p>
+<p>Let’s use <code>last_fit()</code> to fit one final time to the training data and evaluate one final time on the testing data, with the numerically optimal result from <code>xgb_rs</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">childcare_fit <span style="color:#666">&lt;-</span> xgb_wf <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">finalize_workflow</span>(<span style="color:#06287e">select_best</span>(xgb_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>)) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">last_fit</span>(childcare_split)
+
+childcare_fit
+</code></pre></div><pre><code>## # Resampling results
+## # Manual resampling
+## # A tibble: 1 × 6
+##   splits               id              .metrics .notes   .predictions .workflow
+##   &lt;list&gt;               &lt;chr&gt;           &lt;list&gt;   &lt;list&gt;   &lt;list&gt;       &lt;list&gt;
+## 1 &lt;split [17693/5900]&gt; train/test spl… &lt;tibble&gt; &lt;tibble&gt; &lt;tibble&gt;     &lt;workflow&gt;
+</code></pre>
+<p>How did this model perform on the testing data, that was not used in tuning or training?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(childcare_fit)
+</code></pre></div><pre><code>## # A tibble: 2 × 4
+##   .metric .estimator .estimate .config
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;
+## 1 rmse    standard      21.5   Preprocessor1_Model1
+## 2 rsq     standard       0.625 Preprocessor1_Model1
+</code></pre>
+<p>What features are most important for this xgboost model?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+<span style="color:#06287e">extract_workflow</span>(childcare_fit) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">extract_fit_parsnip</span>() <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">vip</span>(num_features <span style="color:#666">=</span> <span style="color:#40a070">15</span>, geom <span style="color:#666">=</span> <span style="color:#4070a0">&#34;point&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/childcare-costs/index_files/figure-html/unnamed-chunk-13-1.png" width="1260" />
+<p>The proportion of county population that is Asian has a <em>big</em> impact in this model, as does median household income, median earnings for women, year, and number of households in the county.</p>
+
+
+
+
+<h2 id="bonus-create-a-deployable-model-object">BONUS: create a deployable model object!
+  <a href="#bonus-create-a-deployable-model-object"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you wanted to deploy this model, the next step is to create a deployable model object with 
+<a href="https://vetiver.rstudio.com/" target="_blank" rel="noopener">vetiver</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vetiver)
+v <span style="color:#666">&lt;-</span> <span style="color:#06287e">extract_workflow</span>(childcare_fit) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">vetiver_model</span>(<span style="color:#4070a0">&#34;childcare-costs-xgb&#34;</span>)
+v
+</code></pre></div><pre><code>##
+## ── childcare-costs-xgb ─ &lt;bundled_workflow&gt; model for deployment
+## A xgboost regression modeling workflow using 52 features
+</code></pre>
+<p>At 
+<a href="https://pos.it/conf" target="_blank" rel="noopener">posit::conf()</a> this coming September in Chicago, I am teaching a workshop on how to deploy and maintain models with vetiver. Registration is 
+<a href="https://pos.it/conf" target="_blank" rel="noopener">open now</a> if you are interested in learning more about this part of the modeling process, but you should also 
+<a href="https://www.youtube.com/playlist?list=PL9HYL-VRX0oROlETlHRDAt0FzqnfkoG84" target="_blank" rel="noopener">check out all the other workshops</a> being organized!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 11, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">10 minute read, 1966 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/tornadoes/">&larr; Predict the magnitude of #TidyTuesday tornadoes with effect encoding and xgboost</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/vetiver-sagemaker/">Deploy a model on AWS SageMaker with vetiver &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

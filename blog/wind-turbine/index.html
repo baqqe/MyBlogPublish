@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Tune and interpret decision trees for #TidyTuesday wind turbines | Lucas Bagge</title>
+
+
+<meta property="twitter:site" content="@LucasBagge">
+<meta property="twitter:creator" content="@LucasBagge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Lucas Bagge">
+<meta property="og:title" content="Tune and interpret decision trees for #TidyTuesday wind turbines | Lucas Bagge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/wind-turbine/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/wind-turbine/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/wind-turbine/featured.png" >
+    
+    
+  <meta itemprop="name" content="Tune and interpret decision trees for #TidyTuesday wind turbines">
+<meta itemprop="description" content="Use tidymodels to predict capacity for Canadian wind turbines with decision trees."><meta itemprop="datePublished" content="2020-10-29T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-10-29T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1599"><meta itemprop="image" content="https://juliasilge.com/blog/wind-turbine/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.264a454df97d6259abc406d98e665487fa32b9418451399bd8c8f0ba265b69bd.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Lucas Bagge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Tune and interpret decision trees for #TidyTuesday wind turbines</h1>
+        
+        
+        
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from starting out with first modeling steps to tuning more complex models. Today&rsquo;s screencast walks through how to tune, fit, and predict from decision tree models, using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Canadian wind turbines. 🇨🇦</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/EDQnJF9LKHQ" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict the capacity of wind turbines in Canada 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-10-27/readme.md" target="_blank" rel="noopener">based on other characteristics of the turbines from this week&rsquo;s #TidyTuesday dataset</a>. Simon Couch outlined this week 
+<a href="https://blog.simonpcouch.com/blog/gentle-intro-stacks/" target="_blank" rel="noopener">how to use stacks for ensembling with this dataset,</a> but here let&rsquo;s take a more straightforward approach.</p>
+<p>Let&rsquo;s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+turbines <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-27/wind-turbine.csv&#34;</span>)
+turbines
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 6,698 x 15
+##    objectid province_territ… project_name total_project_c… turbine_identif…
+##       &lt;dbl&gt; &lt;chr&gt;            &lt;chr&gt;                   &lt;dbl&gt; &lt;chr&gt;           
+##  1        1 Alberta          Optimist Wi…             0.9  OWE1            
+##  2        2 Alberta          Castle Rive…            44    CRW1            
+##  3        3 Alberta          Waterton Wi…             3.78 WWT1            
+##  4        4 Alberta          Waterton Wi…             3.78 WWT2            
+##  5        5 Alberta          Waterton Wi…             3.78 WWT3            
+##  6        6 Alberta          Waterton Wi…             3.78 WWT4            
+##  7        7 Alberta          Cowley North            19.5  CON1            
+##  8        8 Alberta          Cowley North            19.5  CON2            
+##  9        9 Alberta          Cowley North            19.5  CON3            
+## 10       10 Alberta          Cowley North            19.5  CON4            
+## # … with 6,688 more rows, and 10 more variables:
+## #   turbine_number_in_project &lt;chr&gt;, turbine_rated_capacity_k_w &lt;dbl&gt;,
+## #   rotor_diameter_m &lt;dbl&gt;, hub_height_m &lt;dbl&gt;, manufacturer &lt;chr&gt;,
+## #   model &lt;chr&gt;, commissioning_date &lt;chr&gt;, latitude &lt;dbl&gt;, longitude &lt;dbl&gt;,
+## #   notes &lt;chr&gt;
+</code></pre><p>Let&rsquo;s do a bit of data cleaning and preparation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">turbines_df <span style="color:#666">&lt;-</span> turbines <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">transmute</span>(
+    turbine_capacity <span style="color:#666">=</span> turbine_rated_capacity_k_w,
+    rotor_diameter_m,
+    hub_height_m,
+    commissioning_date <span style="color:#666">=</span> <span style="color:#06287e">parse_number</span>(commissioning_date),
+    province_territory <span style="color:#666">=</span> <span style="color:#06287e">fct_lump_n</span>(province_territory, <span style="color:#40a070">10</span>),
+    model <span style="color:#666">=</span> <span style="color:#06287e">fct_lump_n</span>(model, <span style="color:#40a070">10</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(turbine_capacity)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.character, factor)
+</code></pre></div><p>How is the capacity related to other characteristics like the year of commissioning or size of the turbines?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">turbines_df <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(turbine_capacity<span style="color:#666">:</span>commissioning_date) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(rotor_diameter_m<span style="color:#666">:</span>commissioning_date) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(turbine_capacity, value)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_hex</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">15</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(method <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lm&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>name, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_gradient</span>(high <span style="color:#666">=</span> <span style="color:#4070a0">&#34;cyan3&#34;</span>)
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="2700" />
+<p>These relationships are the kind that we want to use in modeling, whether that&rsquo;s the 
+<a href="https://blog.simonpcouch.com/blog/gentle-intro-stacks/" target="_blank" rel="noopener">modeling stacking Simon demonstrated</a> or the single model we&rsquo;ll use here.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, splitting our data into training and testing sets, and creating cross-validation samples.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+wind_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(turbines_df, strata <span style="color:#666">=</span> turbine_capacity)
+wind_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(wind_split)
+wind_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(wind_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+wind_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(wind_train, strata <span style="color:#666">=</span> turbine_capacity)
+wind_folds
+</code></pre></div><pre tabindex="0"><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 x 2
+##    splits             id    
+##    &lt;list&gt;             &lt;chr&gt; 
+##  1 &lt;split [4.4K/488]&gt; Fold01
+##  2 &lt;split [4.4K/487]&gt; Fold02
+##  3 &lt;split [4.4K/486]&gt; Fold03
+##  4 &lt;split [4.4K/486]&gt; Fold04
+##  5 &lt;split [4.4K/486]&gt; Fold05
+##  6 &lt;split [4.4K/486]&gt; Fold06
+##  7 &lt;split [4.4K/486]&gt; Fold07
+##  8 &lt;split [4.4K/486]&gt; Fold08
+##  9 &lt;split [4.4K/485]&gt; Fold09
+## 10 &lt;split [4.4K/484]&gt; Fold10
+</code></pre><p>Next, let&rsquo;s create a tunable decision tree model specification.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tree_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">decision_tree</span>(
+  cost_complexity <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+  tree_depth <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(),
+  min_n <span style="color:#666">=</span> <span style="color:#06287e">tune</span>()
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;rpart&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>)
+
+tree_spec
+</code></pre></div><pre tabindex="0"><code>## Decision Tree Model Specification (regression)
+## 
+## Main Arguments:
+##   cost_complexity = tune()
+##   tree_depth = tune()
+##   min_n = tune()
+## 
+## Computational engine: rpart
+</code></pre><p>We need a set of possible parameter values to try out for the decision tree.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tree_grid <span style="color:#666">&lt;-</span> <span style="color:#06287e">grid_regular</span>(<span style="color:#06287e">cost_complexity</span>(), <span style="color:#06287e">tree_depth</span>(), <span style="color:#06287e">min_n</span>(), levels <span style="color:#666">=</span> <span style="color:#40a070">4</span>)
+
+tree_grid
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 64 x 3
+##    cost_complexity tree_depth min_n
+##              &lt;dbl&gt;      &lt;int&gt; &lt;int&gt;
+##  1    0.0000000001          1     2
+##  2    0.0000001             1     2
+##  3    0.0001                1     2
+##  4    0.1                   1     2
+##  5    0.0000000001          5     2
+##  6    0.0000001             5     2
+##  7    0.0001                5     2
+##  8    0.1                   5     2
+##  9    0.0000000001         10     2
+## 10    0.0000001            10     2
+## # … with 54 more rows
+</code></pre><p>Now, let&rsquo;s try out all the possible parameter values on all our resampled datasets. Let&rsquo;s use some non-default metrics, while we&rsquo;re at it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">345</span>)
+tree_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">tune_grid</span>(
+  tree_spec,
+  turbine_capacity <span style="color:#666">~</span> .,
+  resamples <span style="color:#666">=</span> wind_folds,
+  grid <span style="color:#666">=</span> tree_grid,
+  metrics <span style="color:#666">=</span> <span style="color:#06287e">metric_set</span>(rmse, rsq, mae, mape)
+)
+
+tree_rs
+</code></pre></div><pre tabindex="0"><code>## # Tuning results
+## # 10-fold cross-validation using stratification 
+## # A tibble: 10 x 4
+##    splits             id     .metrics           .notes          
+##    &lt;list&gt;             &lt;chr&gt;  &lt;list&gt;             &lt;list&gt;          
+##  1 &lt;split [4.4K/488]&gt; Fold01 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  2 &lt;split [4.4K/487]&gt; Fold02 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  3 &lt;split [4.4K/486]&gt; Fold03 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  4 &lt;split [4.4K/486]&gt; Fold04 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  5 &lt;split [4.4K/486]&gt; Fold05 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  6 &lt;split [4.4K/486]&gt; Fold06 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  7 &lt;split [4.4K/486]&gt; Fold07 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  8 &lt;split [4.4K/486]&gt; Fold08 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+##  9 &lt;split [4.4K/485]&gt; Fold09 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+## 10 &lt;split [4.4K/484]&gt; Fold10 &lt;tibble [256 × 7]&gt; &lt;tibble [0 × 1]&gt;
+</code></pre><p>Notice that we aren&rsquo;t tuning a <code>workflow()</code> here, as I have often shown how to do. Instead we are tuning the model specification (accompanied by a formula preprocessor); this is so we can use the bare model in some model evaluation activities.</p>
+
+
+
+
+<h2 id="evaluate-model">Evaluate model
+  <a href="#evaluate-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let&rsquo;s check out how we did. We can collect or visualize the metrics.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(tree_rs)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 256 x 9
+##    cost_complexity tree_depth min_n .metric .estimator    mean     n std_err
+##              &lt;dbl&gt;      &lt;int&gt; &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;        &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+##  1    0.0000000001          1     2 mae     standard   386.       10  1.50  
+##  2    0.0000000001          1     2 mape    standard    27.7      10  1.30  
+##  3    0.0000000001          1     2 rmse    standard   508.       10  1.44  
+##  4    0.0000000001          1     2 rsq     standard     0.303    10  0.0134
+##  5    0.0000001             1     2 mae     standard   386.       10  1.50  
+##  6    0.0000001             1     2 mape    standard    27.7      10  1.30  
+##  7    0.0000001             1     2 rmse    standard   508.       10  1.44  
+##  8    0.0000001             1     2 rsq     standard     0.303    10  0.0134
+##  9    0.0001                1     2 mae     standard   386.       10  1.50  
+## 10    0.0001                1     2 mape    standard    27.7      10  1.30  
+## # … with 246 more rows, and 1 more variable: .config &lt;chr&gt;
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(tree_rs) <span style="color:#666">+</span> <span style="color:#06287e">theme_light</span>(base_family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IBMPlexSans&#34;</span>)
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-9-1.png" width="2400" />
+<p>Looks like this data needs a fairly complex tree!</p>
+<p>We can examine or select the best sets of parameter options, chosen by whichever metric we want.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">show_best</span>(tree_rs, <span style="color:#4070a0">&#34;mape&#34;</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 5 x 9
+##   cost_complexity tree_depth min_n .metric .estimator  mean     n std_err
+##             &lt;dbl&gt;      &lt;int&gt; &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+## 1    0.0000000001         15     2 mape    standard   0.564    10  0.0592
+## 2    0.0000001            15     2 mape    standard   0.564    10  0.0591
+## 3    0.0000000001         15    14 mape    standard   0.823    10  0.0547
+## 4    0.0000001            15    14 mape    standard   0.823    10  0.0547
+## 5    0.0001               15     2 mape    standard   0.885    10  0.0705
+## # … with 1 more variable: .config &lt;chr&gt;
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">select_best</span>(tree_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 4
+##   cost_complexity tree_depth min_n .config              
+##             &lt;dbl&gt;      &lt;int&gt; &lt;int&gt; &lt;chr&gt;                
+## 1    0.0000000001         15     2 Preprocessor1_Model13
+</code></pre><p>Next, let&rsquo;s use one of these &ldquo;best&rdquo; sets of parameters to update and finalize our model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_tree <span style="color:#666">&lt;-</span> <span style="color:#06287e">finalize_model</span>(tree_spec, <span style="color:#06287e">select_best</span>(tree_rs, <span style="color:#4070a0">&#34;rmse&#34;</span>))
+
+final_tree
+</code></pre></div><pre tabindex="0"><code>## Decision Tree Model Specification (regression)
+## 
+## Main Arguments:
+##   cost_complexity = 1e-10
+##   tree_depth = 15
+##   min_n = 2
+## 
+## Computational engine: rpart
+</code></pre><p>This model <code>final_tree</code> is updated and finalized (no longer tunable) but it is not <em>fit</em>. It has all its hyperparameters set but it has not been fit to any data. We have a couple of options for how to fit this model. We can either fit <code>final_tree</code> to training data using <code>fit()</code> or to the testing/training split using <code>last_fit()</code>, which will give us some other results along with the fitted output.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(final_tree, turbine_capacity <span style="color:#666">~</span> ., wind_train)
+final_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(final_tree, turbine_capacity <span style="color:#666">~</span> ., wind_split)
+</code></pre></div><p>We can predict from either one of these objects.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">predict</span>(final_fit, wind_train[144, ])
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 1
+##   .pred
+##   &lt;dbl&gt;
+## 1  1800
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">predict</span>(final_rs<span style="color:#666">$</span>.workflow[[1]], wind_train[144, ])
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 1
+##   .pred
+##   &lt;dbl&gt;
+## 1  1800
+</code></pre><p>What are the most important variables in this decision tree for predicting turbine capacity?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+final_fit <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">vip</span>(geom <span style="color:#666">=</span> <span style="color:#4070a0">&#34;col&#34;</span>, aesthetics <span style="color:#666">=</span> <span style="color:#06287e">list</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(expand <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#40a070">0</span>))
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-14-1.png" width="2400" />
+<p>I really like the 
+<a href="https://github.com/grantmcdermott/parttree" target="_blank" rel="noopener">parttree</a> package for visualization decision tree results. It only works for models with one or two predictors, so we&rsquo;ll have to fit an example model that isn&rsquo;t quite the same as our full model. It can still help us understand how this decision tree is working, but keep in mind that it is not the same as our full model with more predictors.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(parttree)
+
+ex_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(
+  final_tree,
+  turbine_capacity <span style="color:#666">~</span> rotor_diameter_m <span style="color:#666">+</span> commissioning_date,
+  wind_train
+)
+
+wind_train <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(rotor_diameter_m, commissioning_date)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_parttree</span>(data <span style="color:#666">=</span> ex_fit, <span style="color:#06287e">aes</span>(fill <span style="color:#666">=</span> turbine_capacity), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.3</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_jitter</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, width <span style="color:#666">=</span> <span style="color:#40a070">1</span>, height <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>, <span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> turbine_capacity)) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_colour_viridis_c</span>(aesthetics <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;color&#34;</span>, <span style="color:#4070a0">&#34;fill&#34;</span>))
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+<p>Finally, let&rsquo;s turn to the testing data! These results are stored in <code>final_rs</code>, along with the fitted output there. We can see both metrics on the testing data and predictions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(final_rs)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2 x 4
+##   .metric .estimator .estimate .config             
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 rmse    standard      73.6   Preprocessor1_Model1
+## 2 rsq     standard       0.985 Preprocessor1_Model1
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">collect_predictions</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(turbine_capacity, .pred)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_abline</span>(slope <span style="color:#666">=</span> <span style="color:#40a070">1</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_fixed</span>()
+</code></pre></div><img src="index_files/figure-html/unnamed-chunk-16-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 29, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1599 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/dbt/">&larr; Manifesto: Introducing the Analytical Engineer</a>
+  
+  
+  
+</div>
+
+      </footer>
+    </article>
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Lucas Bagge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

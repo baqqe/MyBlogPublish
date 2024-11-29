@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>tidylo is now on CRAN! 🎉 | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="tidylo is now on CRAN! 🎉 | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tidylo-cran/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/tidylo-cran/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/tidylo-cran/featured.png" >
+    
+    
+  <meta itemprop="name" content="tidylo is now on CRAN! 🎉">
+<meta itemprop="description" content="Measure how the frequency of some feature differs across some group or set, using the weighted log odds."><meta itemprop="datePublished" content="2020-05-26T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-05-26T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1410"><meta itemprop="image" content="https://juliasilge.com/blog/tidylo-cran/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">tidylo is now on CRAN! 🎉</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">May 26, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I am very pleased to announce that 
+<a href="https://github.com/juliasilge/tidylo" target="_blank" rel="noopener">tidylo</a>, a package for weighted log odds using tidy data principles, is 
+<a href="https://cran.r-project.org/package=tidylo" target="_blank" rel="noopener">now on CRAN</a>! 🎉 I would like to send my warmest thanks to my collaborators 
+<a href="https://www.alexpghayes.com/" target="_blank" rel="noopener">Alex Hayes</a> and 
+<a href="https://www.letslanguage.org/" target="_blank" rel="noopener">Tyler Schnoebelen</a> for their helpful contributions.</p>
+<p>You can now install the released version of tidylo from 
+<a href="https://CRAN.R-project.org" target="_blank" rel="noopener">CRAN</a> with:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">install.packages</span>(<span style="color:#4070a0">&#34;tidylo&#34;</span>)
+</code></pre></div><p>A log odds ratio is a way of expressing probabilities, and we can weight a log odds ratio so that our implementation does a better job dealing with different features having different counts. In particular, we use the method outlined in 
+<a href="https://doi.org/10.1093/pan/mpn018" target="_blank" rel="noopener">Monroe, Colaresi, and Quinn (2008)</a> for posterior log odds ratios, assuming a multinomial model with a Dirichlet prior. The default prior is <strong>estimated from the data itself</strong>, an empirical Bayesian approach, but an uninformative prior is also available.</p>
+<p>Text analysis is a main motivator for this implementation of weighted log odds, because natural language exhibits an approximately power distribution for word counts with some words counted many times and others counted only a few times. Check out both the 
+<a href="https://github.com/juliasilge/tidylo" target="_blank" rel="noopener">README</a> and the 
+<a href="https://cran.r-project.org/web/packages/tidylo/vignettes/tidy_log_odds.html" target="_blank" rel="noopener">package vignette</a> for examples using text mining. However, this weighted log odds approach is a general one for measuring how much more likely one feature (any kind of feature, not just a word or bigram) is to be associated than another for some set or group (any kind of set, not just a document or book).</p>
+
+
+
+
+<h2 id="cocktail-ingredients">Cocktail ingredients
+  <a href="#cocktail-ingredients"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To demonstrate this, let&rsquo;s examine 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-05-26/readme.md" target="_blank" rel="noopener">this week&rsquo;s #TidyTuesday dataset of cocktail recipes</a>, focusing on the ingredients in the cocktails and the type of glasses 🍸 the cocktails are served in. This is a good fit for the weighted log odds approach because some ingredients (like vodka) are <em>much</em> more common than others (like tabasco sauce). Which ingredients are more likely to be used with which type of cocktail glass, using a prior estimated from the data itself? By weighting using empirical Bayes estimation, we take into account the uncertainty in our measurements and acknowledge that we are more certain when we&rsquo;ve counted something a lot of times and less certain when we&rsquo;ve counted something only a few times. When weighting by the prior in this way, we focus on differences that are more likely to be real, given the evidence that we have.</p>
+<p>Let&rsquo;s convert both the cocktail <code>glass</code> and <code>ingredient</code> columns to lower case (because there are some differences in capitalization across rows), and count up totals for each combination.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+<span style="color:#06287e">library</span>(tidylo)
+<span style="color:#06287e">library</span>(tidytuesdayR)
+
+tuesdata <span style="color:#666">&lt;-</span> <span style="color:#06287e">tt_load</span>(<span style="color:#40a070">2020</span>, week <span style="color:#666">=</span> <span style="color:#40a070">22</span>)
+cocktails <span style="color:#666">&lt;-</span> tuesdata<span style="color:#666">$</span>cocktails
+
+cocktail_counts <span style="color:#666">&lt;-</span> cocktails <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    glass <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(glass),
+    ingredient <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(ingredient)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(glass, ingredient, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+
+cocktail_counts
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 900 x 3
+##    glass          ingredient       n
+##    &lt;chr&gt;          &lt;chr&gt;        &lt;int&gt;
+##  1 cocktail glass gin             39
+##  2 collins glass  vodka           24
+##  3 cocktail glass dry vermouth    19
+##  4 cocktail glass lemon juice     19
+##  5 cocktail glass triple sec      19
+##  6 collins glass  sugar           19
+##  7 highball glass vodka           18
+##  8 highball glass gin             16
+##  9 collins glass  orange juice    15
+## 10 highball glass orange juice    15
+## # … with 890 more rows
+</code></pre><p>Now let&rsquo;s use the <code>bind_log_odds()</code> function from the tidylo package to find the weighted log odds for each bigram. The weighted log odds computed by this function are also 
+<a href="https://en.wikipedia.org/wiki/Standard_score" target="_blank" rel="noopener">z-scores</a> for the log odds; this quantity is useful for comparing frequencies across categories or sets but its relationship to an odds ratio is not straightforward after the weighting.</p>
+<p>What are the ingredients with the highest weighted log odds for these glasses?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">cocktail_log_odds <span style="color:#666">&lt;-</span> cocktail_counts <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_log_odds</span>(glass, ingredient, n) 
+
+cocktail_log_odds <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">5</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>log_odds_weighted)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 83 x 4
+##    glass              ingredient               n log_odds_weighted
+##    &lt;chr&gt;              &lt;chr&gt;                &lt;int&gt;             &lt;dbl&gt;
+##  1 coffee mug         coffee                  10              8.52
+##  2 coffee mug         chocolate                6              8.25
+##  3 coffee mug         sugar                    6              7.94
+##  4 coffee mug         milk                    11              7.63
+##  5 champagne flute    champagne                6              7.26
+##  6 whiskey sour glass powdered sugar           6              6.56
+##  7 highball glass     yoghurt                  9              6.42
+##  8 cocktail glass     orange bitters          11              6.35
+##  9 cocktail glass     dry vermouth            19              6.32
+## 10 shot glass         bailey's irish cream     9              5.91
+## # … with 73 more rows
+</code></pre><p>We can see right away that the highest weighted log odds ingredients in the dataset are coffee, chocolate, sugar, and milk for a coffee mug. Let&rsquo;s create a visualization to see the highest weighted log odds ingredients for four different types of glasses.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+glasses <span style="color:#666">&lt;-</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;coffee mug&#34;</span>, <span style="color:#4070a0">&#34;champagne flute&#34;</span>, <span style="color:#4070a0">&#34;old-fashioned glass&#34;</span>, <span style="color:#4070a0">&#34;shot glass&#34;</span>)
+
+cocktail_log_odds <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(glass <span style="color:#666">%in%</span> glasses) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(glass) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">top_n</span>(<span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(ingredient <span style="color:#666">=</span> <span style="color:#06287e">reorder_within</span>(ingredient, log_odds_weighted, glass)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(log_odds_weighted, ingredient, fill <span style="color:#666">=</span> glass)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>glass, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_reordered</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(expand <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Weighted log odds (empirical Bayes)&#34;</span>)
+</code></pre></div><img src="/blog/tidylo-cran/index_files/figure-html/unnamed-chunk-4-1.png" width="2100" />
+<p>OH BOY, seeing all these ingredients mixed up like this makes me feel a little queasy. 🤢 These are the ingredients most likely to be used with each glass, assuming the prior estimated from the data itself. Notice also that the ingredients for the coffee mug are the <strong>most</strong> distinctive, and the ingredients for the old-fashioned glass are the <strong>least</strong> distinctive.</p>
+<p>Perhaps we want to understand one type of glass in more detail, and examine the relationship between weighted log odds and how common an ingredient is. Let&rsquo;s look at the &ldquo;cocktail glass&rdquo;, which you might know as a martini glass.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(ggrepel)
+cocktail_log_odds <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(glass <span style="color:#666">==</span> <span style="color:#4070a0">&#34;cocktail glass&#34;</span>,
+         n <span style="color:#666">&gt;</span> <span style="color:#40a070">5</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(n, log_odds_weighted, label <span style="color:#666">=</span> ingredient)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_hline</span>(yintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_text_repel</span>(family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IBMPlexSans&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of cocktails in dataset&#34;</span>,
+       y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Weighted log odds (empirical Bayes)&#34;</span>,
+       title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;What ingredients are most specific to a cocktail/martini glass?&#34;</span>,
+       subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Sweet &amp; dry vermouth are among the high log odds ingredients\nGin is both very common and likely to be used with a cocktail glass&#34;</span>)
+</code></pre></div><img src="/blog/tidylo-cran/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>Vodka is common, but it is used among so many different kinds of glasses that is does not have a high weighted log odds for a cocktail/martini glass.</p>
+
+
+
+
+<h2 id="weighty-matters">Weighty matters
+  <a href="#weighty-matters"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>By default, the prior in tidylo is estimated from the data itself as shown with the cocktail ingredients, an empirical Bayes approach, but an uninformative prior is also available. To demonstrate this, let&rsquo;s look at everybody&rsquo;s favorite data about cars. 🚗 What do we know about the relationship between number of gears and engine shape <code>vs</code>?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gear_counts <span style="color:#666">&lt;-</span> mtcars <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(vs, gear)
+
+gear_counts
+</code></pre></div><pre tabindex="0"><code>##   vs gear  n
+## 1  0    3 12
+## 2  0    4  2
+## 3  0    5  4
+## 4  1    3  3
+## 5  1    4 10
+## 6  1    5  1
+</code></pre><p>Now we can use <code>bind_log_odds()</code> to find the weighted log odds for each number of gears and engine shape. First, let&rsquo;s use the default empirical Bayes prior. It regularizes the values.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">regularized <span style="color:#666">&lt;-</span> gear_counts <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_log_odds</span>(vs, gear, n)
+
+regularized
+</code></pre></div><pre tabindex="0"><code>##   vs gear  n log_odds_weighted
+## 1  0    3 12         1.1728347
+## 2  0    4  2        -1.3767516
+## 3  0    5  4         0.4033125
+## 4  1    3  3        -1.1354777
+## 5  1    4 10         1.5661168
+## 6  1    5  1        -0.4362340
+</code></pre><p>For engine shape <code>vs = 0</code>, having three gears has the highest weighted log odds while for engine shape <code>vs = 1</code>, having four gears has the highest weighted log odds. This dataset is small enough that you can look at the count data and see how this is working.</p>
+<p>Now, let&rsquo;s use the uninformative prior, and compare to the unweighted log odds. These log odds will be farther from zero than the regularized estimates.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">unregularized <span style="color:#666">&lt;-</span> gear_counts <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_log_odds</span>(vs, gear, n, uninformative <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>, unweighted <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+
+unregularized
+</code></pre></div><pre tabindex="0"><code>##   vs gear  n   log_odds log_odds_weighted
+## 1  0    3 12  0.6968169         1.8912729
+## 2  0    4  2 -1.2527630        -1.9691060
+## 3  0    5  4  0.3249262         0.5549172
+## 4  1    3  3 -0.9673459        -1.7407107
+## 5  1    4 10  1.1451323         2.8421436
+## 6  1    5  1 -0.5268260        -0.6570674
+</code></pre><p>Most importantly, you can notice that this approach is useful both for text data, for our example of cocktail ingredients 🥃, but also more generally whenever you have counts in some kind of groups or sets and you want to find what feature is more likely to come from a group, compared to the other groups.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 26, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1410 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/cocktail-recipes-umap/">&larr; PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/xgboost-tune-volleyball/">Tune XGBoost with tidymodels and #TidyTuesday beach volleyball &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

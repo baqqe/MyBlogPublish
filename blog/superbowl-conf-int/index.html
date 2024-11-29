@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Bootstrap confidence intervals for #TidyTuesday Super Bowl commercials | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Bootstrap confidence intervals for #TidyTuesday Super Bowl commercials | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/superbowl-conf-int/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/superbowl-conf-int/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/superbowl-conf-int/featured.png" >
+    
+    
+  <meta itemprop="name" content="Bootstrap confidence intervals for #TidyTuesday Super Bowl commercials">
+<meta itemprop="description" content="Estimate how commercial characteristics like humor and patriotic themes change with time using tidymodels functions for bootstrap confidence intervals."><meta itemprop="datePublished" content="2021-03-04T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-03-04T00:00:00+00:00" />
+<meta itemprop="wordCount" content="882"><meta itemprop="image" content="https://juliasilge.com/blog/superbowl-conf-int/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Bootstrap confidence intervals for #TidyTuesday Super Bowl commercials</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">March 4, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from starting out with first modeling steps to tuning more complex models. Today&rsquo;s screencast uses a relatively new function from rsample for quickly finding bootstrap confidence intervals, with this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on Super Bowl commercials. 🏈</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/joMZ5GUqqSI" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to estimate how the characteristics of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-03-02/readme.md" target="_blank" rel="noopener">Super Bowl commercials</a> have changed over time. There aren&rsquo;t a lot of observations in this data set, and this is an approach that can be used for robust estimates in such situations. Let&rsquo;s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+youtube <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv&#34;</span>)
+</code></pre></div><p>Let&rsquo;s make one exploratory plot to see how the characteristics of the commercials change over time.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">youtube <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(year, funny<span style="color:#666">:</span>use_sex) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(funny<span style="color:#666">:</span>use_sex) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(year, name) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(prop <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(value)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year, prop, color <span style="color:#666">=</span> name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of commercials&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/superbowl-conf-int/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+
+
+
+
+<h2 id="fit-a-simple-model">Fit a simple model
+  <a href="#fit-a-simple-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Although those relationships don&rsquo;t look perfectly linear, we can use a linear model to estimate if and how much these characteristics are changing with time.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">simple_mod <span style="color:#666">&lt;-</span> <span style="color:#06287e">lm</span>(year <span style="color:#666">~</span> funny <span style="color:#666">+</span> show_product_quickly <span style="color:#666">+</span>
+  patriotic <span style="color:#666">+</span> celebrity <span style="color:#666">+</span> danger <span style="color:#666">+</span> animals <span style="color:#666">+</span> use_sex,
+data <span style="color:#666">=</span> youtube
+)
+
+<span style="color:#06287e">summary</span>(simple_mod)
+</code></pre></div><pre tabindex="0"><code>##
+## Call:
+## lm(formula = year ~ funny + show_product_quickly + patriotic +
+##     celebrity + danger + animals + use_sex, data = youtube)
+##
+## Residuals:
+##      Min       1Q   Median       3Q      Max
+## -12.5254  -4.1023   0.1456   3.9662  10.1727
+##
+## Coefficients:
+##                           Estimate Std. Error  t value Pr(&gt;|t|)
+## (Intercept)              2011.0838     0.9312 2159.748  &lt; 2e-16 ***
+## funnyTRUE                  -2.8979     0.8593   -3.372  0.00087 ***
+## show_product_quicklyTRUE    0.7706     0.7443    1.035  0.30160
+## patrioticTRUE               2.0455     1.0140    2.017  0.04480 *
+## celebrityTRUE               2.4416     0.7767    3.144  0.00188 **
+## dangerTRUE                  0.4814     0.7846    0.614  0.54007
+## animalsTRUE                 0.1082     0.7330    0.148  0.88274
+## use_sexTRUE                -2.4041     0.8175   -2.941  0.00359 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##
+## Residual standard error: 5.391 on 239 degrees of freedom
+## Multiple R-squared:  0.178,	Adjusted R-squared:  0.1539
+## F-statistic: 7.393 on 7 and 239 DF,  p-value: 4.824e-08
+</code></pre><p>We get statistical properties from this linear model, but we can use bootstrap resampling to get an estimate of the variance in our quantities. In tidymodels, the 
+<a href="https://rsample.tidymodels.org/" target="_blank" rel="noopener">rsample</a> package has functions to create resamples such as bootstraps.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(rsample)
+<span style="color:#06287e">bootstraps</span>(youtube, times <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>)
+</code></pre></div><pre tabindex="0"><code>## # Bootstrap sampling
+## # A tibble: 1,000 x 2
+##    splits            id
+##    &lt;list&gt;            &lt;chr&gt;
+##  1 &lt;split [247/91]&gt;  Bootstrap0001
+##  2 &lt;split [247/100]&gt; Bootstrap0002
+##  3 &lt;split [247/93]&gt;  Bootstrap0003
+##  4 &lt;split [247/87]&gt;  Bootstrap0004
+##  5 &lt;split [247/86]&gt;  Bootstrap0005
+##  6 &lt;split [247/94]&gt;  Bootstrap0006
+##  7 &lt;split [247/98]&gt;  Bootstrap0007
+##  8 &lt;split [247/96]&gt;  Bootstrap0008
+##  9 &lt;split [247/92]&gt;  Bootstrap0009
+## 10 &lt;split [247/89]&gt;  Bootstrap0010
+## # … with 990 more rows
+</code></pre><p>This has allowed you to carry out 
+<a href="https://www.tidymodels.org/learn/statistics/bootstrap/" target="_blank" rel="noopener">flexible bootstrapping or permutation steps</a>. However, that&rsquo;s a lot of steps to get to confidence intervals, especially if you are using a really simple model! In a recent release of rsample, we added a new function <code>reg_intervals()</code> that finds confidence intervals for models like <code>lm()</code> and <code>glm()</code> (as well as models from the 
+<a href="https://cran.r-project.org/package=survival" target="_blank" rel="noopener">survival</a> package).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+youtube_intervals <span style="color:#666">&lt;-</span> <span style="color:#06287e">reg_intervals</span>(year <span style="color:#666">~</span> funny <span style="color:#666">+</span> show_product_quickly <span style="color:#666">+</span>
+  patriotic <span style="color:#666">+</span> celebrity <span style="color:#666">+</span> danger <span style="color:#666">+</span> animals <span style="color:#666">+</span> use_sex,
+data <span style="color:#666">=</span> youtube,
+type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;percentile&#34;</span>,
+keep_reps <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>
+)
+
+youtube_intervals
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 7 x 7
+##   term                   .lower .estimate .upper .alpha .method      .replicates
+##   &lt;chr&gt;                   &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;      &lt;list&lt;tibble&gt;
+## 1 animalsTRUE            -1.22      0.144  1.51    0.05 percentile   [2,001 × 2]
+## 2 celebrityTRUE           0.828     2.46   4.06    0.05 percentile   [2,001 × 2]
+## 3 dangerTRUE             -1.01      0.515  2.09    0.05 percentile   [2,001 × 2]
+## 4 funnyTRUE              -4.58     -2.91  -1.26    0.05 percentile   [2,001 × 2]
+## 5 patrioticTRUE           0.112     2.05   3.88    0.05 percentile   [2,001 × 2]
+## 6 show_product_quicklyT… -0.839     0.740  2.23    0.05 percentile   [2,001 × 2]
+## 7 use_sexTRUE            -4.04     -2.43  -0.952   0.05 percentile   [2,001 × 2]
+</code></pre><p>All done!</p>
+
+
+
+
+<h2 id="explore-bootstrap-results">Explore bootstrap results
+  <a href="#explore-bootstrap-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can use visualization to explore these results. If we had <em>not</em> set <code>keep_reps = TRUE</code>, we would only have the intervals themselves and could a plot such as this one.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">youtube_intervals <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    term <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(term, <span style="color:#4070a0">&#34;TRUE&#34;</span>),
+    term <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(term, .estimate)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.estimate, term)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray80&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbarh</span>(<span style="color:#06287e">aes</span>(xmin <span style="color:#666">=</span> .lower, xmax <span style="color:#666">=</span> .upper),
+    size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">3</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Increase in year for each commercial characteristic&#34;</span>,
+    y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/superbowl-conf-int/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<p>Since we did keep the individual replicates, we can look at the distributions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">youtube_intervals <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    term <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(term, <span style="color:#4070a0">&#34;TRUE&#34;</span>),
+    term <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(term, .estimate)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(.replicates) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate, fill <span style="color:#666">=</span> term)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(term))
+</code></pre></div><img src="https://juliasilge.com/blog/superbowl-conf-int/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>We have evidence that Super Bowl commericals (at least the ones including in this 
+<a href="https://github.com/fivethirtyeight/superbowl-ads" target="_blank" rel="noopener">FiveThirtyEight sample</a>) are including less humor and sexual content and more celebrities and patriotic themes.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">March 4, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 882 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/un-voting/">&larr; Dimensionality reduction of #TidyTuesday United Nations voting patterns</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/kmeans-employment/">Getting started with k-means and #TidyTuesday employment status &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

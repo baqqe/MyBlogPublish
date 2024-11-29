@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Sliding windows for #TidyTuesday rents in San Francisco | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Sliding windows for #TidyTuesday rents in San Francisco | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/sf-rent/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/sf-rent/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/sf-rent/featured.png" >
+    
+    
+  <meta itemprop="name" content="Sliding windows for #TidyTuesday rents in San Francisco">
+<meta itemprop="description" content="The slider package provides support for flexible sliding window aggregation, and we can use these kinds of sliding windows to analyze rents over time."><meta itemprop="datePublished" content="2022-08-04T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-08-04T00:00:00+00:00" />
+<meta itemprop="wordCount" content="871"><meta itemprop="image" content="https://juliasilge.com/blog/sf-rent/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Sliding windows for #TidyTuesday rents in San Francisco</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">August 4, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>, but it is not about tidymodels this time around! I am stepping away from working on tidymodels to focus on 
+<a href="https://vetiver.rstudio.com/" target="_blank" rel="noopener">MLOps tools</a> full-time, so moving forward I’ll focus on a wider variety on topics in screencasts. An important part of managing deployed models is 
+<a href="https://vetiver.rstudio.com/get-started/monitor.html" target="_blank" rel="noopener">monitoring</a>, and this involves computing model metrics at a given aggregation. I love to use the 
+<a href="https://davisvaughan.github.io/slider/" target="_blank" rel="noopener">slider</a> package by my coworker Davis Vaughan for this kind of task, and this screencast walks through how to use sliding window aggregation to analyze a recent 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on rents in San Francisco. 🏙️</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/DK4ERlywtUI" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="load-data">Load data
+  <a href="#load-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our analysis goal is to understand how 
+<a href="https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-07-05" target="_blank" rel="noopener">rents in San Francisco</a> are changing over time. This dataset is from last month, but I didn’t get a chance to look at it then because of preparing for rstudio::conf()! Let’s filter down to apartments that are whole apartments (not a room for rent) and listings that are from the last 15 years or so.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+rent_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-07-05/rent.csv&#39;</span>)
+
+rent <span style="color:#666">&lt;-</span> rent_raw <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">filter</span>(room_in_apt <span style="color:#666">&lt;</span> <span style="color:#40a070">1</span>, year <span style="color:#666">&gt;</span> <span style="color:#40a070">2005</span>) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">select</span>(date, price, beds, baths) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(date <span style="color:#666">=</span> lubridate<span style="color:#666">::</span><span style="color:#06287e">ymd</span>(date)) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">arrange</span>(date)
+
+rent
+</code></pre></div><pre><code>## # A tibble: 144,261 × 4
+##    date       price  beds baths
+##    &lt;date&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 2006-01-01  1000     2     1
+##  2 2006-01-01   900     1    NA
+##  3 2006-01-01  1100     1     1
+##  4 2006-01-01  1750     2    NA
+##  5 2006-01-01  1050     2    NA
+##  6 2006-01-01  2100     2    NA
+##  7 2006-01-01   750     3    NA
+##  8 2006-01-01  1195     0    NA
+##  9 2006-01-01   600     1    NA
+## 10 2006-01-01  1295     0     1
+## # … with 144,251 more rows
+## # ℹ Use `print(n = ...)` to see more rows
+</code></pre>
+
+
+
+
+<h2 id="compute-a-sliding-mean">Compute a sliding mean
+  <a href="#compute-a-sliding-mean"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s 
+<a href="https://davisvaughan.github.io/slider/reference/slide_period.html" target="_blank" rel="noopener">use the <code>sliding_period_*()</code> family of functions</a>, since we have date information and want to aggregate in a date-aware way. These functions may reminder you of <code>purrr::map()</code> in that you can specify the <em>type</em> of the output and you pass in a function to use for the aggregation. How can we compute the mean price during each month?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(slider)
+<span style="color:#06287e">slide_period_dbl</span>(rent, rent<span style="color:#666">$</span>date, <span style="color:#4070a0">&#34;month&#34;</span>, <span style="color:#666">~</span> <span style="color:#06287e">mean</span>(.$price))
+</code></pre></div><pre><code>##   [1] 1702.348 1764.308 1680.277 1780.290 1741.493 1792.470 1937.523 1916.761
+##   [9] 2158.055 1981.265 2000.490 1837.366 2863.852 1944.671 1886.720 1929.790
+##  [17] 1949.142 2122.238 2145.564 2095.632 2213.338 2162.576 1836.880 1935.268
+##  [25] 2093.470 2101.785 2158.061 2069.820 2321.663 1402.000 2053.995 2075.493
+##  [33] 1923.436 1997.835 1810.720 2563.304 1668.604 1714.088 1877.848 2012.075
+##  [41] 1414.392 1894.130 1850.200 2169.115 1988.202 1921.168 2494.451 2024.189
+##  [49] 2171.402 2061.801 2052.503 2071.554 2142.095 2218.942 2173.790 2258.142
+##  [57] 2367.558 2339.565 1932.022 1636.667 3000.000 2403.243 2392.396 2112.032
+##  [65] 2304.910 2613.418 2471.167 2918.508 2783.562 2369.468 2964.150 3017.188
+##  [73] 3008.525 2373.783 3307.472 2832.411 2687.975 2895.371 3381.402 2694.425
+##  [81] 2733.273 2459.929 3014.436 2954.046 3004.527 3050.929 3268.769 2596.823
+##  [89] 3051.025 3145.838 3156.274 2807.752 2883.929 2838.391 2867.761 2980.510
+##  [97] 2807.714 3024.339 3128.416 2877.165 2896.006 3050.295 2949.307 3076.659
+## [105] 3700.000 2904.348 3264.213 3044.426 2940.444 3041.136 2915.409 2876.117
+## [113] 3071.498 2941.088 2982.688 2984.801 2993.061
+</code></pre>
+<p>Nice! But I think I would like this in a dataframe, with the date that belongs to each mean price and maybe also the number that was used for the aggregation. I think this is easiest if I write a little function:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">mean_rent <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(df) {
+    <span style="color:#06287e">summarize</span>(df, date <span style="color:#666">=</span> <span style="color:#06287e">min</span>(date), rent <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(price), n <span style="color:#666">=</span> <span style="color:#06287e">n</span>())
+}
+
+<span style="color:#06287e">slide_period_dfr</span>(rent, rent<span style="color:#666">$</span>date, <span style="color:#4070a0">&#34;month&#34;</span>, mean_rent)
+</code></pre></div><pre><code>## # A tibble: 117 × 3
+##    date        rent     n
+##    &lt;date&gt;     &lt;dbl&gt; &lt;int&gt;
+##  1 2006-01-01 1702.  1323
+##  2 2006-02-03 1764.  3125
+##  3 2006-03-01 1680.  1315
+##  4 2006-04-01 1780.  4996
+##  5 2006-05-01 1741.  1391
+##  6 2006-06-02 1792.  1816
+##  7 2006-07-05 1938.  2711
+##  8 2006-08-11 1917.  2189
+##  9 2006-09-01 2158.   474
+## 10 2006-10-18 1981.   185
+## # … with 107 more rows
+## # ℹ Use `print(n = ...)` to see more rows
+</code></pre>
+<p>I could save this object, or I can just pipe it straight to ggplot2:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">slide_period_dfr</span>(rent, rent<span style="color:#666">$</span>date, <span style="color:#4070a0">&#34;month&#34;</span>, mean_rent) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(date, rent)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/sf-rent/index_files/figure-html/unnamed-chunk-5-1.png" width="1260" />
+<p>Now the real helpfulness of slider comes in when I want to more flexibly aggregate, with a more complex sliding window. Let’s use <code>.before = 1</code>, which makes a sliding window that includes both the current month and the <em>previous</em> month:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">slide_period_dfr</span>(rent, rent<span style="color:#666">$</span>date, <span style="color:#4070a0">&#34;month&#34;</span>, mean_rent, .before <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(date, rent)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/sf-rent/index_files/figure-html/unnamed-chunk-6-1.png" width="1260" />
+<p>The main difference we see here is that the variation is smoothing out a bit, since we are taking the average over a longer time period.</p>
+
+
+
+
+<h2 id="different-sliding-windows">Different sliding windows
+  <a href="#different-sliding-windows"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>What does it look like if we try different values for <code>.before</code>, from one previous month to six previous months?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tibble</span>(.before <span style="color:#666">=</span> <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">6</span>) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(mean_rent <span style="color:#666">=</span> <span style="color:#06287e">map</span>(
+        .before, 
+        <span style="color:#666">~</span> <span style="color:#06287e">slide_period_dfr</span>(rent, rent<span style="color:#666">$</span>date, <span style="color:#4070a0">&#34;month&#34;</span>, mean_rent, .before <span style="color:#666">=</span> .x)
+    )) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">unnest</span>(mean_rent) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(date, rent, color <span style="color:#666">=</span> .before, group <span style="color:#666">=</span> .before)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_color_viridis_c</span>() <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>dollar) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;How many months\nin sliding window?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/sf-rent/index_files/figure-html/unnamed-chunk-7-1.png" width="1260" />
+<p>We see smoother change as we aggregate with larger windows, just like we would expect!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">August 4, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 871 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/lego-sets/">&larr; Use Docker to deploy a model for #TidyTuesday LEGO sets</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/pay-gap-uk/">Three ways to look at #TidyTuesday UK pay gap data &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>My Baby Boomer Name Might Have Been &#34;Debbie&#34; | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Comparing Baby Names Across Years Based on Popularity, plus a Shiny App">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="My Baby Boomer Name Might Have Been &#34;Debbie&#34; | Julia Silge">
+<meta property="og:description" content="Comparing Baby Names Across Years Based on Popularity, plus a Shiny App" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/my-baby-boomer-name/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="My Baby Boomer Name Might Have Been &#34;Debbie&#34;">
+<meta itemprop="description" content="I have always loved learning and thinking about names, how they are chosen and used, and how people feel about their names and the names around them. We had a traditional baby name book at our house when I was growing up (you know, lists of names with meanings), and I remember poring over it to find unusual or appealing names for my pretend play or the stories I wrote. As an adult, I read Laura Wattenberg&rsquo;s excellent book on baby names when we were expecting our second baby, and I also discovered the NameVoyager on Wattenberg&rsquo;s website."><meta itemprop="datePublished" content="2016-02-29T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-02-29T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1690">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">My Baby Boomer Name Might Have Been &#34;Debbie&#34;</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">February 29, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I have always loved learning and thinking about names, how they are chosen and used, and how people feel about their names and the names around them. We had a traditional baby name book at our house when I was growing up (you know, lists of names with meanings), and I remember poring over it to find unusual or appealing names for my pretend play or the stories I wrote. As an adult, I read Laura Wattenberg&rsquo;s 
+<a href="http://www.amazon.com/Baby-Name-Wizard-Revised-Edition/dp/0770436471" target="_blank" rel="noopener">excellent book on baby names</a> when we were expecting our second baby, and I also discovered the 
+<a href="http://www.babynamewizard.com/voyager" target="_blank" rel="noopener">NameVoyager</a> on Wattenberg&rsquo;s website. I just love that kind of thing.</p>
+<p>The data used to make the NameVoyager interactive is from the 
+<a href="https://www.ssa.gov/OACT/babynames/background.html" target="_blank" rel="noopener">Social Security Administration</a> based on Social Security card applications, and Hadley Wickham has done the work of taking the same data and making it 
+<a href="https://github.com/hadley/babynames" target="_blank" rel="noopener">an R package</a>. Lucky us! Let&rsquo;s use this package and take a look at how the popularity of my name has changed over time.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(babynames)
+library(ggplot2)
+library(dplyr)
+data(babynames)
+juliejulia &lt;- babynames %&gt;% filter(sex == &quot;F&quot;, name %in% c(&quot;Julia&quot;, &quot;Julie&quot;))
+ggplot(juliejulia, aes(x = year, y = prop, color = name)) + 
+        geom_line(size = 1.1) + 
+        theme(legend.title=element_blank()) + 
+        scale_color_manual(values = c(&quot;tomato&quot;, &quot;midnightblue&quot;)) + 
+        ggtitle(&quot;My Name Is NOT JULIE!&quot;) +
+        ylab(&quot;Proportion of total applicants for year&quot;) + xlab(&quot;Year&quot;)
+</code></pre><p><img src="/figs/2016-02-29-My-Baby-Boomer-Name/unnamed-chunk-2-1.png" alt="center"></p>
+<p>The <code>babynames</code> package includes data from 1880 through 2014. I was born in 1978; notice that for about 20 years or so before my birth, the name &ldquo;Julie&rdquo; was very popular, about 4 times as popular as &ldquo;Julia&rdquo;. This means that by the time I was born, there were many more girls and women named Julie walking around than those named Julia. During my childhood, I got called &ldquo;Julie&rdquo; all the time by people who misheard or misread my name, and oh, how it rankled! It bothered me so, so much at the time. My actual name started to gain in popularity a little after &ldquo;Julie&rdquo; started to decline in popularity, so this doesn&rsquo;t happen to me much as an adult. In fact, I have known a number of other girls and women named Julia at this point in my life, although they have all been younger than me.</p>
+
+
+
+
+<h2 id="my-parents-the-trendsetters">My Parents, the Trendsetters
+  <a href="#my-parents-the-trendsetters"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I&rsquo;ve always thought it was interesting that my parents somehow picked a name like mine; they picked a name that was on its way to becoming popular again, after its long decline from the 19th century, but wasn&rsquo;t yet really. (They did the same thing for my one sibling, too; her name also was about to become popular when she was born and named.) Let&rsquo;s look a bit more deeply at my name&rsquo;s popularity around my birth year.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">pickaname &lt;- babynames %&gt;% filter(sex == &quot;F&quot;, name == &quot;Julia&quot;)
+pickaname[pickaname$year == 1978,]
+</code></pre><pre tabindex="0"><code>## Source: local data frame [1 x 5]
+## 
+##    year   sex  name     n        prop
+##   (dbl) (chr) (chr) (int)       (dbl)
+## 1  1978     F Julia  2592 0.001576993
+</code></pre><p>So that is the proportion of the total applicants for Social Security cards who had the name &ldquo;Julia&rdquo; in 1978, a measure of the popularity of a name. How is the popularity changing? Let&rsquo;s take 5 years before and after my birth year and fit a linear model to just those years.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">subsetfitname &lt;- pickaname %&gt;% filter(year %in% seq(1978-5,1978+5))
+myfit &lt;- lm(prop ~ year, subsetfitname)
+subsetfitname$prop &lt;- myfit$fitted.values
+
+fitname &lt;- pickaname %&gt;% mutate(fit = &quot;data&quot;)
+subsetfitname &lt;- subsetfitname %&gt;% mutate(fit = &quot;fit&quot;)
+fitname &lt;- rbind(fitname, subsetfitname)
+fitname$fit &lt;- as.factor(fitname$fit)
+goalprop &lt;- as.numeric(fitname[fitname$year == 1978 &amp; fitname$fit == &quot;data&quot;,'prop'])
+goalslope &lt;- myfit$coefficients[2]
+
+ggplot(fitname, aes(x = year, y = prop, color = fit, size = fit, alpha = fit)) + 
+        geom_line() + 
+        annotate(&quot;point&quot;, x = 1978, y = goalprop,
+                 color = &quot;tomato&quot;, size = 4, alpha = .8) +
+        theme(legend.title=element_blank()) + 
+        scale_color_manual(values = c(&quot;black&quot;, &quot;blue&quot;)) +
+        scale_size_manual(values = c(1.1, 2)) +
+        scale_alpha_manual(values = c(1, 0.8)) +
+        ggtitle(&quot;How Was the Popularity of My Name Changing Around 1978?&quot;) +
+        ylab(&quot;Proportion of total applicants for year&quot;) + xlab(&quot;Year&quot;)
+</code></pre><p><img src="/figs/2016-02-29-My-Baby-Boomer-Name/unnamed-chunk-4-1.png" alt="center"></p>
+<p>Here we can see the positive slope for the proportion of applicants with year; the popularity of the name &ldquo;Julia&rdquo; is increasing around 1978.</p>
+
+
+
+
+<h2 id="finding-similar-names-in-a-different-year">Finding Similar Names in a Different Year
+  <a href="#finding-similar-names-in-a-different-year"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now we have a magnitude and a slope to characterize the popularity of my name in my birth year. Let&rsquo;s find similar names in other years. This type of analysis was 
+<a href="http://time.com/3856405/baby-name-popularity/" target="_blank" rel="noopener">done by Time last year</a>, but they ranked names and then matched names by their rank (i.e. what was the 112th most common name today and in the past decades?). Here, we are approaching the question a little differently. What names in other years have similar proportion of the total applicants and change in that proportion to my name in my birth year? My oldest daughter was born in 2006; let&rsquo;s try that year. First, let&rsquo;s find all the names with about the same proportion. Then, let&rsquo;s calculate the slope for each of those names.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">goalyear &lt;- 2006
+findmatches &lt;- babynames %&gt;% filter(sex == &quot;F&quot;, year == goalyear, 
+                     prop &lt; goalprop*1.1 &amp; prop &gt; goalprop*0.9) %&gt;%
+        mutate(slope = 0.00)
+
+for (i in seq_along(findmatches$name)) {
+        matchfitname &lt;- babynames %&gt;% filter(sex == &quot;F&quot;, 
+                                             name == as.character(findmatches[i,'name']))
+        matchfitname &lt;- matchfitname %&gt;% filter(year %in% seq(goalyear-5,goalyear+5))
+        matchfit &lt;- lm(prop ~ year, matchfitname)
+        findmatches[i,'slope'] &lt;- matchfit$coefficients[2]
+}
+</code></pre><p>Now, let&rsquo;s keep only the names that have about the same slope as the original name. For matching purposes, the slopes here are divided into three categories: positive, negative, and mostly flat (between -0.00005 and 0.00005).</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">if (goalslope &gt;= 0.00005) {
+        matchnames &lt;- findmatches %&gt;% filter(slope &gt;= 0.00005) %&gt;% select(name)
+} else if (goalslope &lt;= -0.00005) {
+        matchnames &lt;- findmatches %&gt;% filter(slope &lt;= -0.00005) %&gt;% select(name)
+} else {
+        matchnames &lt;- findmatches %&gt;% 
+                filter(slope &gt; -0.00005 &amp; slope &lt; 0.00005) %&gt;% select(name) 
+}
+
+matchnames &lt;- babynames %&gt;% filter(sex == &quot;F&quot;, name %in% matchnames$name)
+plotname &lt;- rbind(pickaname, matchnames)
+</code></pre><p>So what do we have?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(plotname, aes(x = year, y = prop, color = name)) + 
+        geom_line(size = 1.1) + 
+        annotate(&quot;text&quot;, x = 1978, y = goalprop*1.3, label = &quot;1978&quot;) +
+        annotate(&quot;point&quot;, x = 1978, y = goalprop,
+                 color = &quot;blue&quot;, size = 4.5, alpha = .8) +
+        annotate(&quot;text&quot;, x = goalyear, y = goalprop*1.3, label = goalyear) +
+        annotate(&quot;point&quot;, x = goalyear, y = goalprop,
+                 color = &quot;blue&quot;, size = 4.5, alpha = .8) +
+        theme(legend.title=element_blank()) + 
+        ggtitle(&quot;Which Names For a Girl Born in 2006 Are Similar to Julia Born in 1978?&quot;) +
+        ylab(&quot;Proportion of total applicants for year&quot;) + xlab(&quot;Year&quot;)
+</code></pre><p><img src="/figs/2016-02-29-My-Baby-Boomer-Name/unnamed-chunk-7-1.png" alt="center"></p>
+<p>These names all have about the same proportion of the population in 2006 as &ldquo;Julia&rdquo; in 1978, and they are all increasing in popularity.</p>
+
+
+
+
+<h2 id="what-if-i-was-a-baby-boomer">What If I Was a Baby Boomer?
+  <a href="#what-if-i-was-a-baby-boomer"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>My mom was born in 1953, so let&rsquo;s do this one more time.</p>
+<p><img src="/figs/2016-02-29-My-Baby-Boomer-Name/unnamed-chunk-8-1.png" alt="center"></p>
+<p>These names definitely sound different than the 2006 matches. They don&rsquo;t necessarily sound like 1950s names, which makes sense when we look at the patterns in their popularity. These names were all at the beginning of becoming more popular in 1953, some of them <em>extremely</em> popular; they sound more like 1970s names to me. Coincidentally, the proportion for Julia at 1953 is within the bounds to match the proportion for Julia at 1978, but the slope at 1953 is flat and not increasing.</p>
+
+
+
+
+<h2 id="explore-the-names-yourself">Explore the Names Yourself
+  <a href="#explore-the-names-yourself"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>
+<a href="https://juliasilge.shinyapps.io/PredictNamesApp/" target="_blank" rel="noopener"><img src="/figs/2016-02-29-My-Baby-Boomer-Name/NamesScreenshot1.jpg" alt="Shiny App Screenshot"></a></p>
+<p>I made a Shiny app to explore the names further. Check out 
+<a href="https://github.com/juliasilge/PredictNamesApp" target="_blank" rel="noopener">the code for the app</a>, and explore the names in the 
+<a href="https://juliasilge.shinyapps.io/PredictNamesApp/" target="_blank" rel="noopener">app itself</a>. The app works pretty much just as described in this blog post. Let&rsquo;s look at some screenshots for a few cases.</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/PredictNamesApp/" target="_blank" rel="noopener"><img src="/figs/2016-02-29-My-Baby-Boomer-Name/NamesScreenshot2.jpg" alt="Robert in 1910"></a></p>
+<p>There is only one name in 1980 as popular as Robert in 1910, and that is Christopher, which was the second most popular male name in 1980. Robert is further down the list in 1910. This illustrates a trend in U.S. baby naming; in general, more parents now are choosing less common names than in the past. You can see this in the 
+<a href="http://www.babynamewizard.com/voyager" target="_blank" rel="noopener">NameVoyager</a>. That visualization includes the top 1000 names for each year; notice that this makes up a smaller proportion of total births in recent years than in earlier years.</p>
+<p>It&rsquo;s not that there aren&rsquo;t ever very popular, common names in recent decades, though.</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/PredictNamesApp/" target="_blank" rel="noopener"><img src="/figs/2016-02-29-My-Baby-Boomer-Name/NamesScreenshot3.jpg" alt="Jennifer in 1980"></a></p>
+<p>Gosh, Jennifer was just so dominant during my childhood. So much so that there was no name for girls as popular in 2010 as Jennifer was in 1980. I think my younger sister regularly had multiple Jennifers in her classes all through school.</p>
+<p>What if we switch those dates?</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/PredictNamesApp/" target="_blank" rel="noopener"><img src="/figs/2016-02-29-My-Baby-Boomer-Name/NamesScreenshot4.jpg" alt="Jennifer in 2010"></a></p>
+<p>By 2010, Jennifer is on the decline. Naming one&rsquo;s daughter Jennifer in 2010 is like someone my age being named Barbara, Sharon, or Cheryl. I do not know many women my age with these names, and I will say they sound significantly older to me. (Probably my children or grandchildren will revive these names as adorably retro.)</p>
+<p>What happens if you choose a name that is rare in your chosen year? Like, say, Leonard in 1990?</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/PredictNamesApp/" target="_blank" rel="noopener"><img src="/figs/2016-02-29-My-Baby-Boomer-Name/NamesScreenshot5.jpg" alt="Leonard in 1990"></a></p>
+<p>There are many more rare names than common names (
+<a href="http://arxiv.org/abs/cond-mat/0412004" target="_blank" rel="noopener">everything&rsquo;s a power law?</a>). In fact, I ended up adding a ceiling to how many names the app will display because it would just get too overwhelming. The matches to display for the rare names are chosen randomly so you might get different names if you put in the same rare name twice.</p>
+<p>Looking at the rare names can be pretty entertaining, though. Notice how a few of the extremely rare names in 1920 (Austin, Steven, Larry) went on to significant popularity. Some, of course, stayed rare and sound rather hilariously antique (Cornelius, Millard, Gerard), and we can see the rise of Hispanic names like Carlos throughout this app. After playing with the app for a while, I&rsquo;ve come to the conclusion that this matching process is the least meaningful for very rare names with flat slopes; it&rsquo;s just a slush of super rare names not changing in popularity down there.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>There are a 
+<a href="https://dpmartin42.shinyapps.io/babynameR/" target="_blank" rel="noopener">couple</a> of 
+<a href="https://justmarkham.shinyapps.io/babynames/" target="_blank" rel="noopener">other</a> Shiny 
+<a href="https://adrianvs.shinyapps.io/Babynames/" target="_blank" rel="noopener">apps</a> out there for exploring the <code>babynames</code> data set in different ways, if you just can&rsquo;t get enough. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-02-29-My-Baby-Boomer-Name.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 29, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1690 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/you-must-allow-me/">&larr; You Must Allow Me To Tell You How Ardently I Admire and Love Natural Language Processing</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/your-floor/">Your Floor Is the Most Dangerous Thing In Your House &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

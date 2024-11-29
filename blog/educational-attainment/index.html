@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Educational attainment in #TidyTuesday UK towns | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Educational attainment in #TidyTuesday UK towns | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/educational-attainment/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/educational-attainment/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/educational-attainment/featured.png" >
+    
+    
+  <meta itemprop="name" content="Educational attainment in #TidyTuesday UK towns">
+<meta itemprop="description" content="Let&rsquo;s walk through the ML lifecycle from EDA to model development to deployment, using tidymodels, vetiver, and Posit Team."><meta itemprop="datePublished" content="2024-04-24T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2024-04-24T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1363"><meta itemprop="image" content="https://juliasilge.com/blog/educational-attainment/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Educational attainment in #TidyTuesday UK towns</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">April 24, 2024</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to use 
+<a href="https://posit.co/products/enterprise/team/" target="_blank" rel="noopener">Posit Team</a> for the ML lifecycle from EDA through model development and then deployment, with a recent 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on educational attainment in UK towns. This screencast and blog post are part of the monthly 
+<a href="https://www.youtube.com/playlist?list=PL9HYL-VRX0oRsUB5AgNMQuKuHPpNDLBVt" target="_blank" rel="noopener">Workflows with Posit Team</a> series.</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/FZW_0HB-Eas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video. In the video, you’ll notice I’m working on Posit Workbench.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2024/2024-01-23/readme.md" target="_blank" rel="noopener">the educational attainment in UK towns</a>, based on various characteristics of those towns. Let’s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+education <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-01-23/english_education.csv&#39;</span>)
+<span style="color:#06287e">glimpse</span>(education)
+</code></pre></div><pre><code>## Rows: 1,104
+## Columns: 31
+## $ town11cd                                                          &lt;chr&gt; &quot;E34…
+## $ town11nm                                                          &lt;chr&gt; &quot;Car…
+## $ population_2011                                                   &lt;dbl&gt; 5456…
+## $ size_flag                                                         &lt;chr&gt; &quot;Sma…
+## $ rgn11nm                                                           &lt;chr&gt; &quot;Eas…
+## $ coastal                                                           &lt;chr&gt; &quot;Non…
+## $ coastal_detailed                                                  &lt;chr&gt; &quot;Sma…
+## $ ttwa11cd                                                          &lt;chr&gt; &quot;E30…
+## $ ttwa11nm                                                          &lt;chr&gt; &quot;Wor…
+## $ ttwa_classification                                               &lt;chr&gt; &quot;Maj…
+## $ job_density_flag                                                  &lt;chr&gt; &quot;Res…
+## $ income_flag                                                       &lt;chr&gt; &quot;Hig…
+## $ university_flag                                                   &lt;chr&gt; &quot;No …
+## $ level4qual_residents35_64_2011                                    &lt;chr&gt; &quot;Low…
+## $ ks4_2012_2013_counts                                              &lt;dbl&gt; 65, …
+## $ key_stage_2_attainment_school_year_2007_to_2008                   &lt;dbl&gt; 65.0…
+## $ key_stage_4_attainment_school_year_2012_to_2013                   &lt;dbl&gt; 70.7…
+## $ level_2_at_age_18                                                 &lt;dbl&gt; 72.3…
+## $ level_3_at_age_18                                                 &lt;dbl&gt; 50.7…
+## $ activity_at_age_19_full_time_higher_education                     &lt;dbl&gt; 30.7…
+## $ activity_at_age_19_sustained_further_education                    &lt;dbl&gt; 21.5…
+## $ activity_at_age_19_appprenticeships                               &lt;dbl&gt; NA, …
+## $ activity_at_age_19_employment_with_earnings_above_0               &lt;dbl&gt; 52.3…
+## $ activity_at_age_19_employment_with_earnings_above_10_000          &lt;dbl&gt; 36.9…
+## $ activity_at_age_19_out_of_work                                    &lt;dbl&gt; NA, …
+## $ highest_level_qualification_achieved_by_age_22_less_than_level_1  &lt;dbl&gt; NA, …
+## $ highest_level_qualification_achieved_by_age_22_level_1_to_level_2 &lt;dbl&gt; 34.9…
+## $ highest_level_qualification_achieved_by_age_22_level_3_to_level_5 &lt;dbl&gt; 39.7…
+## $ highest_level_qualification_achieved_by_age_22_level_6_or_above   &lt;dbl&gt; NA, …
+## $ highest_level_qualification_achieved_b_age_22_average_score       &lt;dbl&gt; 3.32…
+## $ education_score                                                   &lt;dbl&gt; -0.5…
+</code></pre>
+<p>How does the <code>education_score</code> vary across towns and cities?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">education <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(income_flag)) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">mutate</span>(income_flag <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(income_flag, levels <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Lower deprivation towns&#34;</span>,
+                                                      <span style="color:#4070a0">&#34;Mid deprivation towns&#34;</span>,
+                                                      <span style="color:#4070a0">&#34;Higher deprivation towns&#34;</span>,
+                                                      <span style="color:#4070a0">&#34;Cities&#34;</span>))) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(education_score, income_flag, fill <span style="color:#666">=</span> size_flag)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/educational-attainment/index_files/figure-html/unnamed-chunk-3-1.png" width="1260" />
+<p>It definitely looks like there is variation across income and size, and we will want to train a model that can use that variation to predict the educational attainment.</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, splitting our data into training and testing sets, and creating bootstrap resamples. Think about this stage as <em>spending your data budget</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+edu_split <span style="color:#666">&lt;-</span>
+  education <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">str_detect</span>(income_flag, <span style="color:#4070a0">&#34;deprivation towns&#34;</span>)) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">select</span>(education_score, income_flag, size_flag, coastal, university_flag, rgn11nm) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> education_score)
+
+edu_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(edu_split)
+edu_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(edu_split)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+edu_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(edu_train, strata <span style="color:#666">=</span> education_score)
+edu_folds
+</code></pre></div><pre><code>## # Bootstrap sampling using stratification 
+## # A tibble: 25 × 2
+##    splits            id         
+##    &lt;list&gt;            &lt;chr&gt;      
+##  1 &lt;split [810/298]&gt; Bootstrap01
+##  2 &lt;split [810/294]&gt; Bootstrap02
+##  3 &lt;split [810/302]&gt; Bootstrap03
+##  4 &lt;split [810/307]&gt; Bootstrap04
+##  5 &lt;split [810/300]&gt; Bootstrap05
+##  6 &lt;split [810/311]&gt; Bootstrap06
+##  7 &lt;split [810/272]&gt; Bootstrap07
+##  8 &lt;split [810/302]&gt; Bootstrap08
+##  9 &lt;split [810/298]&gt; Bootstrap09
+## 10 &lt;split [810/306]&gt; Bootstrap10
+## # ℹ 15 more rows
+</code></pre>
+<p>Now let’s create a modeling workflow for this data, with a straightforward formula preprocessor and a random forest model. Random forest models tend to work well with rectangular data as long as you have enough trees, even without hyperparameter tuning. How well does this do in our situation here?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(future)
+<span style="color:#06287e">plan</span>(multisession, workers <span style="color:#666">=</span> <span style="color:#40a070">4</span>)
+
+edu_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(
+  education_score <span style="color:#666">~</span> ., 
+  <span style="color:#06287e">rand_forest</span>(mode <span style="color:#666">=</span> <span style="color:#4070a0">&#34;regression&#34;</span>, trees <span style="color:#666">=</span> <span style="color:#40a070">500</span>)
+)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+edu_res <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(edu_wf, edu_folds)
+<span style="color:#06287e">collect_metrics</span>(edu_res)
+</code></pre></div><pre><code>## # A tibble: 2 × 6
+##   .metric .estimator  mean     n std_err .config             
+##   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 rmse    standard   2.71     25 0.0213  Preprocessor1_Model1
+## 2 rsq     standard   0.458    25 0.00676 Preprocessor1_Model1
+</code></pre>
+<p>The <code>rmse</code> metric is on the same scale as <code>education_score</code>, our outcome. If we decide this model is good enough for our purposes, we can then use <code>last_fit()</code> to fit one final time to the <strong>training</strong> data and evaluate one final time on the <strong>testing</strong> data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">edu_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(edu_wf, edu_split)
+<span style="color:#06287e">collect_metrics</span>(edu_fit)
+</code></pre></div><pre><code>## # A tibble: 2 × 4
+##   .metric .estimator .estimate .config             
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 rmse    standard       2.55  Preprocessor1_Model1
+## 2 rsq     standard       0.492 Preprocessor1_Model1
+</code></pre>
+<p>Notice that this is the first time we’ve used the testing data. Our metrics on the testing data are about the same as from our resampling folds. Let’s evaluate the predictions on the testing data visually:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(edu_fit) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(education_score, .pred)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_abline</span>(slope <span style="color:#666">=</span> <span style="color:#40a070">1</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, linewidth <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_fixed</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/educational-attainment/index_files/figure-html/unnamed-chunk-7-1.png" width="1620" />
+<p>We can see from this visualization that we are doing a worse job predicting the highest educational attainment scores. This is a common problem to run into when training models, and it is something to keep in mind as we think about how to use this model in practice.</p>
+
+
+
+
+<h2 id="deploy-our-model">Deploy our model
+  <a href="#deploy-our-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>So far, we have covered EDA and model development, including evaluating our model. Now we can deploy our model for use in production. Let’s extract the final fitted workflow from our <code>last_fit()</code> object, and then create a deployable model bundle using 
+<a href="https://vetiver.posit.co/" target="_blank" rel="noopener">vetiver</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vetiver)
+v <span style="color:#666">&lt;-</span> <span style="color:#06287e">extract_workflow</span>(edu_fit) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">vetiver_model</span>(
+    <span style="color:#4070a0">&#34;uk-edu-rf&#34;</span>, 
+    metadata <span style="color:#666">=</span> <span style="color:#06287e">list</span>(metrics <span style="color:#666">=</span> <span style="color:#06287e">collect_metrics</span>(edu_fit))
+  )
+v
+</code></pre></div><pre><code>## 
+## ── uk-edu-rf ─ &lt;bundled_workflow&gt; model for deployment 
+## A ranger regression modeling workflow using 5 features
+</code></pre>
+<p>When you use <code>vetiver_model()</code>, some model metadata is automatically included, but we also can store custom <code>metadata</code> that we want to use later, like the metrics from model development. After our deployable model bundle is created, we can store and version it using 
+<a href="https://pins.rstudio.com/" target="_blank" rel="noopener">pins</a>. We’ve been working on Posit Workbench so far, and now for the first time we are going to be using Posit Connect, as our deployment target for both the model binary object and model API.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(pins)
+board <span style="color:#666">&lt;-</span> <span style="color:#06287e">board_connect</span>()
+board <span style="color:#666">|&gt;</span> <span style="color:#06287e">vetiver_pin_write</span>(v)
+</code></pre></div><p>When we use <code>vetiver_pin_write()</code>, we store and publish a versioned model binary together with its metadata on Connect. Posit Connect can be used as a model repository with this approach. After the versioned model object is safely stored, we can deploy an API to generate predictions using this model:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">vetiver_deploy_rsconnect</span>(
+  board, 
+  <span style="color:#4070a0">&#34;julia.silge/uk-edu-rf&#34;</span>, 
+  predict_args <span style="color:#666">=</span> <span style="color:#06287e">list</span>(debug <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+)
+</code></pre></div><p>Because we are using Posit Team, we automatically get exactly the right versions of the packages needed for prediction installed in the production environment using Posit Package Manager. It’s pretty fast too!</p>
+<p>We automatically get some default visual documentation for our model, which can be shared with colleagues who need to know how the model API works and how to interact with it:</p>
+<p><img src="vetiver-api.png" alt=""></p>
+<p>Since we deployed our model as a REST API, anyone can query it using curl or their own choice of programming language or similar. There is special support for getting predictions in R as well, treating the endpoint for predictions almost the same as a model in memory. First we create a vetiver endpoint object:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">url <span style="color:#666">&lt;-</span> <span style="color:#4070a0">&#34;https://pub.palm.ptd.posit.it/uk-edu-rf/predict&#34;</span>
+endpoint <span style="color:#666">&lt;-</span> <span style="color:#06287e">vetiver_endpoint</span>(url)
+endpoint
+</code></pre></div><pre><code>## 
+## ── A model API endpoint for prediction: 
+## https://pub.palm.ptd.posit.it/uk-edu-rf/predict
+</code></pre>
+<p>Then we can use the <code>predict()</code> function to get predictions from the model API. We can pass in a dataframe of new data to get predictions for, and we can also pass in any necessary headers. Here we are using an API key for authentication, since I set the access to this API to require that:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">connect_auth <span style="color:#666">&lt;-</span> httr<span style="color:#666">::</span><span style="color:#06287e">add_headers</span>(
+  Authorization <span style="color:#666">=</span> <span style="color:#06287e">paste</span>(<span style="color:#4070a0">&#34;Key&#34;</span>, <span style="color:#06287e">Sys.getenv</span>(<span style="color:#4070a0">&#34;CONNECT_API_KEY&#34;</span>))
+)
+
+<span style="color:#06287e">predict</span>(
+  endpoint, 
+  <span style="color:#06287e">slice_sample</span>(edu_test, n <span style="color:#666">=</span> <span style="color:#40a070">10</span>),
+  connect_auth
+)
+</code></pre></div><pre><code>## # A tibble: 10 × 1
+##    .pred
+##    &lt;dbl&gt;
+##  1 -2.84 
+##  2  2.52 
+##  3  0.678
+##  4  2.69 
+##  5 -2.78 
+##  6  3.78 
+##  7 -1.24 
+##  8 -2.54 
+##  9 -2.51 
+## 10 -2.79 
+</code></pre>
+<p>Using Posit Team throughout the ML lifecycle provides a great experience, and we were able to:</p>
+<ul>
+<li>Explore our data and develop our model on Posit Workbench</li>
+<li>Deploy our model to Posit Connect</li>
+<li>Use the correct versions of packages for prediction with Posit Package Manager</li>
+</ul>
+<p>At the same time, since we used open source packages like tidymodels and vetiver for model development and deployment, we aren’t locked in to any given infrastructure or set of professional tools. We can use the same code and the same models in an entirely different environment if we need to!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 24, 2024</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1363 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/house-elections/">Logistic regression modeling for #TidyTuesday US House Elections</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/polling-places/">Changes in #TidyTuesday US polling places &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

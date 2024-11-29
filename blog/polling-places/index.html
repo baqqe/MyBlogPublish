@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Changes in #TidyTuesday US polling places | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Changes in #TidyTuesday US polling places | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/polling-places/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/polling-places/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/polling-places/featured.png" >
+    
+    
+  <meta itemprop="name" content="Changes in #TidyTuesday US polling places">
+<meta itemprop="description" content="Let&rsquo;s use summarization and visualization to explore how the numbers of polling places have changed in the United States."><meta itemprop="datePublished" content="2024-01-17T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2024-01-17T00:00:00+00:00" />
+<meta itemprop="wordCount" content="936"><meta itemprop="image" content="https://juliasilge.com/blog/polling-places/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Changes in #TidyTuesday US polling places</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">January 17, 2024</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This week we observed Martin Luther King Day in the US and this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> honors King&rsquo;s legacy, including his work on voting rights, with a focus on polling places in the United States.</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/NZ2oXAj-bHE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video. FYI, I recently started 
+<a href="https://docs.posit.co/ide/user/ide/guide/tools/copilot.html" target="_blank" rel="noopener">using GitHub Copilot in RStudio</a> and you can see it in action in the video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our analysis goal is to explore how 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2024/2024-01-16/readme.md" target="_blank" rel="noopener">the numbers of polling places in the US</a> have changed. I&rsquo;ve definitely heard about polling places being closed so I&rsquo;m interested in looking at this myself in more detail. Let&rsquo;s start by reading in the data and looking at the dates covered by this dataset:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+polling_places <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-01-16/polling_places.csv&#39;</span>)
+
+polling_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(election_date)
+</code></pre></div><pre><code># A tibble: 7 × 2
+  election_date      n
+  &lt;date&gt;         &lt;int&gt;
+1 2012-11-06     87176
+2 2014-11-04     89268
+3 2016-02-09       316
+4 2016-09-13       316
+5 2016-11-08     86572
+6 2018-11-06     94507
+7 2020-11-03    103290
+</code></pre>
+<p>How has the number of polling places per state changed over time? Let&rsquo;s only look at November elections.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">polling_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">month</span>(election_date) <span style="color:#666">==</span> <span style="color:#40a070">11</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(state, election_date) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">mutate</span>(state <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(state, n)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(election_date, n, color <span style="color:#666">=</span> state)) <span style="color:#666">+</span> 
+  <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, linewidth <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span> 
+  <span style="color:#06287e">scale_color_viridis_d</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of polling places per state&#34;</span>)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-3-1.png" width="1260" />
+<p>There aren&rsquo;t 50 states in this plot because this dataset doesn&rsquo;t include information on all states. My own state (Utah) isn&rsquo;t really included because we have widespread voting by mail. These lines look flat for the most part, so it doesn&rsquo;t look like there have been really dramatic decreases across the board, but there are some exceptions. Let&rsquo;s think about how we could measure the changes represented in this plot.</p>
+
+
+
+
+<h2 id="choose-how-to-measure-change">Choose how to measure change
+  <a href="#choose-how-to-measure-change"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s start off by counting up the polling places again and storing that info.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">by_state <span style="color:#666">&lt;-</span>
+  polling_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">month</span>(election_date) <span style="color:#666">==</span> <span style="color:#40a070">11</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(state, election_date)
+
+by_state
+</code></pre></div><pre><code># A tibble: 159 × 3
+   state election_date     n
+   &lt;chr&gt; &lt;date&gt;        &lt;int&gt;
+ 1 AK    2012-11-06      396
+ 2 AK    2014-11-04      396
+ 3 AK    2016-11-08      396
+ 4 AK    2018-11-06      396
+ 5 AK    2020-11-03      441
+ 6 AL    2020-11-03     2075
+ 7 AR    2012-11-06     2536
+ 8 AR    2014-11-04     2972
+ 9 AR    2018-11-06     8980
+10 AR    2020-11-03      967
+# ℹ 149 more rows
+</code></pre>
+<p>Notice what this looks like for a single state, such as Arkansas:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">by_state <span style="color:#666">|&gt;</span> <span style="color:#06287e">filter</span>(state <span style="color:#666">==</span> <span style="color:#4070a0">&#34;AR&#34;</span>)
+</code></pre></div><pre><code># A tibble: 4 × 3
+  state election_date     n
+  &lt;chr&gt; &lt;date&gt;        &lt;int&gt;
+1 AR    2012-11-06     2536
+2 AR    2014-11-04     2972
+3 AR    2018-11-06     8980
+4 AR    2020-11-03      967
+</code></pre>
+<p>How might we measure this kind of change (a decrease, in Arkansas' case)? We could fit a model, but with only 4 or 5 elections per state, that seems like overkill. We could look at the change in total number of polling places, but different states have wildly different populations and numbers of polling places. I&rsquo;d prefer to look at a relative change, like a percent change.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">total_change <span style="color:#666">&lt;-</span>
+  by_state <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(state) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(change <span style="color:#666">=</span> n <span style="color:#666">-</span> <span style="color:#06287e">lag</span>(n)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(<span style="color:#06287e">n</span>() <span style="color:#666">&gt;</span> <span style="color:#40a070">1</span>) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">summarize</span>(change <span style="color:#666">=</span> <span style="color:#06287e">sum</span>(change, na.rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">/</span> <span style="color:#06287e">first</span>(n)) 
+
+total_change
+</code></pre></div><pre><code># A tibble: 33 × 2
+   state   change
+   &lt;chr&gt;    &lt;dbl&gt;
+ 1 AK     0.114  
+ 2 AR    -0.619  
+ 3 CT    -0.0336 
+ 4 DE     0.00463
+ 5 GA    -0.00668
+ 6 IA    -0.00415
+ 7 IL    -0.153  
+ 8 IN    -0.478  
+ 9 KY     0.0237 
+10 LA    -0.0785 
+# ℹ 23 more rows
+</code></pre>
+<p>Notice how I use 
+<a href="https://dplyr.tidyverse.org/reference/lead-lag.html" target="_blank" rel="noopener"><code>lag()</code></a> and 
+<a href="https://dplyr.tidyverse.org/reference/nth.html" target="_blank" rel="noopener"><code>first()</code></a> here to find a total change in polling places relative to the first observation we have. Gotta love all the dplyr helpers for this kind of thing! Overall, more states have seen a decrease in polling places than an increase:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(total_change<span style="color:#666">$</span>change)
+</code></pre></div><pre><code>     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-0.834023 -0.070430 -0.006677 -0.045207  0.023678  0.593750 
+</code></pre>
+
+
+
+
+<h2 id="mapping-change-in-polling-places">Mapping change in polling places
+  <a href="#mapping-change-in-polling-places"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s create a map visualization of the changes in polling places. I&rsquo;ll use a diverging color palette so we can see both increases and decreases via color.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">us_states <span style="color:#666">&lt;-</span> <span style="color:#06287e">as_tibble</span>(<span style="color:#06287e">map_data</span>(<span style="color:#4070a0">&#34;state&#34;</span>))
+limits <span style="color:#666">&lt;-</span> <span style="color:#06287e">max</span>(<span style="color:#06287e">abs</span>(total_change<span style="color:#666">$</span>change)) <span style="color:#666">*</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">-1</span>, <span style="color:#40a070">1</span>)
+
+us_states <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">inner_join</span>(<span style="color:#06287e">tibble</span>(state <span style="color:#666">=</span> state.abb, region <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(state.name))) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">left_join</span>(total_change) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(x <span style="color:#666">=</span> long, y <span style="color:#666">=</span> lat, group <span style="color:#666">=</span> group, fill <span style="color:#666">=</span> change)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_polygon</span>(color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;black&#34;</span>, linewidth <span style="color:#666">=</span> <span style="color:#40a070">0.1</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_map</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_distiller</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;RdYlBu&#34;</span>, direction <span style="color:#666">=</span> <span style="color:#40a070">1</span>, na.value <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray95&#34;</span>,
+                       limits <span style="color:#666">=</span> limits, label <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">label_percent</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Total change&#34;</span>)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-8-1.png" width="1440" />
+<p>With this palette,</p>
+<ul>
+<li>red indicates a decrease in polling places</li>
+<li>yellow indicates a stable number of polling places</li>
+<li>blue indicates an increase in polling places</li>
+<li>gray indicates that we have no data for that state</li>
+</ul>
+<p>On the extreme end of decreases, we have Maryland which recently started using larger &ldquo;voting centers&rdquo; instead of smaller polling places.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">by_state <span style="color:#666">|&gt;</span> <span style="color:#06287e">filter</span>(state <span style="color:#666">==</span> <span style="color:#4070a0">&#34;MD&#34;</span>)
+</code></pre></div><pre><code># A tibble: 5 × 3
+  state election_date     n
+  &lt;chr&gt; &lt;date&gt;        &lt;int&gt;
+1 MD    2012-11-06     1934
+2 MD    2014-11-04     2089
+3 MD    2016-11-08     2093
+4 MD    2018-11-06     2092
+5 MD    2020-11-03      321
+</code></pre>
+<p>That&rsquo;s a decrease of over 80%! On the other end of the spectrum, we have North Dakota, which has seen about a 60% <em>increase</em> in polling places:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">by_state <span style="color:#666">|&gt;</span> <span style="color:#06287e">filter</span>(state <span style="color:#666">==</span> <span style="color:#4070a0">&#34;ND&#34;</span>)
+</code></pre></div><pre><code># A tibble: 5 × 3
+  state election_date     n
+  &lt;chr&gt; &lt;date&gt;        &lt;int&gt;
+1 ND    2012-11-06      416
+2 ND    2014-11-04      402
+3 ND    2016-11-08      688
+4 ND    2018-11-06      521
+5 ND    2020-11-03      663
+</code></pre>
+<p>I wouldn&rsquo;t conclude that the United States is experiencing a huge decrease in polling places based on this analysis (most states are pretty stable) but more states are seeing decreases than increases and the magnitude of decreases are larger than the magnitude of any increases.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">January 17, 2024</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 936 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/house-elections/">Logistic regression modeling for #TidyTuesday US House Elections</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/educational-attainment/">&larr; Educational attainment in #TidyTuesday UK towns</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

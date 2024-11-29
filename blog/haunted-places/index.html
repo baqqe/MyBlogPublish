@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Where are #TidyTuesday haunted cemeteries compared to haunted schools? | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Where are #TidyTuesday haunted cemeteries compared to haunted schools? | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/haunted-places/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/haunted-places/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/haunted-places/featured.png" >
+    
+    
+  <meta itemprop="name" content="Where are #TidyTuesday haunted cemeteries compared to haunted schools?">
+<meta itemprop="description" content="Use tidy log odds to compare which US states are more likely to have haunted cemeteries or haunted schools."><meta itemprop="datePublished" content="2023-10-11T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-10-11T00:00:00+00:00" />
+<meta itemprop="wordCount" content="755"><meta itemprop="image" content="https://juliasilge.com/blog/haunted-places/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Where are #TidyTuesday haunted cemeteries compared to haunted schools?</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">October 11, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! It&rsquo;s spooky season, and this screencast focuses on how to compute weighted log odds using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on haunted places in the United States. 👻</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/TfgG50P_gOs" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our analysis goal here is to understand how different types of 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-10-10/readme.md" target="_blank" rel="noopener">haunted places in the United States</a> vary by state. Let&rsquo;s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+haunted_places <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-10/haunted_places.csv&#39;</span>)
+</code></pre></div><p>The <code>description</code> variable is longer text explaining details about the haunting, while the <code>location</code> variable is shorter text describing the haunted location. Which states are these hauntings in?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">haunted_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(state, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code># A tibble: 51 × 2
+   state             n
+   &lt;chr&gt;         &lt;int&gt;
+ 1 California     1070
+ 2 Texas           696
+ 3 Pennsylvania    649
+ 4 Michigan        529
+ 5 Ohio            477
+ 6 New York        459
+ 7 Illinois        395
+ 8 Kentucky        370
+ 9 Indiana         351
+10 Massachusetts   342
+# ℹ 41 more rows
+</code></pre>
+<p>And what kinds of places are haunted?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">haunted_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">slice_sample</span>(n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">select</span>(location)
+</code></pre></div><pre><code># A tibble: 10 × 1
+   location                  
+   &lt;chr&gt;                     
+ 1 Single T Canal            
+ 2 Hwy521                    
+ 3 Santaquin Canyon          
+ 4 Syracuse Cemetery         
+ 5 Del Frisco's Steakhouse   
+ 6 Walt Disney World         
+ 7 the Tanning Yards         
+ 8 Moonshadows Restaurant    
+ 9 Refugio County Court House
+10 The Legend of Big Liz     
+</code></pre>
+<p>What are the most common words used for the haunted locations?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+haunted_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">unnest_tokens</span>(word, location) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code># A tibble: 7,765 × 2
+   word           n
+   &lt;chr&gt;      &lt;int&gt;
+ 1 school      1217
+ 2 the          989
+ 3 cemetery     751
+ 4 high         700
+ 5 old          599
+ 6 house        502
+ 7 university   500
+ 8 road         437
+ 9 of           406
+10 college      373
+# ℹ 7,755 more rows
+</code></pre>
+<p>Looks like there are lots of haunted cemeteries, which seems reasonable to me, but also lots of haunted <em>schools</em>! 😱 Haunted schools??!? Won&rsquo;t someone think of the children? I don&rsquo;t approve at all.</p>
+
+
+
+
+<h2 id="weighted-log-odds">Weighted log odds
+  <a href="#weighted-log-odds"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I&rsquo;d like to know what states are more likely to have haunted cemeteries and what states are more likely to have haunted schools, so I can know which states keep their hauntings where they <em>belong</em>. Let&rsquo;s use 
+<a href="https://juliasilge.github.io/tidylo/" target="_blank" rel="noopener">tidylo</a>, a package for weighted log odds using tidy data principles. A log odds ratio is a way of expressing probabilities, and we can <em>weight</em> a log odds ratio so that our implementation does a better job dealing with different features having different counts. Think about how the different states have different numbers of haunted places; we&rsquo;d like to compute a log odds ratio that gives us a more robust estimate across the states with many haunted places and those with few. You can 
+<a href="https://juliasilge.com/blog/tidylo-cran/" target="_blank" rel="noopener">read more about tidylo</a> in a previous blog post.</p>
+<p>To start, let&rsquo;s create a dataset of counts:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">haunted_counts <span style="color:#666">&lt;-</span>
+  haunted_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(location <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(location)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(location <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    <span style="color:#06287e">str_detect</span>(location, <span style="color:#4070a0">&#34;cemetery|graveyard&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;cemetery&#34;</span>,
+    <span style="color:#06287e">str_detect</span>(location, <span style="color:#4070a0">&#34;school&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;school&#34;</span>,
+    .default <span style="color:#666">=</span> <span style="color:#4070a0">&#34;other&#34;</span>
+  )) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">count</span>(state_abbrev, location)
+
+haunted_counts
+</code></pre></div><pre><code># A tibble: 149 × 3
+   state_abbrev location     n
+   &lt;chr&gt;        &lt;chr&gt;    &lt;int&gt;
+ 1 AK           cemetery     4
+ 2 AK           other       23
+ 3 AK           school       5
+ 4 AL           cemetery    19
+ 5 AL           other      187
+ 6 AL           school      18
+ 7 AR           cemetery    16
+ 8 AR           other       91
+ 9 AR           school      12
+10 AZ           cemetery     3
+# ℹ 139 more rows
+</code></pre>
+<p>Now we can compute the log odds, weighted (the tidylo default) via empirical Bayes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidylo)
+
+haunted_counts <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">bind_log_odds</span>(location, state_abbrev, n) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">group_by</span>(location) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">slice_max</span>(log_odds_weighted, n <span style="color:#666">=</span> <span style="color:#40a070">5</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(state_abbrev <span style="color:#666">=</span> <span style="color:#06287e">reorder</span>(state_abbrev, log_odds_weighted)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(log_odds_weighted, state_abbrev, fill <span style="color:#666">=</span> location)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(location), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_brewer</span>(palette <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Dark2&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Weighted log odds (empirical Bayes)&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="index.markdown_strict_files/figure-markdown_strict/unnamed-chunk-7-1.png" width="1800" />
+<p>This plot shows us that:</p>
+<ul>
+<li>Illinois, Idaho, and Connecticut are reasonable places where haunted locations are more likely to be cemeteries compared to other states.</li>
+<li>The haunting situation in California, South Dakota, and North Dakota is <em>not good</em> as their haunted locations are more likely to be schools. Beware! 👻</li>
+<li>Delaware, Washington DC, and Maryland have haunted locations that are more likely to be something other than cemeteries and schools, compared to the other states. What are some of these, specifically in DC?</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">haunted_places <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(state_abbrev <span style="color:#666">==</span> <span style="color:#4070a0">&#34;DC&#34;</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">slice_sample</span>(n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">select</span>(location)
+</code></pre></div><pre><code># A tibble: 10 × 1
+   location        
+   &lt;chr&gt;           
+ 1 White House     
+ 2 White House     
+ 3 Trinity College 
+ 4 Capitol Building
+ 5 Fort McNair     
+ 6 White House     
+ 7 White House     
+ 8 The Hay         
+ 9 Capitol building
+10 Georgetown      
+</code></pre>
+<p>Seems like the White House is pretty haunted!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 11, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">4 minute read, 755 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/taylor-swift/">&larr; Topic modeling for #TidyTuesday Taylor Swift lyrics</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/roy-kent/">How often does Roy Kent say &#34;F*CK&#34;? &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

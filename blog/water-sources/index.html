@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Predict availability in #TidyTuesday water sources with random forest models | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Predict availability in #TidyTuesday water sources with random forest models | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/water-sources/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/water-sources/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/water-sources/featured.png" >
+    
+    
+  <meta itemprop="name" content="Predict availability in #TidyTuesday water sources with random forest models">
+<meta itemprop="description" content="Walk through a tidymodels analysis from beginning to end to predict whether water is available at a water source in Sierra Leone."><meta itemprop="datePublished" content="2021-05-06T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-05-06T00:00:00+00:00" />
+<meta itemprop="wordCount" content="983"><meta itemprop="image" content="https://juliasilge.com/blog/water-sources/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Predict availability in #TidyTuesday water sources with random forest models</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">May 6, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just starting out to tuning more complex models with many hyperparameters. Today’s screencast walks through how to train and evalute a random forest model, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on water sources. 🚰</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/WYaNdxmlYUg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict whether a 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-04/readme.md" target="_blank" rel="noopener">water source</a> actually has water available at it, based on characteristics of the water source observed during a visit. Let’s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+water_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-04/water.csv&#34;</span>)
+</code></pre></div><p>Let’s restrict this model analysis to only water sources in Sierra Leone, and just the water sources that were cataloged as “y” or “n” for water availability. How are these water sources distributed across Sierra Leone?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">water_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(
+    country_name <span style="color:#666">==</span> <span style="color:#4070a0">&#34;Sierra Leone&#34;</span>,
+    lat_deg <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>, lat_deg <span style="color:#666">&lt;</span> <span style="color:#40a070">15</span>, lon_deg <span style="color:#666">&lt;</span> <span style="color:#40a070">0</span>,
+    status_id <span style="color:#666">%in%</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;y&#34;</span>, <span style="color:#4070a0">&#34;n&#34;</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(lon_deg, lat_deg, color <span style="color:#666">=</span> status_id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.1</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">coord_fixed</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">guides</span>(color <span style="color:#666">=</span> <span style="color:#06287e">guide_legend</span>(override.aes <span style="color:#666">=</span> <span style="color:#06287e">list</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">1</span>)))
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Let’s create a new <code>water</code> data set to use moving forward, and handle the <code>pay</code> variable.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">water <span style="color:#666">&lt;-</span> water_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(
+    country_name <span style="color:#666">==</span> <span style="color:#4070a0">&#34;Sierra Leone&#34;</span>,
+    lat_deg <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>, lat_deg <span style="color:#666">&lt;</span> <span style="color:#40a070">15</span>, lon_deg <span style="color:#666">&lt;</span> <span style="color:#40a070">0</span>,
+    status_id <span style="color:#666">%in%</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;y&#34;</span>, <span style="color:#4070a0">&#34;n&#34;</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(pay <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    <span style="color:#06287e">str_detect</span>(pay, <span style="color:#4070a0">&#34;^No&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;no&#34;</span>,
+    <span style="color:#06287e">str_detect</span>(pay, <span style="color:#4070a0">&#34;^Yes&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;yes&#34;</span>,
+    <span style="color:#06287e">is.na</span>(pay) <span style="color:#666">~</span> pay,
+    <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;it&#39;s complicated&#34;</span>
+  )) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>country_name, <span style="color:#666">-</span>status, <span style="color:#666">-</span>report_date) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.character, as.factor)
+</code></pre></div><p>Do we see differences in water availability by when a source was installed?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">water <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(install_year, y <span style="color:#666">=</span> ..density.., fill <span style="color:#666">=</span> status_id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;identity&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Water available?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>What about by payment status of the water source?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">water <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(y <span style="color:#666">=</span> pay, fill <span style="color:#666">=</span> status_id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bar</span>(position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;fill&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Water available?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-6-1.png" width="2400" />
+<p>This may be an issue with the data itself; we may not have as much information about payment for water sources that didn’t have water available at the time of the visit. This would definitely be worth learning more!</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start our modeling by setting up our “data budget.”</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+water_split <span style="color:#666">&lt;-</span> <span style="color:#06287e">initial_split</span>(water, strata <span style="color:#666">=</span> status_id)
+water_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(water_split)
+water_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(water_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+water_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(water_train, strata <span style="color:#666">=</span> status_id)
+water_folds
+</code></pre></div><pre><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 x 2
+##    splits               id    
+##    &lt;list&gt;               &lt;chr&gt; 
+##  1 &lt;split [36985/4110]&gt; Fold01
+##  2 &lt;split [36985/4110]&gt; Fold02
+##  3 &lt;split [36985/4110]&gt; Fold03
+##  4 &lt;split [36985/4110]&gt; Fold04
+##  5 &lt;split [36985/4110]&gt; Fold05
+##  6 &lt;split [36986/4109]&gt; Fold06
+##  7 &lt;split [36986/4109]&gt; Fold07
+##  8 &lt;split [36986/4109]&gt; Fold08
+##  9 &lt;split [36986/4109]&gt; Fold09
+## 10 &lt;split [36986/4109]&gt; Fold10
+</code></pre>
+<p>For this analysis, I used the 
+<a href="https://usemodels.tidymodels.org/" target="_blank" rel="noopener">usemodels</a> package to set up my modeling code quickly.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">usemodels<span style="color:#666">::</span><span style="color:#06287e">use_ranger</span>(status_id <span style="color:#666">~</span> ., data <span style="color:#666">=</span> water_train)
+</code></pre></div><p>This generated code for me that I could then go in and edit. I especially needed to add to the feature engineeering part of my modeling code.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(themis)
+ranger_recipe <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">recipe</span>(formula <span style="color:#666">=</span> status_id <span style="color:#666">~</span> ., data <span style="color:#666">=</span> water_train) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">update_role</span>(row_id, new_role <span style="color:#666">=</span> <span style="color:#4070a0">&#34;id&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_unknown</span>(<span style="color:#06287e">all_nominal_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_other</span>(<span style="color:#06287e">all_nominal_predictors</span>(), threshold <span style="color:#666">=</span> <span style="color:#40a070">0.03</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_impute_linear</span>(install_year) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_downsample</span>(status_id)
+
+ranger_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1000</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>)
+
+ranger_workflow <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(ranger_recipe) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(ranger_spec)
+
+doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">74403</span>)
+ranger_rs <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">fit_resamples</span>(ranger_workflow,
+    resamples <span style="color:#666">=</span> water_folds,
+    control <span style="color:#666">=</span> <span style="color:#06287e">control_resamples</span>(save_pred <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+  )
+</code></pre></div><p>Modeling done! I chose not to tune the random forest because they typically do pretty well if you give them enough trees.</p>
+
+
+
+
+<h2 id="explore-results">Explore results
+  <a href="#explore-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>How did the random forest models perform?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_metrics</span>(ranger_rs)
+</code></pre></div><pre><code>## # A tibble: 2 x 6
+##   .metric  .estimator  mean     n std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.893    10 0.00179 Preprocessor1_Model1
+## 2 roc_auc  binary     0.951    10 0.00145 Preprocessor1_Model1
+</code></pre>
+<p>We can look at ROC curves for the set of 10 cross-validation folds.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(ranger_rs) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(id) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">roc_curve</span>(status_id, .pred_n) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-11-1.png" width="2400" />
+<p>We can also create a confusion matrix from the resamples using <code>conf_mat_resampled()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">conf_mat_resampled</span>(ranger_rs, tidy <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-12-1.png" width="2400" />
+<p>These results look pretty good (with the caveat about the <code>pay</code> feature) so let’s <strong>fit</strong> one final time to the entire training set at once and <strong>evaluate</strong> once on the test set. This is the first time we have used the test set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">final_fitted <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(ranger_workflow, water_split)
+<span style="color:#06287e">collect_metrics</span>(final_fitted) <span style="color:#60a0b0;font-style:italic">## metrics on the *testing* set</span>
+</code></pre></div><pre><code>## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.892 Preprocessor1_Model1
+## 2 roc_auc  binary         0.951 Preprocessor1_Model1
+</code></pre>
+<p>We can collect predictions on the testing set and create an ROC curve or, as shown here, a confusion matrix.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(final_fitted) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">conf_mat</span>(status_id, .pred_class) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-14-1.png" width="2400" />
+<p>What about variable importance? Let’s use the 
+<a href="https://koalaverse.github.io/vip/" target="_blank" rel="noopener">vip</a> package to computer variable importance for this random forest; we’ll have to fit the model again using <code>importance = &quot;permutation&quot;</code> and a data set <code>imp_data</code> that we preprocessed manually.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+imp_data <span style="color:#666">&lt;-</span> ranger_recipe <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">prep</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bake</span>(new_data <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>row_id)
+
+ranger_spec <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>, importance <span style="color:#666">=</span> <span style="color:#4070a0">&#34;permutation&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit</span>(status_id <span style="color:#666">~</span> ., data <span style="color:#666">=</span> imp_data) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">vip</span>(geom <span style="color:#666">=</span> <span style="color:#4070a0">&#34;point&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-15-1.png" width="2400" />
+<p>Not a huge surprise that <code>pay</code> is most important! The next most important variables are the technology used at the water source and who installed it. Let’s make one more plot using our preprocessed data to see how those are distributed.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">imp_data <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(status_id, pay, water_tech, installer) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(pay<span style="color:#666">:</span>installer, names_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;feature&#34;</span>, values_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;value&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(y <span style="color:#666">=</span> value, fill <span style="color:#666">=</span> status_id)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bar</span>(position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;fill&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_grid</span>(rows <span style="color:#666">=</span> <span style="color:#06287e">vars</span>(feature), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>, space <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;top&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_brewer</span>(type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;qual&#34;</span>, palette <span style="color:#666">=</span> <span style="color:#40a070">7</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(expand <span style="color:#666">=</span> <span style="color:#06287e">expansion</span>(mult <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#40a070">.01</span>)), labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% of water sources&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Water available?&#34;</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Water availability by source characteristic in Sierra Leone&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Water sources with no payment information are likely to have no water available&#34;</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/water-sources/index_files/figure-html/unnamed-chunk-16-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 6, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 983 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/mario-kart/">&larr; Partial dependence plots with tidymodels and DALEX for #TidyTuesday Mario Kart world records</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/ceo-departures/">Estimate change in #TidyTuesday CEO departures with bootstrap resampling &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

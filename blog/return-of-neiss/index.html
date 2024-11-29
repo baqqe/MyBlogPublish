@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Return of the NEISS Data | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Injuries Caused by Consumer Products, with a Shiny App">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Return of the NEISS Data | Julia Silge">
+<meta property="og:description" content="Injuries Caused by Consumer Products, with a Shiny App" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/return-of-neiss/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Return of the NEISS Data">
+<meta itemprop="description" content="Almost six months ago (!) I wrote a blog post about the NEISS data set, a sample of accidents reported to emergency rooms in the U.S. that are related to consumer products. Ever since I did that exploration, I have been wanting to ask a bit of a different question from that sample of accidents. How do the accidents that people suffer depend on their demographic characteristics? We can get a bit of a sense of that from looking at the plot with age on the x-axis (or exploring Hadley Wickham&rsquo;s NEISS Shiny app) but the NEISS data set includes quite a bit more demographic information to interact with."><meta itemprop="datePublished" content="2016-07-22T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-07-22T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1033">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Return of the NEISS Data</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">July 22, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Almost six months ago (!) I wrote a 
+<a href="http://juliasilge.com/blog/Your-Floor/" target="_blank" rel="noopener">blog post about the NEISS data set</a>, a sample of accidents reported to emergency rooms in the U.S. that are related to consumer products. Ever since I did that exploration, I have been wanting to ask a bit of a different question from that sample of accidents. How do the accidents that people suffer depend on their demographic characteristics? We can get a bit of a sense of that from looking at the plot with age on the x-axis (or exploring Hadley Wickham&rsquo;s 
+<a href="https://hadley.shinyapps.io/neiss-explorer/" target="_blank" rel="noopener">NEISS Shiny app</a>) but the NEISS data set includes quite a bit more demographic information to interact with.</p>
+<p>Before we get started, it is probably good to be reminded that this data set doesn&rsquo;t necessarily include everything you might think it does. After I published that first post, 
+<a href="https://twitter.com/henrikbengtsson" target="_blank" rel="noopener">Henrik Bengtsson</a> asked about hang gliding injuries reported in this data set. There appeared to be none, and I was befuddled until 
+<a href="https://twitter.com/apreshill" target="_blank" rel="noopener">Alison Hill</a> pointed out that the NEISS coding manual says that they don&rsquo;t include such injuries.</p>
+<blockquote class="twitter-tweet" data-dnt="true"><p lang="en" dir="ltr"><a href="https://twitter.com/juliasilge?ref_src=twsrc%5Etfw">@juliasilge</a> <a href="https://twitter.com/henrikbengtsson?ref_src=twsrc%5Etfw">@henrikbengtsson</a> yup from here <a href="https://t.co/yrDtL27iVx">https://t.co/yrDtL27iVx</a> <a href="https://t.co/5Dj17ciLQl">pic.twitter.com/5Dj17ciLQl</a></p>&mdash; Alison Hill (@apreshill) <a href="https://twitter.com/apreshill/status/700826041116291073?ref_src=twsrc%5Etfw">February 19, 2016</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>So there you go.</p>
+
+
+
+
+<h2 id="getting-the-data">Getting the Data
+  <a href="#getting-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>First, let&rsquo;s get the NEISS data. It&rsquo;s a pretty big data set so this can take a while.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(devtools)
+install_github(&quot;hadley/neiss&quot;)
+library(neiss)
+</code></pre><p>Now let&rsquo;s open up the main data set and see what is there.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">data(injuries)
+names(injuries)
+</code></pre><pre tabindex="0"><code>##  [1] &quot;case_num&quot;    &quot;trmt_date&quot;   &quot;psu&quot;         &quot;weight&quot;      &quot;stratum&quot;    
+##  [6] &quot;age&quot;         &quot;sex&quot;         &quot;race&quot;        &quot;race_other&quot;  &quot;diag&quot;       
+## [11] &quot;diag_other&quot;  &quot;body_part&quot;   &quot;disposition&quot; &quot;location&quot;    &quot;fmv&quot;        
+## [16] &quot;prod1&quot;       &quot;prod2&quot;       &quot;narrative&quot;
+</code></pre><p>Each row is a case, i.e. injury. The consumer product(s) implicated in the injury are in <code>prod1</code> and <code>prod2</code> as numbers, which can be looked up in another data set, <code>products</code>. Let&rsquo;s <code>join</code> these data frames together so we have the product names rather than codes.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(dplyr)
+injuries &lt;- left_join(injuries, products, by = c(&quot;prod1&quot; = &quot;code&quot;)) %&gt;% 
+        rename(product = title)
+</code></pre>
+
+
+
+<h2 id="what-should-i-worry-about">What Should I Worry About?
+  <a href="#what-should-i-worry-about"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I am a white woman in my (ever later) thirties, so let&rsquo;s find what the most common injuries are for someone with my demographic characteristics. This is just some basic dplyr.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">me &lt;- injuries %&gt;% filter(sex == &quot;Female&quot;,
+                          race == &quot;White&quot;,
+                          age &gt;= 30 &amp; age &lt; 40) %&gt;%
+        group_by(product) %&gt;%
+        summarise(total = sum(weight)) %&gt;% 
+        top_n(20, total) %&gt;% arrange(desc(total)) %&gt;%
+        mutate(product = factor(product, levels = rev(unique(product))))
+me
+</code></pre><pre tabindex="0"><code>## # A tibble: 20 x 2
+##                                     product     total
+##                                      &lt;fctr&gt;     &lt;dbl&gt;
+## 1                           stairs or steps 418788.68
+## 2              floors or flooring materials 132231.22
+## 3          knives, not elsewhere classified  90598.30
+## 4  exercise (activity or apparel, w/o equip  71217.00
+## 5                       bathtubs or showers  71213.57
+## 6      beds or bedframes, other or not spec  66536.09
+## 7             doors, other or not specified  54158.15
+## 8                 containers, not specified  48236.82
+## 9                  furniture, not specified  45926.30
+## 10 ceilings and walls (part of completed st  44420.16
+## 11  bicycles and accessories (excl mountain  41523.37
+## 12  porches, balconies, open-side floors or  39930.77
+## 13                                 footwear  39712.56
+## 14           chairs, other or not specified  37362.72
+## 15         tables, not elsewhere classified  36498.25
+## 16 sofas, couches, davenports, divans or st  30144.78
+## 17 cabinets, racks, room dividers and shelv  27286.59
+## 18                tableware and accessories  25579.41
+## 19 horseback riding (activity, apparel, eq)  23512.82
+## 20 softball (activity, apparel or equipment  23004.19
+</code></pre><p>Let&rsquo;s make a visualization for this.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(ggplot2)
+library(ggstance)
+library(scales)
+ggplot(data = me, aes(x = total, y = product)) + 
+        geom_barh(stat=&quot;identity&quot;, aes(fill = total)) +
+        theme_minimal(base_family = &quot;RobotoCondensed-Regular&quot;, base_size = 13) +
+        theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;)) +
+        theme(legend.position = &quot;none&quot;) +
+        scale_x_continuous(expand=c(0,0), labels = scientific_format()) +
+        scale_fill_gradient(low = &quot;#86d746&quot;, high = &quot;#5eb151&quot;) +
+        labs(y = NULL, x = &quot;Estimated number of injuries each year&quot;,
+             title = &quot;Emergency Room Injuries for White Women in Their 30s&quot;,
+             subtitle = &quot;NEISS reporting of injuries due to consumer products&quot;) +
+        theme(axis.title.x=element_text(margin=margin(t=15)))
+</code></pre><p><img src="/figs/2016-07-22-Return-of-NEISS/unnamed-chunk-6-1.png" alt="center"></p>
+<p>Looks like I should <em>really</em> be careful on our basement stairs. (ALSO, KNIVES!!!) There&rsquo;s still a fair showing for exercise and sports injuries for white women in their (our?) thirties but a lot of this looks very domestic. &ldquo;Containers, not specified&rdquo;?! Not sure on that one.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">injuries %&gt;% filter(sex == &quot;Female&quot;,
+                    race == &quot;White&quot;,
+                    age &gt;= 30 &amp; age &lt; 40,
+                    product == &quot;containers, not specified&quot;) %&gt;%
+        sample_n(5) %&gt;%
+        select(narrative)
+</code></pre><pre tabindex="0"><code>## # A tibble: 5 x 1
+##                                                                          narrative
+##                                                                              &lt;chr&gt;
+## 1 EXAC. CHRONIC LOW BACK PAIN: 37YOF HAS BEEN MOVING HEAVY BOXES, FELT SOMETHING &quot;
+## 2                      A BOX FELL ONTO PT'S SHOULDER. DX:  L SHOULDER CONT/SPRAIN.
+## 3 30YOWF  PT REPORTS SHE HELPED MOVE SOME HEAVY BOXES &amp; DEVELOPED L LOWER BACK PAI
+## 4                     38YOF-ANKLE INJURY-TWISTED ANKLE WHILE LIFTING A BOX-@ HOME 
+## 5 LAC FINGER 33YOF CUTTING OPEN PACKAGE WITH KNIFE CUT FINGER AT HOME DX: LAC FING
+</code></pre><p>So that means boxes mainly, apparently.</p>
+
+
+
+
+<h2 id="what-should-you-worry-about">What Should <em>YOU</em> Worry About?
+  <a href="#what-should-you-worry-about"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Those are the most common injuries for my demographic, but what about the rest of everyone else? I have made a Shiny app where you can explore the NEISS data and see how the most common injuries change with age, sex, and race/ethnicity. Check out 
+<a href="https://juliasilge.shinyapps.io/neiss_demographics/" target="_blank" rel="noopener">the app itself</a>, and the 
+<a href="https://github.com/juliasilge/neissapp" target="_blank" rel="noopener">code to make the app on GitHub</a>.</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/neiss_demographics/" target="_blank" rel="noopener"><img src="/figs/2016-07-22-Return-of-NEISS/NEISSshiny.png" alt="center"></a></p>
+<p>Race/ethnicity and also sex/gender can be fraught categories for people whose identities are not easily categorizable; I have chosen to just use these demographics as reported. It appears that an age is reported for every injury in the data set (all 2.3 million of them), but there is missing information for sex and race/ethnicity.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">mean(injuries$sex == &quot;None listed&quot;)
+</code></pre><pre tabindex="0"><code>## [1] 3.814901e-05
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">mean(injuries$race == &quot;None listed&quot;)
+</code></pre><pre tabindex="0"><code>## [1] 0.2754251
+</code></pre><p>You can look in the Shiny app at the injuries for which these quantities are not reported as &ldquo;None listed&rdquo;.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The distribution of common injuries changes quite a lot with various demographic indicators. Check out, for example, the shape of the distribution for children of some sex/race compared to basically any decade of adulthood for the same sex/race. There are also some relative differences by sex and race; compare black and white teenage girls, or male and female children of some race. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-07-22-Return-of-NEISS.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 22, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 1033 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/something-strange/">&larr; Something Strange in the Neighborhood</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/fatal-shootings/">Fatal Police Shootings Across the U.S. &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

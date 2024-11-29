@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Bootstrap resampling with #TidyTuesday beer production data | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Bootstrap resampling with #TidyTuesday beer production data | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/beer-production/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Bootstrap resampling with #TidyTuesday beer production data">
+<meta itemprop="description" content="I&rsquo;ve been publishing screencasts demonstrating how to use the tidymodels framework, from first steps in modeling to how to tune more complex models. Today, I&rsquo;m using this week&rsquo;s #TidyTuesday dataset on beer production to show how to use bootstrap resampling to estimate model parameters.
+   Here is the code I used in the video, for those who prefer reading instead of or in addition to video."><meta itemprop="datePublished" content="2020-04-02T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-04-02T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1231">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Bootstrap resampling with #TidyTuesday beer production data</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">April 2, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I&rsquo;ve been publishing 
+<a href="https://juliasilge.com/tags/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the tidymodels framework, from first steps in modeling to how to tune more complex models. Today, I&rsquo;m using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on beer production to show how to use bootstrap resampling to estimate model parameters.</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/7LGR1sEUXoI" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal here is to estimate how much <strong>sugar</strong> beer producers use relative to <strong>malt</strong> according to the 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-03-31/readme.md" target="_blank" rel="noopener">#TidyTuesday dataset</a>. We&rsquo;ll use bootstrap resampling to do this! 🍻</p>
+<p>First, let&rsquo;s look at the data on brewing materials.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+brewing_materials_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/brewing_materials.csv&#34;</span>)
+
+brewing_materials_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(type, wt <span style="color:#666">=</span> month_current, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 12 x 2
+##    type                                 n
+##    &lt;chr&gt;                            &lt;dbl&gt;
+##  1 Total Used                 53559516695
+##  2 Total Grain products       44734903124
+##  3 Malt and malt products     32697313882
+##  4 Total Non-Grain products    8824613571
+##  5 Sugar and syrups            6653104081
+##  6 Rice and rice products      5685742541
+##  7 Corn and corn products      5207759409
+##  8 Hops (dry)                  1138840132
+##  9 Other                        998968470
+## 10 Barley and barley products   941444745
+## 11 Wheat and wheat products     202642547
+## 12 Hops (used as extracts)       33700888
+</code></pre><p>How have some different brewing materials changed over time?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">brewing_filtered <span style="color:#666">&lt;-</span> brewing_materials_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(
+    type <span style="color:#666">%in%</span> <span style="color:#06287e">c</span>(
+      <span style="color:#4070a0">&#34;Malt and malt products&#34;</span>,
+      <span style="color:#4070a0">&#34;Sugar and syrups&#34;</span>,
+      <span style="color:#4070a0">&#34;Hops (dry)&#34;</span>
+    ),
+    year <span style="color:#666">&lt;</span> <span style="color:#40a070">2016</span>,
+    <span style="color:#666">!</span>(month <span style="color:#666">==</span> <span style="color:#40a070">12</span> <span style="color:#666">&amp;</span> year <span style="color:#666">%in%</span> <span style="color:#40a070">2014</span><span style="color:#666">:</span><span style="color:#40a070">2015</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    date <span style="color:#666">=</span> <span style="color:#06287e">paste0</span>(year, <span style="color:#4070a0">&#34;-&#34;</span>, month, <span style="color:#4070a0">&#34;-01&#34;</span>),
+    date <span style="color:#666">=</span> lubridate<span style="color:#666">::</span><span style="color:#06287e">ymd</span>(date)
+  )
+
+brewing_filtered <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(date, month_current, color <span style="color:#666">=</span> type)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>()
+</code></pre></div><img src="/blog/2020/2020-04-02-beer-production_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>There are strong annual patterns in these materials. We want to measure how much sugar beer producers use relative to malt.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">brewing_materials <span style="color:#666">&lt;-</span> brewing_filtered <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(date, type, month_current) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> type,
+    values_from <span style="color:#666">=</span> month_current
+  ) <span style="color:#666">%&gt;%</span>
+  janitor<span style="color:#666">::</span><span style="color:#06287e">clean_names</span>()
+
+brewing_materials
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 94 x 4
+##    date       malt_and_malt_products sugar_and_syrups hops_dry
+##    &lt;date&gt;                      &lt;dbl&gt;            &lt;dbl&gt;    &lt;dbl&gt;
+##  1 2008-01-01              374165152         78358212  4506546
+##  2 2008-02-01              355687578         80188744  1815271
+##  3 2008-03-01              399855819         78907213  6067167
+##  4 2008-04-01              388639443         81199989  6864440
+##  5 2008-05-01              411307544         89946309  7470130
+##  6 2008-06-01              415161326         81012422  7361941
+##  7 2008-07-01              405393784         76728131  1759452
+##  8 2008-08-01              389391266         83928121  5992025
+##  9 2008-09-01              362587470         71982604  3788942
+## 10 2008-10-01              353803777         42828943  3788949
+## # … with 84 more rows
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">brewing_materials <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(malt_and_malt_products, sugar_and_syrups)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(method <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lm&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>()
+</code></pre></div><img src="/blog/2020/2020-04-02-beer-production_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>There is a lot of variation in this relationship, but beer reproducers use more sugar when they use more malt. What is the relationship?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+beer_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">lm</span>(sugar_and_syrups <span style="color:#666">~</span> <span style="color:#40a070">0</span> <span style="color:#666">+</span> malt_and_malt_products,
+  data <span style="color:#666">=</span> brewing_materials
+)
+
+<span style="color:#06287e">summary</span>(beer_fit)
+</code></pre></div><pre tabindex="0"><code>##
+## Call:
+## lm(formula = sugar_and_syrups ~ 0 + malt_and_malt_products, data = brewing_materials)
+##
+## Residuals:
+##       Min        1Q    Median        3Q       Max
+## -29985291  -6468052    174001   7364462  23462837
+##
+## Coefficients:
+##                        Estimate Std. Error t value Pr(&gt;|t|)
+## malt_and_malt_products 0.205804   0.003446   59.72   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##
+## Residual standard error: 11480000 on 93 degrees of freedom
+## Multiple R-squared:  0.9746,	Adjusted R-squared:  0.9743
+## F-statistic:  3567 on 1 and 93 DF,  p-value: &lt; 2.2e-16
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(beer_fit)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 5
+##   term                   estimate std.error statistic  p.value
+##   &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 malt_and_malt_products    0.206   0.00345      59.7 5.72e-76
+</code></pre><p>Here I am choosing to set the intercept to zero to take a simplified view of the malt-sugar relationship (i.e., beer producers don&rsquo;t use any sugar if they aren&rsquo;t starting with malt). We could leave that off and estimate both an intercept (baseline use of sugar all the time) and slope (increase in use of sugar per barrel of malt).</p>
+<p>This model and the visualization above are based on model assumptions that may not hold with our real-world beer production data. Bootstrap resampling provides predictions and confidence intervals that are more robust.</p>
+
+
+
+
+<h2 id="bootstrap-resampling">Bootstrap resampling
+  <a href="#bootstrap-resampling"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>First, let&rsquo;s create a set of bootstrap resamples.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+beer_boot <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(brewing_materials, times <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>, apparent <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+beer_boot
+</code></pre></div><pre tabindex="0"><code>## # Bootstrap sampling with apparent sample
+## # A tibble: 1,001 x 2
+##    splits          id
+##    &lt;list&gt;          &lt;chr&gt;
+##  1 &lt;split [94/39]&gt; Bootstrap0001
+##  2 &lt;split [94/34]&gt; Bootstrap0002
+##  3 &lt;split [94/37]&gt; Bootstrap0003
+##  4 &lt;split [94/39]&gt; Bootstrap0004
+##  5 &lt;split [94/29]&gt; Bootstrap0005
+##  6 &lt;split [94/27]&gt; Bootstrap0006
+##  7 &lt;split [94/35]&gt; Bootstrap0007
+##  8 &lt;split [94/33]&gt; Bootstrap0008
+##  9 &lt;split [94/29]&gt; Bootstrap0009
+## 10 &lt;split [94/34]&gt; Bootstrap0010
+## # … with 991 more rows
+</code></pre><p>Next, let&rsquo;s train a model to each of these bootstrap resamples. We can use <code>tidy()</code> with <code>map()</code> to create a dataframe of model results.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">beer_models <span style="color:#666">&lt;-</span> beer_boot <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    model <span style="color:#666">=</span> <span style="color:#06287e">map</span>(splits, <span style="color:#666">~</span> <span style="color:#06287e">lm</span>(sugar_and_syrups <span style="color:#666">~</span> <span style="color:#40a070">0</span> <span style="color:#666">+</span> malt_and_malt_products, data <span style="color:#666">=</span> .)),
+    coef_info <span style="color:#666">=</span> <span style="color:#06287e">map</span>(model, tidy)
+  )
+
+beer_coefs <span style="color:#666">&lt;-</span> beer_models <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(coef_info)
+
+beer_coefs
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1,001 x 8
+##    splits     id        model term         estimate std.error statistic  p.value
+##    &lt;list&gt;     &lt;chr&gt;     &lt;lis&gt; &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+##  1 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.203   0.00326      62.3 1.31e-77
+##  2 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.208   0.00338      61.7 3.17e-77
+##  3 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.205   0.00336      61.1 7.30e-77
+##  4 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.206   0.00361      57.1 3.26e-74
+##  5 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.203   0.00349      58.3 4.77e-75
+##  6 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.209   0.00335      62.2 1.33e-77
+##  7 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.210   0.00330      63.7 1.73e-78
+##  8 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.209   0.00359      58.2 5.52e-75
+##  9 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.207   0.00342      60.5 1.74e-76
+## 10 &lt;split [9… Bootstra… &lt;lm&gt;  malt_and_ma…    0.207   0.00378      54.9 1.14e-72
+## # … with 991 more rows
+</code></pre>
+
+
+
+<h2 id="evaluate-results">Evaluate results
+  <a href="#evaluate-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>What is the distribution of the relationship between sugar and malt?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">beer_coefs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;cyan3&#34;</span>)
+</code></pre></div><img src="/blog/2020/2020-04-02-beer-production_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>We can see where this distribution is centered and how broad it is from this visualization, and we can  estimate these quantities using <code>int_pctl()</code> from the rsample package.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">int_pctl</span>(beer_models, coef_info)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 1 x 6
+##   term                   .lower .estimate .upper .alpha .method
+##   &lt;chr&gt;                   &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;
+## 1 malt_and_malt_products  0.199     0.206  0.212   0.05 percentile
+</code></pre><p>We can also visualize some of these fits to the bootstrap resamples. First, let&rsquo;s use <code>augment()</code> to get the fitted values for each resampled data point.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">beer_aug <span style="color:#666">&lt;-</span> beer_models <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">sample_n</span>(<span style="color:#40a070">200</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(augmented <span style="color:#666">=</span> <span style="color:#06287e">map</span>(model, augment)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(augmented)
+
+beer_aug
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 18,800 x 13
+##    splits id    model coef_info sugar_and_syrups malt_and_malt_p… .fitted
+##    &lt;list&gt; &lt;chr&gt; &lt;lis&gt; &lt;list&gt;               &lt;dbl&gt;            &lt;dbl&gt;   &lt;dbl&gt;
+##  1 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         71341108        384396702  7.78e7
+##  2 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         76728131        405393784  8.20e7
+##  3 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         73793509        322480722  6.53e7
+##  4 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         85703037        340319408  6.89e7
+##  5 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         67266337        380521275  7.70e7
+##  6 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         81199989        388639443  7.86e7
+##  7 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         76115769        399504457  8.08e7
+##  8 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         66002563        321371392  6.50e7
+##  9 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         85703037        340319408  6.89e7
+## 10 &lt;spli… Boot… &lt;lm&gt;  &lt;tibble …         74805384        351222725  7.11e7
+## # … with 18,790 more rows, and 6 more variables: .se.fit &lt;dbl&gt;, .resid &lt;dbl&gt;,
+## #   .hat &lt;dbl&gt;, .sigma &lt;dbl&gt;, .cooksd &lt;dbl&gt;, .std.resid &lt;dbl&gt;
+</code></pre><p>Then, let&rsquo;s create a visualization.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">ggplot</span>(beer_aug, <span style="color:#06287e">aes</span>(malt_and_malt_products, sugar_and_syrups)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(<span style="color:#06287e">aes</span>(y <span style="color:#666">=</span> .fitted, group <span style="color:#666">=</span> id), alpha <span style="color:#666">=</span> <span style="color:#40a070">.2</span>, col <span style="color:#666">=</span> <span style="color:#4070a0">&#34;cyan3&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>()
+</code></pre></div><img src="/blog/2020/2020-04-02-beer-production_files/figure-html/unnamed-chunk-11-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 2, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1231 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/best-hip-hop/">&larr; PCA and the #TidyTuesday best hip hop songs ever</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/sf-trees-random-tuning/">Tuning random forest hyperparameters with #TidyTuesday trees data &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

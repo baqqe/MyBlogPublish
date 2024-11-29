@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>You Must Allow Me To Tell You How Ardently I Admire and Love Natural Language Processing | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Because of Elizabeth Bennet, I Relearned What a Fourier Transform Is">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="You Must Allow Me To Tell You How Ardently I Admire and Love Natural Language Processing | Julia Silge">
+<meta property="og:description" content="Because of Elizabeth Bennet, I Relearned What a Fourier Transform Is" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/you-must-allow-me/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="You Must Allow Me To Tell You How Ardently I Admire and Love Natural Language Processing">
+<meta itemprop="description" content="It is a truth universally acknowledged that sentiment analysis is super fun, and Pride and Prejudice is probably my very favorite book in all of literature, so let&rsquo;s do some Jane Austen natural language processing.
+Project Gutenberg makes e-texts available for many, many books, including Pride and Prejudice which is available here. I am using the plain text UTF-8 file available at that link for this analysis. Let&rsquo;s read the file and get it ready for analysis."><meta itemprop="datePublished" content="2016-03-08T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-03-08T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2388">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">You Must Allow Me To Tell You How Ardently I Admire and Love Natural Language Processing</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">March 8, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>It is a truth universally acknowledged that sentiment analysis is super fun, and <em>Pride and Prejudice</em> is probably my very favorite book in all of literature, so let&rsquo;s do some Jane Austen natural language processing.</p>
+<p>
+<a href="https://www.gutenberg.org/" target="_blank" rel="noopener">Project Gutenberg</a> makes e-texts available for many, many books, including <em>Pride and Prejudice</em> which is available 
+<a href="https://www.gutenberg.org/ebooks/1342" target="_blank" rel="noopener">here</a>. I am using the plain text UTF-8 file available at that link for this analysis. Let&rsquo;s read the file and get it ready for analysis.</p>
+
+
+
+
+<h2 id="munge-the-data-but-elegantly-as-would-befit-jane-austen">Munge the Data, But ELEGANTLY, As Would Befit Jane Austen
+  <a href="#munge-the-data-but-elegantly-as-would-befit-jane-austen"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The plain text file has lines that are just over 70 characters long. We can read them in using the <code>readr</code> library, which is super fast and easy to use. Let&rsquo;s use the <code>skip</code> and <code>n_max</code> options to leave out the Project Gutenberg header and footer information and just get the actual text of the novel. Lines of 70 characters are not really a big enough chunk of text to be useful for my purposes here (that&rsquo;s not even a tweet!) so let&rsquo;s use <code>stringr</code> to concatenate these lines in chunks of 10. That gives us sort of paragraph-sized chunks of text.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(readr)
+library(stringr)
+rawPandP &lt;- read_lines(&quot;./pg1342.txt&quot;, skip = 30, n_max = 13032)
+PandP &lt;- character()
+for (i in seq_along(rawPandP)) {
+        if (i%%10 == 1) PandP[ceiling(i/10)] &lt;- str_c(rawPandP[i], 
+                                                     rawPandP[i+1],
+                                                     rawPandP[i+2],
+                                                     rawPandP[i+3],
+                                                     rawPandP[i+4],
+                                                     rawPandP[i+5],
+                                                     rawPandP[i+6],
+                                                     rawPandP[i+7],
+                                                     rawPandP[i+8],
+                                                     rawPandP[i+9], sep = &quot; &quot;)
+}
+</code></pre><p>Maybe you don&rsquo;t think for loops are elegant, actually, but I could not come up with a way to vectorize this.</p>
+
+
+
+
+<h2 id="mr-darcy-delivered-his-sentiments-in-a-manner-little-suited-to-recommend-them">Mr. Darcy Delivered His Sentiments in a Manner Little Suited to Recommend Them
+  <a href="#mr-darcy-delivered-his-sentiments-in-a-manner-little-suited-to-recommend-them"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To do the sentiment analysis, let&rsquo;s use the 
+<a href="http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm" target="_blank" rel="noopener">NRC Word-Emotion Association Lexicon</a> of Saif Mohammad and Peter Turney. You can read a bit more about the NRC sentiment dictionary and how it is used in 
+<a href="http://juliasilge.com/blog/Joy-to-the-World/" target="_blank" rel="noopener">one of my previous blog posts</a>. It is implemented in R in the <code>syuzhet</code> package.</p>
+<p>I was not sure, when I stopped to think about it, exactly how appropriate this tool is for analyzing 200-year-old text. Language changes over time and from what I can tell, the NRC lexicon is designed and validated to measure the sentiment in contemporary English. It was created via 
+<a href="http://arxiv.org/pdf/1308.6297.pdf" target="_blank" rel="noopener">crowdsourcing on Amazon&rsquo;s Mechanical Turk</a>. However, it doesn&rsquo;t seem to do badly on Jane Austen&rsquo;s prose; the sentiment results are about what one would expect compared to a human reading of the meaning. If anything, the text in <em>Pride and Prejudice</em> involves more dramatic vocabulary than a lot of contemporary English prose and it is easier for a tool like the NRC dictionary to pick up on the emotions involved.</p>
+<p>Let&rsquo;s look at some examples.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(syuzhet)
+get_nrc_sentiment(&quot;Nobody can tell what I suffer! But it is always so. Those who do not complain are never pitied.&quot;)
+</code></pre><pre tabindex="0"><code>##   anger anticipation disgust fear joy sadness surprise trust negative positive
+## 1     1            0       0    0   0       1        0     0        2        0
+</code></pre><p>Oh, Mrs. Bennett&hellip;</p>
+<iframe src="http://giphy.com/embed/ixZCcU2hQc6zK" width="480" height="292" frameBorder="0" class="giphy-embed"></iframe><p><a href="http://giphy.com/gifs/pride-and-prejudice-jane-austen-ixZCcU2hQc6zK">via GIPHY</a></p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">get_nrc_sentiment(&quot;And your defect is to hate everybody.&quot;)
+</code></pre><pre tabindex="0"><code>##   anger anticipation disgust fear joy sadness surprise trust negative positive
+## 1     2            0       1    1   0       1        0     0        2        0
+</code></pre><iframe src="http://giphy.com/embed/mIeWT5Klehws0" width="240" height="275" frameBorder="0" class="giphy-embed"></iframe><p><a href="http://giphy.com/gifs/pride-and-prejudice-colin-firth-jane-austen-mIeWT5Klehws0">via GIPHY</a></p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">get_nrc_sentiment(&quot;You must allow me to tell you how ardently I admire and love you.&quot;)
+</code></pre><pre tabindex="0"><code>##   anger anticipation disgust fear joy sadness surprise trust negative positive
+## 1     0            0       0    0   1       0        0     1        0        2
+</code></pre><iframe src="http://giphy.com/embed/fjbUprnyVivza" width="480" height="352" frameBorder="0" class="giphy-embed"></iframe><p><a href="http://giphy.com/gifs/movie-i-love-you-fjbUprnyVivza">via GIPHY</a></p>
+<p>So let&rsquo;s start from a working hypothesis that the NRC lexicon can be applied to this novel and do the sentiment analysis for each chunk of text in our dataframe. At the same time, let&rsquo;s make a <code>linenumber</code> that counts up through the novel.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PandPnrc &lt;- cbind(linenumber = seq_along(PandP), get_nrc_sentiment(PandP))
+</code></pre>
+
+
+
+<h2 id="dividing-up-the-volumes">Dividing Up the Volumes
+  <a href="#dividing-up-the-volumes"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p><em>Pride and Prejudice</em> contains 61 chapters divided into three volumes; Volume I is Chapters 1-23, Volume II is Chapters 24-42, and Volume III is Chapters 43-61. Let&rsquo;s find where these breaks between volumes have ended up.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">grep(&quot;Chapter 1 &quot;, PandP)
+</code></pre><pre tabindex="0"><code>## [1] 1
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">grep(&quot;Chapter 24&quot;, PandP)
+</code></pre><pre tabindex="0"><code>## [1] 451
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">grep(&quot;Chapter 43&quot;, PandP)
+</code></pre><pre tabindex="0"><code>## [1] 805
+</code></pre><p>Let&rsquo;s make a <code>volume</code> factor for the dataframe and then restart the <code>linenumber</code> count at the beginning of each volume.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PandPnrc$volume &lt;- &quot;Volume I&quot;
+PandPnrc[grep(&quot;Chapter 24&quot;, PandP):length(PandP),'volume'] &lt;- &quot;Volume II&quot;
+PandPnrc[grep(&quot;Chapter 43&quot;, PandP):length(PandP),'volume'] &lt;- &quot;Volume III&quot;
+PandPnrc$volume &lt;- as.factor(PandPnrc$volume)
+PandPnrc$linenumber[PandPnrc$volume == &quot;Volume II&quot;] &lt;- seq_along(PandP)
+PandPnrc$linenumber[PandPnrc$volume == &quot;Volume III&quot;] &lt;- seq_along(PandP)
+</code></pre>
+
+
+
+<h2 id="positive-and-negative-sentiment">Positive and Negative Sentiment
+  <a href="#positive-and-negative-sentiment"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>First let&rsquo;s look at the overall postive vs. negative sentiment in the text of <em>Pride and Prejudice</em> before looking at more specific emotions.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(dplyr)
+library(reshape2)
+PandPnrc$negative &lt;- -PandPnrc$negative
+posneg &lt;- PandPnrc %&gt;% select(linenumber, volume, positive, negative) %&gt;% 
+        melt(id = c(&quot;linenumber&quot;, &quot;volume&quot;))
+names(posneg) &lt;- c(&quot;linenumber&quot;, &quot;volume&quot;, &quot;sentiment&quot;, &quot;value&quot;)
+</code></pre><p>Here, each chunk of text has a score for the positive sentiment and the negative sentiment; a given chunk of text could have high scores for both, low scores for both, or any combination thereof. I have made the sign of the negative sentiment negative for plotting purposes. Let&rsquo;s make a dataframe of some important events in the novel to annotate the plots; I found the chapters for these events and matched them up to the correct volumes and line numbers.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">annotatetext &lt;- data.frame(x = c(114, 211, 307, 183, 91, 415), y = rep(18.3, 6), 
+                           label = c(&quot;Jane's illness&quot;, &quot;Mr. Collins arrives&quot;, 
+                                     &quot;Ball at Netherfield&quot;, &quot;Mr. Darcy proposes&quot;, 
+                                     &quot;Lydia elopes&quot;, &quot;Mr. Darcy proposes again&quot;),
+                           volume = factor(c(&quot;Volume I&quot;, &quot;Volume I&quot;, 
+                                             &quot;Volume I&quot;, &quot;Volume II&quot;, 
+                                             &quot;Volume III&quot;, &quot;Volume III&quot;),
+                                           levels = c(&quot;Volume I&quot;, &quot;Volume II&quot;, &quot;Volume III&quot;)))
+annotatearrow &lt;- data.frame(x = c(114, 211, 307, 183, 91, 415), 
+                            y1 = rep(17, 6), y2 = c(11.2, 10.7, 11.4, 13.5, 10.5, 11.5), 
+                            volume = factor(c(&quot;Volume I&quot;, &quot;Volume I&quot;, 
+                                              &quot;Volume I&quot;, &quot;Volume II&quot;, 
+                                              &quot;Volume III&quot;, &quot;Volume III&quot;),
+                                            levels = c(&quot;Volume I&quot;, &quot;Volume II&quot;, &quot;Volume III&quot;)))
+</code></pre><p>Now let&rsquo;s plot the positive and negative sentiment.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(ggplot2)
+library(ggthemes)
+ggplot(data = posneg, aes(x = linenumber, y = value, color = sentiment)) +
+        facet_wrap(~volume, nrow = 3) +
+        geom_point(size = 4, alpha = 0.5) + theme_minimal() +
+        ylab(&quot;Sentiment&quot;) + 
+        ggtitle(expression(paste(&quot;Positive and Negative Sentiment in &quot;, 
+                                 italic(&quot;Pride and Prejudice&quot;)))) +
+        theme(legend.title=element_blank()) + 
+        theme(axis.title.x=element_blank()) +
+        theme(axis.ticks.x=element_blank()) +
+        theme(axis.text.x=element_blank()) +
+        geom_text(data = annotatetext, aes(x,y,label=label), hjust = 0.5, 
+                  size = 3, inherit.aes = FALSE) +
+        geom_segment(data = annotatearrow, aes(x = x, y = y1, xend = x, yend = y2),
+                     arrow = arrow(length = unit(0.05, &quot;npc&quot;)), inherit.aes = FALSE) +
+        theme(legend.justification=c(1,1), legend.position=c(1, 0.71)) +
+        scale_color_manual(values = c(&quot;aquamarine3&quot;, &quot;midnightblue&quot;))
+</code></pre><p><img src="/figs/2016-03-08-You-Must-Allow-Me/unnamed-chunk-11-1.png" alt="center"></p>
+<p>Narrative time runs along the x-axis. Volume II is the shortest of the three parts of the novel. We can see here that the positive sentiment scores are overall much higher than the negative sentiment, which makes sense for Jane Austen&rsquo;s writing style. We can see some more strongly negative sentiment when Mr. Darcy proposes for the first time and when Lydia elopes. Let&rsquo;s try visualizing these same data with a bar chart instead of points.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = posneg, aes(x = linenumber, y = value, color = sentiment, fill = sentiment)) +
+        facet_wrap(~volume, nrow = 3) +
+        geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) + theme_minimal() +
+        ylab(&quot;Sentiment&quot;) +
+        ggtitle(expression(paste(&quot;Positive and Negative Sentiment in &quot;, 
+                                 italic(&quot;Pride and Prejudice&quot;)))) +
+        theme(legend.title=element_blank()) +
+        theme(axis.title.x=element_blank()) +
+        theme(axis.ticks.x=element_blank()) +
+        theme(axis.text.x=element_blank()) +
+        theme(legend.justification=c(1,1), legend.position=c(1, 0.71)) +
+        geom_text(data = annotatetext, aes(x,y,label=label), hjust = 0.5, 
+                  size = 3, inherit.aes = FALSE) +
+        geom_segment(data = annotatearrow, aes(x = x, y = y1, xend = x, yend = y2),
+                     arrow = arrow(length = unit(0.05, &quot;npc&quot;)), inherit.aes = FALSE) +
+        scale_fill_manual(values = c(&quot;aquamarine3&quot;, &quot;midnightblue&quot;)) +
+        scale_color_manual(values = c(&quot;aquamarine3&quot;, &quot;midnightblue&quot;))
+</code></pre><p><img src="/figs/2016-03-08-You-Must-Allow-Me/unnamed-chunk-12-1.png" alt="center"></p>
+<p>I like certain aspects of both of these styles of plots. What do you think? Is one of these clearer or more appealing to you?</p>
+
+
+
+
+<h2 id="fourier-transform-time">Fourier Transform Time
+  <a href="#fourier-transform-time"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The previous plots showed both the positive and negative sentiment, but we could also take each chunk of text and assign one value, the positive sentiment minus the negative sentiment for an overall sense of the emotional content of the text. Let&rsquo;s do that for a new view of the novel&rsquo;s content.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PandPsentiment &lt;- data.frame(cbind(linenumber = seq_along(PandP), 
+                                   sentiment = get_sentiment(PandP, method = &quot;nrc&quot;)))
+PandPsentiment$volume &lt;- &quot;Volume I&quot;
+PandPsentiment[grep(&quot;Chapter 24&quot;, PandP):length(PandP),'volume'] &lt;- &quot;Volume II&quot;
+PandPsentiment[grep(&quot;Chapter 43&quot;, PandP):length(PandP),'volume'] &lt;- &quot;Volume III&quot;
+PandPsentiment$volume &lt;- as.factor(PandPsentiment$volume)
+PandPsentiment$linenumber[PandPsentiment$volume == &quot;Volume II&quot;] &lt;- seq_along(PandP)
+PandPsentiment$linenumber[PandPsentiment$volume == &quot;Volume III&quot;] &lt;- seq_along(PandP)
+</code></pre><p>Now let&rsquo;s plot this single measure of the sentiment in the novel.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = PandPsentiment, aes(x = linenumber, y = sentiment)) +
+        facet_wrap(~volume, nrow = 3) +
+        geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;, color = &quot;midnightblue&quot;) + 
+        theme_minimal() +
+        ylab(&quot;Sentiment&quot;) +
+        ggtitle(expression(paste(&quot;Sentiment in &quot;, italic(&quot;Pride and Prejudice&quot;)))) +
+        theme(axis.title.x=element_blank()) +
+        theme(axis.ticks.x=element_blank()) +
+        theme(axis.text.x=element_blank()) +
+        theme(legend.justification=c(1,1), legend.position=c(1, 0.71)) +
+        geom_text(data = annotatetext, aes(x,y,label=label), hjust = 0.5, 
+                  size = 3, inherit.aes = FALSE) +
+        geom_segment(data = annotatearrow, aes(x = x, y = y1, xend = x, yend = y2),
+                     arrow = arrow(length = unit(0.05, &quot;npc&quot;)), inherit.aes = FALSE)
+</code></pre><p><img src="/figs/2016-03-08-You-Must-Allow-Me/unnamed-chunk-14-1.png" alt="center"></p>
+<p>To better see the overall trajectory of the narrative, we can filter and transform these sentiment scores using a low-pass filter Fourier transform. Matthew Jockers, the author of the <code>syuzhet</code> package, describes this 
+<a href="http://www.matthewjockers.net/2015/02/02/syuzhet/" target="_blank" rel="noopener">in more detail here</a>.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PandPft &lt;- as.numeric(get_transformed_values(PandPsentiment$sentiment, 
+                                  low_pass_size = 3,
+                                  scale_vals = TRUE,
+                                  scale_range = FALSE))
+PandPft &lt;- data.frame(cbind(linenumber = seq_along(PandPft), ft = PandPft))
+</code></pre><p>Now, I am a little rusty on the Fourier transform. I haven&rsquo;t thought much about it since I was a physics undergrad taking an electronics lab; I vaguely remember that I made a square wave by adding up a bunch of sine waves. In the case here with text from a novel, the sentiment scores are the time domain signal. Taking the Fourier transform finds the set of sinusoidal functions to sum up to represent the time domain signal. Thus, the Fourier transform shows us where the narrative sentiment is positive/negative, and the low-pass filter allows us to see the overall structure in the narrative (i.e. low frequency structure) while filtering out high frequency information. We would just have to decide how many components to keep for the low-pass filtering.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = PandPft, aes(x = linenumber, y = ft)) +
+        geom_bar(stat = &quot;identity&quot;, alpha = 0.8, color = &quot;midnightblue&quot;, fill = &quot;midnightblue&quot;) +
+        theme_minimal() +
+        ylab(&quot;Transformed Sentiment Value&quot;) +
+        ggtitle(expression(paste(&quot;Sentiment in &quot;, italic(&quot;Pride and Prejudice&quot;)))) +
+        theme(axis.title.x=element_blank()) +
+        theme(axis.ticks.x=element_blank()) +
+        theme(axis.text.x=element_blank()) +
+        annotate(&quot;text&quot;, size = 3, x = c(9, 23, 49, 69, 94), 
+                 y = c(-0.2, -0.5, 0.5, 0.2, 0.7), 
+                 label = c(&quot;Jane's illness&quot;, &quot;Ball at Netherfield&quot;,
+                           &quot;Mr. Darcy proposes&quot;, &quot;Lydia elopes&quot;, 
+                           &quot;Mr. Darcy proposes again&quot;)) +
+        annotate(&quot;segment&quot;, arrow = arrow(length = unit(0.03, &quot;npc&quot;)),
+                 x = c(9, 23, 49, 69, 94), xend = c(9, 23, 49, 69, 94),
+                 y = c(-0.16, -0.46, 0.44, 0.15, 0.64), 
+                 yend = c(-0.02, -0.02 , 0.02, 0.02, 0.2))
+</code></pre><p><img src="/figs/2016-03-08-You-Must-Allow-Me/unnamed-chunk-16-1.png" alt="center"></p>
+<p>This probably jumps out as pretty obvious, but the values have been scaled and centered here to show the narrative shape. The raw sentiment scores were all mostly positive in <em>Pride and Prejudice</em> but the filtered and transformed sentiment scores have been scaled and centered to visualize the overall structure of the narrative. Notice the important events that correspond to the max/min in the transformed and filtered sentiment score. I am just delighted about that. Math! It is the best. I do want to be careful not to overemphasize that result just now, though, because it depends on how many Fourier components we keep during the low-pass filtering. This plot is made by keeping 3 components, the default in the <code>syuzhet</code> package; the shape will look a little different with more small-scale (i.e., higher frequency) structure if we keep 4 or 5 components and the important plot events may not align quite as perfectly with a maximum, for example. I would like to explore this point more.</p>
+
+
+
+
+<h2 id="the-feeeeeeeeeeelings">The FEEEEEEEEEEELINGS
+  <a href="#the-feeeeeeeeeeelings"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The NRC lexicon includes scores for eight emotions, along with the overall positive and negative sentiment scores. Let&rsquo;s see how these emotion scores change during the novel. We will need bigger chunks of text to make reasonable looking plots, so let&rsquo;s go back and concatenate our chunks into bits that are five times larger. (The last chunk will be a bit shorter because it doesn&rsquo;t come out exactly even.)</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PandP[1304] &lt;- &quot;&quot;
+PandP[1305] &lt;- &quot;&quot;
+shorterPandP &lt;- character()
+for (i in seq_along(PandP)) {
+        if (i%%5 == 1) shorterPandP[ceiling(i/5)] &lt;- str_c(PandP[i], 
+                                                      PandP[i+1],
+                                                      PandP[i+2],
+                                                      PandP[i+3],
+                                                      PandP[i+4], sep = &quot; &quot;)
+}
+</code></pre><p>Now let&rsquo;s find the sentiment scores, divide between the three volumes of the novel, and <code>melt</code> for plotting.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">PandPnrc &lt;- cbind(linenumber = seq_along(shorterPandP), get_nrc_sentiment(shorterPandP))
+PandPnrc$volume &lt;- &quot;Volume I&quot;
+PandPnrc[grep(&quot;Chapter 24&quot;, shorterPandP):length(shorterPandP),'volume'] &lt;- &quot;Volume II&quot;
+PandPnrc[grep(&quot;Chapter 43&quot;, shorterPandP):length(shorterPandP),'volume'] &lt;- &quot;Volume III&quot;
+PandPnrc$volume &lt;- as.factor(PandPnrc$volume)
+PandPnrc$linenumber[PandPnrc$volume == &quot;Volume II&quot;] &lt;- seq_along(shorterPandP)
+PandPnrc$linenumber[PandPnrc$volume == &quot;Volume III&quot;] &lt;- seq_along(shorterPandP)
+emotions &lt;- PandPnrc %&gt;% select(linenumber, volume, anger, anticipation, 
+                                      disgust, fear, joy, sadness, surprise, 
+                                      trust) %&gt;% 
+        melt(id = c(&quot;linenumber&quot;, &quot;volume&quot;))
+names(emotions) &lt;- c(&quot;linenumber&quot;, &quot;volume&quot;, &quot;sentiment&quot;, &quot;value&quot;)
+</code></pre><p>Let&rsquo;s capitalize the names of the emotions for plotting, and also let&rsquo;s reorder the factor so that more postive emotions are together in the plot and more negative emotions are together in the plot.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">levels(emotions$sentiment) &lt;- c(&quot;Anger&quot;, &quot;Anticipation&quot;, &quot;Disgust&quot;, &quot;Fear&quot;, 
+                                &quot;Joy&quot;, &quot;Sadness&quot;, &quot;Surprise&quot;, &quot;Trust&quot;)
+emotions$sentiment = factor(emotions$sentiment,levels(emotions$sentiment)[c(5,8,2,7,6,3,4,1)])
+</code></pre><p>For plotting the emotions, let&rsquo;s make heat maps 
+<a href="http://rud.is/projects/facetedheatmaps.html" target="_blank" rel="noopener">in the style of Bob Rudis</a>. When I saw him put some examples of these heat maps on Twitter, I just knew that I needed to make some.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(viridis)
+ggplot(data = emotions, aes(x = linenumber, y = sentiment, fill = value)) +
+        geom_tile(color=&quot;white&quot;, size=0.1) +
+        facet_wrap(~volume, nrow = 3) +
+        scale_fill_viridis(name=&quot;Sentiment\nScore&quot;) +
+        coord_equal() + theme_tufte(base_family=&quot;Helvetica&quot;) + 
+        labs(x=NULL, y=NULL, 
+             title=expression(paste(&quot;Sentiment in &quot;, italic(&quot;Pride and Prejudice&quot;)))) +
+        theme(axis.ticks=element_blank(), axis.text.x=element_blank()) +
+        scale_x_discrete(expand=c(0,0)) +
+        theme(axis.text=element_text(size=6)) +
+        theme(panel.border=element_blank()) +
+        theme(legend.title=element_text(size=6)) + 
+        theme(legend.title.align=1) + 
+        theme(legend.text=element_text(size=6)) + 
+        theme(legend.position=&quot;bottom&quot;) + 
+        theme(legend.key.size=unit(0.2, &quot;cm&quot;)) + 
+        theme(legend.key.width=unit(1, &quot;cm&quot;))
+</code></pre><p><img src="/figs/2016-03-08-You-Must-Allow-Me/unnamed-chunk-20-1.png" alt="center"></p>
+<p>Oh, they&rsquo;re so pretty&hellip; We can see the positive emotions are stronger than the negative ones, which is sensible given Austen&rsquo;s bright, humorous writing style. The negative emotions are stronger in the middle of Volume II when Mr. Darcy proposes for the first time and near the beginning of Volume III when Lydia elopes.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<iframe src="http://giphy.com/embed/yG1hmvkFJPTva" width="480" height="282" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/rain-colin-firth-the-lizzie-bennet-diaries-yG1hmvkFJPTva">via GIPHY</a></p>
+<p>Wow, this was so much fun, although obviously I have outed myself as a super fan. Good thing I have no shame about that whatsoever. The Fourier transformed sentiment values were so interesting, and are perfect for comparing across different texts. I am eager to try that out on some different novels. Boy, I just love that we can do MATH on WORDS; those are two of my very favorite things. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-03-08-You-Must-Allow-Me.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">March 8, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">12 minute read, 2388 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/if-i-loved-nlp-less/">&larr; If I Loved Natural Language Processing Less, I Might Be Able to Talk About It More</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/my-baby-boomer-name/">My Baby Boomer Name Might Have Been &#34;Debbie&#34; &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

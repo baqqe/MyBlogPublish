@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>A Tall Drink of Water | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Mapping Water Use in Salt Lake City, a Shiny App, and a Census Tract Package">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="A Tall Drink of Water | Julia Silge">
+<meta property="og:description" content="Mapping Water Use in Salt Lake City, a Shiny App, and a Census Tract Package" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tall-drink-of-water/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="A Tall Drink of Water">
+<meta itemprop="description" content="In a previous post, I used water consumption data from Utah&rsquo;s Open Data Catalog to explore what kind of users consume the most water in my home here in Salt Lake City, what the annual pattern of water use is, and how the drought of the past few years has affected water use. I made a predictive model for the total aggregate water use of the city and tested how drought affected the accuracy of such a model."><meta itemprop="datePublished" content="2016-02-11T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-02-11T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2355">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">A Tall Drink of Water</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">February 11, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p><img src="/figs/2016-02-11-Tall-Drink-of-Water/watermap.gif" alt="Annual Water Use in SLC"></p>
+<p>In a 
+<a href="http://juliasilge.com/blog/Water-World/" target="_blank" rel="noopener">previous post</a>, I used water consumption data from Utah&rsquo;s Open Data Catalog to explore what kind of users consume the most water in my home here in Salt Lake City, what the annual pattern of water use is, and how the drought of the past few years has affected water use. I made a predictive model for the total aggregate water use of the city and tested how drought affected the accuracy of such a model. The data set I used for all of this also contains spatial information that I basically ignored in that first post; today let&rsquo;s dig in to the spatial information and map water use in my fair city!</p>
+<p>Salt Lake City makes water consumption data publicly available at both the census tract and block level; I am going to use the census tract level information here today. The data set includes information on the type of water user (single residence, apartment, hospital, business, etc.) and amount of water used from 2000 into 2015. The data at the census tract level is available 
+<a href="https://opendata.utah.gov/Energy-Environment/SALT-LAKE-CITY-WATER-CONSUMPTION-BY-TRACT/j4aa-ce7s" target="_blank" rel="noopener">here via Utah&rsquo;s Open Data Catalog</a> and can be accessed via Socrata Open Data API.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(RSocrata)
+water &lt;- read.socrata(&quot;https://opendata.utah.gov/resource/j4aa-ce7s.csv&quot;)
+</code></pre><p>After loading the data, we need to do the same cleaning up as last time. There is one nonsensical row that needs removing with a non-year value in the year column. Then, let&rsquo;s adjust the data types.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">water &lt;- water[grep(&quot;[0-9]{4}&quot;, water$YEAR),]
+water[,1:4] &lt;- lapply(water[,1:4], as.factor)
+water[,5:6] &lt;- lapply(water[,5:6], as.numeric)
+</code></pre><p>Now let&rsquo;s use <code>dplyr</code> to group these observations of water use by each tract and month. I use the median for the consumption because it is less sensitive to outliers than the mean; if you remember from the last post, there are some very high outliers in water use during the drought years and my main goal here is to see which parts of the city use more water over the years in this data set, not to be overwhelmed by the outliers from the drought years.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(dplyr)
+library(lubridate)
+tidytracts &lt;- water %&gt;% 
+        group_by(TRACT, YEAR, month = month(as.integer(MONTH), label = TRUE)) %&gt;% 
+        summarise(consumption = sum(CONSUMPTION)) %&gt;%
+        group_by(TRACT, month) %&gt;%
+        summarise(consumption = median(consumption))
+colnames(tidytracts) &lt;- c(&quot;tract&quot;, &quot;month&quot;, &quot;consumption&quot;)
+</code></pre><p>The data frame we just made here is in &ldquo;long&rdquo; format, otherwise known as 
+<a href="http://vita.had.co.nz/papers/tidy-data.pdf" target="_blank" rel="noopener">&ldquo;tidy&rdquo; data</a>. It looks like this.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">head(tidytracts)
+</code></pre><pre tabindex="0"><code>## Source: local data frame [6 x 3]
+## 
+##    tract  month consumption
+##   (fctr) (fctr)       (dbl)
+## 1 100100    Jan    117482.5
+## 2 100100    Feb    117777.0
+## 3 100100    Mar    112781.0
+## 4 100100    Apr    124734.0
+## 5 100100    May    127651.5
+## 6 100100    Jun    134108.0
+</code></pre><p>Keeping one&rsquo;s data in a tidy format has many benefits and don&rsquo;t worry &ndash; I AM A BELIEVER. However, for the maps we want to make here, the data needs to be in &ldquo;wide&rdquo; format. To do this, we will use <code>dcast</code> from the <code>reshape2</code> library. Let&rsquo;s do that and see what this data frame looks like.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(reshape2)
+maptracts &lt;- dcast(tidytracts, tract ~ month)
+head(maptracts)
+</code></pre><pre tabindex="0"><code>##    tract      Jan      Feb    Mar      Apr      May    Jun    Jul    Aug    Sep
+## 1 100100 117482.5 117777.0 112781 124734.0 127651.5 134108 157652 153996 166824
+## 2 100200   9141.5   8441.5   6866  13054.0  22072.5  47248  56834  61421  59213
+## 3 100306  16381.0  17087.0  14630  17287.0  23605.5  41870  49378  50181  48044
+## 4 100307  11448.0  12392.5   9884  12392.5  17072.5  40090  48997  51948  47106
+## 5 100308  12446.0  12877.0  11211  13826.0  20653.0  37422  52364  56884  53472
+## 6 100500  16246.0  16405.5  13775  16933.5  23024.5  47852  59249  63577  58952
+##      Oct    Nov    Dec
+## 1 137633 123407 111612
+## 2  40763  19941  12631
+## 3  29296  17991  16465
+## 4  25265  13117  11216
+## 5  29720  18437  12462
+## 6  33463  18569  15977
+</code></pre><p>So there we go! Water use data ready for some map making! Now we&hellip; uh&hellip;</p>
+
+
+
+
+<h2 id="now-what">Now what?
+  <a href="#now-what"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>What exactly is a census tract? The U.S. Census Bureau divides up each county in the United States into these tracts; the idea is that they are supposed to be relatively small and relatively permanent. According to the Census, they 
+<a href="https://www.census.gov/geo/reference/gtc/gtc_ct.html" target="_blank" rel="noopener">provide a stable set of geographic units for the presentation of statistical data</a>.</p>
+<p>To map the census tracts in Utah, there are a couple of options we could go with. One option would be to combine the <code>acs</code> package for getting U.S. Census data with the <code>tigris</code> 
+<a href="https://rpubs.com/walkerke/tigris" target="_blank" rel="noopener">package by Kyle Walker</a>, which already includes all the U.S. census tracts. I&rsquo;ve played around with <code>tigris</code> a bit and it is great; you can make line maps or choropleth maps or an <code>htmlwidget</code> or pretty much any of the other things you might like. Another option is to combine ACS data together with the census tract shape information into an R package with the functionality of Ari Lamstein&rsquo;s <code>choroplethr</code> packages. For a variety of reasons, I decided to go with the second option.</p>
+<p>The issue with that choice is that it involves making a new R package! The Utah census tract maps are not automatically built in to any of the <code>choroplethr</code> packages. I forked 
+<a href="https://github.com/arilamstein/choroplethrCaCensusTract" target="_blank" rel="noopener">Ari&rsquo;s repository</a> for his <code>choroplethrCaCensusTract</code> package and modified it for Utah census tracts. This involved changing the names of things, getting the right ACS data, and using the appropriate shapefile for the census tracts. Dealing with the shapefile was the most difficult part. I found 
+<a href="http://rstudio-pubs-static.s3.amazonaws.com/11196_2ac0fb4e6c93425ab7ddd4ccc61c5e47.html" target="_blank" rel="noopener">several</a> 
+<a href="http://blog.mollietaylor.com/2013/02/shapefiles-in-r.html" target="_blank" rel="noopener">posts</a> helpful during that process, and also I&rsquo;d like to thank Ari for some debugging he helped me with. I know that Ari is working on a paid course for working with shapefiles in R and I can see why; it is, as they like to say in my academic fields, not trivial.</p>
+<p>This was a great first experience building an R package. There wasn&rsquo;t an overwhelming amount of work to be done in the actual code and I was able to get a grasp on how the documentation works, how to add data to an R package, and so forth. I found 
+<a href="http://hilaryparker.com/2014/04/29/writing-an-r-package-from-scratch/" target="_blank" rel="noopener">Hilary Parker&rsquo;s post</a> on the basics of making an R package all I really needed to get going. If you too are interested in census tracts in Utah,</p>
+<ul>
+<li>say hello for goodness sake! We are probably neighbors or something</li>
+<li>download the package from Github</li>
+</ul>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(devtools)
+install_github(&quot;juliasilge/choroplethrUTCensusTract&quot;)
+library(choroplethrUTCensusTract)
+</code></pre>
+
+
+
+<h2 id="its-map-time-like-nap-time-but-not-as-restful">It&rsquo;s Map Time (Like Nap Time But Not As Restful)
+  <a href="#its-map-time-like-nap-time-but-not-as-restful"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The water use data from this data set doesn&rsquo;t cover all of Salt Lake County so let&rsquo;s make a vector of the census tracts for mapping purposes. For the <code>choroplethr</code> packages mapping regions, we need to add the Salt Lake County FIPS code (49035) to the beginning of each census tract number.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(stringr)
+myTracts &lt;- as.character(maptracts$tract)
+myTracts &lt;- str_c(&quot;49035&quot;, myTracts)
+</code></pre><p>Now let&rsquo;s do the actual mapping.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(choroplethrUTCensusTract)
+library(ggplot2)
+library(RColorBrewer)
+data(df_pop_ut_tract)
+choro = UtTractChoropleth$new(df_pop_ut_tract)
+choro$title = &quot;Population in Salt Lake Census Tracts&quot;
+choro$set_num_colors(1)
+choro$ggplot_polygon = geom_polygon(aes(fill = value), color = NA)
+choro$set_zoom_tract(tract_zoom = myTracts, county_zoom = NULL)
+choro$ggplot_scale = scale_fill_gradientn(name = &quot;Population&quot;, colours = brewer.pal(8, &quot;PuRd&quot;))
+choro$render()
+</code></pre><p><img src="/figs/2016-02-11-Tall-Drink-of-Water/unnamed-chunk-9-1.png" alt="center"></p>
+<p>Nice! I think I have a good idea of what is what with this map, but let&rsquo;s map it over a reference map for clarity.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">choro$render_with_reference_map()
+</code></pre><p><img src="/figs/2016-02-11-Tall-Drink-of-Water/unnamed-chunk-10-1.png" alt="center"></p>
+<p>See that large census tract on the west side of town with no one living in it? That is the airport.</p>
+<p>One important thing to keep in mind when looking at a choropleth map like this that maps a number measured in counts into areas that are not equal is that the color intensities don&rsquo;t represent density, i.e. population density in this case. The color intensity represents population number, not population density, here. Depending on the numerical sophicastication of one&rsquo;s audience, it may be worth doing some work to change that? Anyway, keep in mind that the very large tracts that have the same color as very small tracts have much lower population densities.</p>
+<p>The relative sizes of the census tracts make less difference when we look at a quantity that is measured in a percentage, rather than in counts. Salt Lake City has a significant Hispanic population. Where do they live here?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">data(df_ut_tract_demographics)
+df_ut_tract_demographics$value &lt;- df_ut_tract_demographics$percent_hispanic
+choro = UtTractChoropleth$new(df_ut_tract_demographics)
+choro$title = &quot;Hispanic Population in Salt Lake Census Tracts&quot;
+choro$set_num_colors(1)
+choro$ggplot_polygon = geom_polygon(aes(fill = value), color = NA)
+choro$set_zoom_tract(tract_zoom = myTracts, county_zoom = NULL)
+choro$ggplot_scale = scale_fill_gradientn(name = &quot;Percent&quot;, colours = brewer.pal(8, &quot;PuRd&quot;))
+choro$render()
+</code></pre><p><img src="/figs/2016-02-11-Tall-Drink-of-Water/unnamed-chunk-11-1.png" alt="center"></p>
+<p>Salt Lake&rsquo;s Hispanic population is concentrated on the west side of the city.</p>
+
+
+
+
+<h2 id="water-use-across-the-city">Water Use Across the City
+  <a href="#water-use-across-the-city"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now that our ability to map census tracts in Salt Lake City is all set up and we have an idea of where people live, let&rsquo;s look at water use. Which census tracts use the most water at which times of year? As a reminder, in my 
+<a href="http://juliasilge.com/blog/Water-World/" target="_blank" rel="noopener">first post on water use in Salt Lake City</a>, we saw that business and single residence users consumed the most water in Salt Lake City, and that water consumption in the city is highest in August and lowest in March. Let&rsquo;s first look at water consumption across the city in August.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">maptracts$region &lt;- str_c(&quot;49035&quot;, as.character(maptracts$tract))
+maptracts$value &lt;- maptracts$Aug
+choro = UtTractChoropleth$new(maptracts)
+choro$title = &quot;August Water Use in Salt Lake Census Tracts&quot;
+choro$set_num_colors(1)
+choro$ggplot_polygon = geom_polygon(aes(fill = value), color = NA)
+choro$set_zoom_tract(tract_zoom = maptracts$region, county_zoom = NULL)
+choro$ggplot_scale = scale_fill_gradientn(name = &quot;Water Use\n(100 cubic ft)&quot;, 
+                                          colours = brewer.pal(8, &quot;PuRd&quot;))
+choro$render()
+</code></pre><p><img src="/figs/2016-02-11-Tall-Drink-of-Water/unnamed-chunk-12-1.png" alt="center"></p>
+<p>This is distributed <em>very</em> differently than population. I mean, look at where the airport is! It is one of the highest water use census tracts in the whole city. I was definitely not expecting to see that. The highest water use census tract for August is on the east side of the city and contains the University of Utah. The university isn&rsquo;t the only thing in that census tract; there is a part of the city called &ldquo;Research Park&rdquo; there where there are a lot of research-oriented businesses and labs and such. It is not a highly residential area. In fact, the census tracts that have the most people living in them are not the ones with the highest water use.</p>
+<p>If you really want to look in detail at the areas of the city that these census tracts represent (i.e. even more than the <code>choroplethr</code> reference map shows), go 
+<a href="http://www2.census.gov/geo/maps/dc10map/tract/st49_ut/c49035_salt_lake/DC10CT_C49035_001.pdf" target="_blank" rel="noopener">over here to the Census Bureau</a> and see their big, detailed map of Salt Lake City census tracts.</p>
+<p>Let&rsquo;s look at March, the lowest water use month for Salt Lake City.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">maptracts$value &lt;- maptracts$Mar
+choro = UtTractChoropleth$new(maptracts)
+choro$title = &quot;March Water Use in Salt Lake Census Tracts&quot;
+choro$set_num_colors(1)
+choro$ggplot_polygon = geom_polygon(aes(fill = value), color = NA)
+choro$set_zoom_tract(tract_zoom = maptracts$region, county_zoom = NULL)
+choro$ggplot_scale = scale_fill_gradientn(name = &quot;Water Use\n(100 cubic ft)&quot;, 
+                                          colours = brewer.pal(8, &quot;PuRd&quot;))
+choro$render()
+</code></pre><p><img src="/figs/2016-02-11-Tall-Drink-of-Water/unnamed-chunk-13-1.png" alt="center"></p>
+<p>First of all, notice that the overall levels are much lower by looking at the legend. The relative level of water use is down at the airport compared to August, making me question what they are doing using so much water in the summer. Are they irrigating a lot of landscaping? Washing a lot of rental cars that don&rsquo;t get washed in the winter? I did a bit of research on water use at airports but I must admit I don&rsquo;t have a super satisfying answer for this one. It is also possible that this water use is due to the airport plus other businesses near the airport. Further exploration of this would be interesting.</p>
+<p>Water use in and near the university is still high compared to the rest of the city, as is that sliver-shaped census tract downtown. That area near downtown is mostly business/industrial with very few people living in it. The large census tract just south of the airport also has a pretty high level of water use. That census tract does have a fairly high number of people living in it, but it is a more mixed area of town with business and industrial areas. All of the census tracts that have high levels of water use during March are ones that are host to significant industrial and business activity.</p>
+<p>I opened this blog post with an animated GIF showing water use in Salt Lake&rsquo;s census through all the months of the year. I did not use <code>gganimate</code> to make this GIF the way I did with the GIFs 
+<a href="http://juliasilge.com/blog/Death-Comes/" target="_blank" rel="noopener">in my most recent post</a>. The code I used to make that GIF is available 
+<a href="https://github.com/juliasilge/SLCWaterMapping" target="_blank" rel="noopener">on Github</a>; I used R to make each of the files and then ImageMagick, a command line tool, to combine the files into a GIF. Here, you probably want to see the GIF again, don&rsquo;t you?</p>
+<p><img src="/figs/2016-02-11-Tall-Drink-of-Water/watermap.gif" alt="Annual Water Use in SLC"></p>
+<p>For the sake of minimalism on the GIF, I removed the legend. The overall levels in August are about 4 times higher than the overall levels in March.</p>
+<p>I also developed a Shiny App to explore how water use changes through the year across Salt Lake City. The app user can choose which month to display and whether to plot the data over a reference map. Check out the 
+<a href="https://github.com/juliasilge/SLCWaterMapping" target="_blank" rel="noopener">code for the app here</a> and explore the 
+<a href="https://juliasilge.shinyapps.io/WaterMapApp/" target="_blank" rel="noopener">app itself here</a>.</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/WaterMapApp/" target="_blank" rel="noopener"><img src="/figs/2016-02-11-Tall-Drink-of-Water/WaterMapScreenshot.jpg" alt="Shiny App Screenshot"></a></p>
+<p>I used the built-in interactivity in Shiny to allow the user to click on the map and find the census tract. This is not screaming fast as implemented right now; the click gets the latitude and longitude and then the code finds which polygon (i.e., census tract) that point is in. If anybody has suggestions on how to implement this more efficiently, I&rsquo;d be happy to hear them.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Single residence users are one of the top two consumers of the most water in Salt Lake City, but they (we? that includes me, I suppose!) are spread out throughout the city in many census tracts. Business and industrial users of water also use a large amount of water in Salt Lake City, but they are concentrated in just a few areas of the city so those census tracts have exceptionally high levels of water use. The airport, or perhaps the airport plus businesses near the airport, use a lot more water than I expected. I really enjoyed working on this whole project; learning about maps and how to make them is very rewarding. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-02-11-Tall-Drink-of-Water.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 11, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">12 minute read, 2355 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/your-floor/">&larr; Your Floor Is the Most Dangerous Thing In Your House</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/death-comes/">Death Comes to Us All &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

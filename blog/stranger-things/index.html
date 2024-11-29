@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Find high FREX and high lift words for #TidyTuesday Stranger Things dialogue | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Find high FREX and high lift words for #TidyTuesday Stranger Things dialogue | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/stranger-things/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/stranger-things/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/stranger-things/featured.png" >
+    
+    
+  <meta itemprop="name" content="Find high FREX and high lift words for #TidyTuesday Stranger Things dialogue">
+<meta itemprop="description" content="New functionality in tidytext supports identifying high FREX and high lift words from topic modeling results."><meta itemprop="datePublished" content="2022-10-20T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-10-20T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1805"><meta itemprop="image" content="https://juliasilge.com/blog/stranger-things/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Find high FREX and high lift words for #TidyTuesday Stranger Things dialogue</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">October 20, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast demonstrates how to use some brand-new functionality in 
+<a href="https://juliasilge.github.io/tidytext/reference/stm_tidiers.html" target="_blank" rel="noopener">tidytext</a>, using this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on <em>Stranger Things</em>. 👻</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/2wcDYVb-2AY" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>The code in this blog post requires the GitHub version of tidytext as of publication. Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to “discover” topics in 
+<a href="https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-10-18" target="_blank" rel="noopener"><em>Stranger Things</em></a> dialogue. Instead of a supervised or predictive model where our observations have labels, this is an unsupervised approach. Let’s start by reading in the data, and focusing only on the show’s dialogue:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+episodes_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-10-18/stranger_things_all_dialogue.csv&#39;</span>)
+
+dialogue <span style="color:#666">&lt;-</span>
+  episodes_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span><span style="color:#06287e">is.na</span>(dialogue)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(season <span style="color:#666">=</span> <span style="color:#06287e">paste0</span>(<span style="color:#4070a0">&#34;season&#34;</span>, season))
+
+dialogue
+</code></pre></div><pre><code>## # A tibble: 26,041 × 8
+##    season  episode  line raw_text                stage…¹ dialo…² start…³ end_t…⁴
+##    &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                   &lt;chr&gt;   &lt;chr&gt;   &lt;time&gt;  &lt;time&gt; 
+##  1 season1       1     9 [Mike] Something is co… [Mike]  Someth… 01'44&quot;  01'48&quot; 
+##  2 season1       1    10 A shadow grows on the … &lt;NA&gt;    A shad… 01'48&quot;  01'52&quot; 
+##  3 season1       1    11 -It is almost here. -W… &lt;NA&gt;    It is … 01'52&quot;  01'54&quot; 
+##  4 season1       1    12 What if it's the Demog… &lt;NA&gt;    What i… 01'54&quot;  01'56&quot; 
+##  5 season1       1    13 Oh, Jesus, we're so sc… &lt;NA&gt;    Oh, Je… 01'56&quot;  01'59&quot; 
+##  6 season1       1    14 It's not the Demogorgo… &lt;NA&gt;    It's n… 01'59&quot;  02'00&quot; 
+##  7 season1       1    15 An army of troglodytes… &lt;NA&gt;    An arm… 02'00&quot;  02'02&quot; 
+##  8 season1       1    16 -Troglodytes? -Told ya… [chuck… Troglo… 02'02&quot;  02'05&quot; 
+##  9 season1       1    18 [softly] Wait a minute. [softl… Wait a… 02'08&quot;  02'09&quot; 
+## 10 season1       1    19 Did you hear that?      &lt;NA&gt;    Did yo… 02'10&quot;  02'12&quot; 
+## # … with 26,031 more rows, and abbreviated variable names ¹​stage_direction,
+## #   ²​dialogue, ³​start_time, ⁴​end_time
+</code></pre>
+<p>To start out with, let’s create a tidy, tokenized version of the dialogue.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+tidy_dialogue <span style="color:#666">&lt;-</span>
+  dialogue <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(word, dialogue)
+
+tidy_dialogue
+</code></pre></div><pre><code>## # A tibble: 143,885 × 8
+##    season  episode  line raw_text                  stage…¹ start…² end_t…³ word 
+##    &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;chr&gt;   &lt;time&gt;  &lt;time&gt;  &lt;chr&gt;
+##  1 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  some…
+##  2 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  is   
+##  3 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  comi…
+##  4 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  some…
+##  5 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  hung…
+##  6 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  for  
+##  7 season1       1     9 [Mike] Something is comi… [Mike]  01'44&quot;  01'48&quot;  blood
+##  8 season1       1    10 A shadow grows on the wa… &lt;NA&gt;    01'48&quot;  01'52&quot;  a    
+##  9 season1       1    10 A shadow grows on the wa… &lt;NA&gt;    01'48&quot;  01'52&quot;  shad…
+## 10 season1       1    10 A shadow grows on the wa… &lt;NA&gt;    01'48&quot;  01'52&quot;  grows
+## # … with 143,875 more rows, and abbreviated variable names ¹​stage_direction,
+## #   ²​start_time, ³​end_time
+</code></pre>
+<p>What words from the dialogue have the 
+<a href="https://juliasilge.github.io/tidylo/" target="_blank" rel="noopener">highest log odds</a> of coming from each season?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidylo)
+
+tidy_dialogue <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(season, word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_log_odds</span>(season, word, n) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">20</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(season) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(log_odds_weighted, n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(word <span style="color:#666">=</span> <span style="color:#06287e">reorder_within</span>(word, log_odds_weighted, season)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(log_odds_weighted, word, fill <span style="color:#666">=</span> season)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(season), scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_reordered</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/stranger-things/index_files/figure-html/unnamed-chunk-4-1.png" width="1260" />
+<p>We can see that:</p>
+<ul>
+<li>Season 1 is more about Barb 😭 and Will</li>
+<li>Season 2 introduces Bob 😭😭, Dart, and the rainbow/sunflower imagery</li>
+<li>Season 3 has Russians and the Scoops shop</li>
+<li>Season 4 brings us Eddie, Vecna, and Yuri</li>
+</ul>
+<p>Lots of proper nouns in here!</p>
+
+
+
+
+<h2 id="train-a-topic-model">Train a topic model
+  <a href="#train-a-topic-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To train a topic model with the stm package, we need to create a sparse matrix from our tidy tibble of tokens. Let’s treat each episode of <em>Stranger Things</em> as a document.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">dialogue_sparse <span style="color:#666">&lt;-</span>
+  tidy_dialogue <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(document <span style="color:#666">=</span> <span style="color:#06287e">paste</span>(season, episode, sep <span style="color:#666">=</span> <span style="color:#4070a0">&#34;_&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(document, word) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">5</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">cast_sparse</span>(document, word, n)
+
+<span style="color:#06287e">dim</span>(dialogue_sparse)
+</code></pre></div><pre><code>## [1]  34 562
+</code></pre>
+<p>This means there are 34 episodes (i.e. documents) and 562 different tokens (i.e. terms or words) in our dataset for modeling.</p>
+<p>A topic model like this one models:</p>
+<ul>
+<li>each <strong>document</strong> as a mixture of topics</li>
+<li>each <strong>topic</strong> as a mixture of words</li>
+</ul>
+<p>The most important parameter when training a topic modeling is <code>K</code>, the number of topics. This is like <code>k</code> in k-means in that it is a hyperparamter of the model and we must choose this value ahead of time. We could 
+<a href="https://juliasilge.com/blog/evaluating-stm/" target="_blank" rel="noopener">try multiple different values</a> to find the best value for <code>K</code>, but this is a pretty small dataset so let’s just stick with <code>K = 5</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(stm)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+topic_model <span style="color:#666">&lt;-</span> <span style="color:#06287e">stm</span>(dialogue_sparse, K <span style="color:#666">=</span> <span style="color:#40a070">5</span>, verbose <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+</code></pre></div><p>To get a quick view of the results, we can use summary().</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(topic_model)
+</code></pre></div><pre><code>## A topic model with 5 topics, 34 documents and a 562 word dictionary.
+
+## Topic 1 Top Words:
+##       Highest Prob: you, i, the, to, a, and, it 
+##       FREX: max, mean, they're, i'm, don't, i, know 
+##       Lift: clarke, dart, soon, better, girlfriend, late, living 
+##       Score: girlfriend, max, dart, duck, mr, building, kline's 
+## Topic 2 Top Words:
+##       Highest Prob: you, i, the, a, to, it, and 
+##       FREX: he's, let, we, he, go, us, what 
+##       Lift: flayer, party, fact, flayed, children, hold, tied 
+##       Score: flayer, ice, cherry, says, bob, key, code 
+## Topic 3 Top Words:
+##       Highest Prob: you, i, the, to, a, and, that 
+##       FREX: eddie, as, only, chrissy, make, has, much 
+##       Lift: ray, california, dad, deal, hellfire, mrs, tonight 
+##       Score: ray, eddie, only, chrissy, try, had, vecna 
+## Topic 4 Top Words:
+##       Highest Prob: you, i, the, to, it, a, and 
+##       FREX: go, mike, come, jonathan, on, okay, get 
+##       Lift: jonathan, gone, jingle, kids, terry, answer, blood 
+##       Score: christmas, jonathan, copy, jingle, gone, bell, scoops 
+## Topic 5 Top Words:
+##       Highest Prob: you, i, the, to, a, what, it 
+##       FREX: will, mom, lucas, murderer, barb, he, know 
+##       Lift: byers, else, upside, fourfifty, demogorgon, lonnie, shut 
+##       Score: threeonefive, mom, barb, lucas, murderer, hopper, sunflower
+</code></pre>
+
+
+
+
+<h2 id="explore-topic-model-results">Explore topic model results
+  <a href="#explore-topic-model-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To explore more deeply, we can <code>tidy()</code> the topic model results to get a dataframe that we can compute on. The <code>&quot;beta&quot;</code> matrix of topic-word probabilities gives us the highest probability words from each topic.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(topic_model, matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;beta&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(topic) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(beta, n <span style="color:#666">=</span> <span style="color:#40a070">10</span>, ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(rank <span style="color:#666">=</span> <span style="color:#06287e">row_number</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>beta) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> <span style="color:#4070a0">&#34;topic&#34;</span>, 
+    names_glue <span style="color:#666">=</span> <span style="color:#4070a0">&#34;topic {.name}&#34;</span>,
+    values_from <span style="color:#666">=</span> term
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>rank) <span style="color:#666">%&gt;%</span>
+  knitr<span style="color:#666">::</span><span style="color:#06287e">kable</span>()
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">topic 1</th>
+<th style="text-align:left">topic 2</th>
+<th style="text-align:left">topic 3</th>
+<th style="text-align:left">topic 4</th>
+<th style="text-align:left">topic 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">you</td>
+<td style="text-align:left">you</td>
+<td style="text-align:left">you</td>
+<td style="text-align:left">you</td>
+<td style="text-align:left">you</td>
+</tr>
+<tr>
+<td style="text-align:left">i</td>
+<td style="text-align:left">i</td>
+<td style="text-align:left">i</td>
+<td style="text-align:left">i</td>
+<td style="text-align:left">i</td>
+</tr>
+<tr>
+<td style="text-align:left">the</td>
+<td style="text-align:left">the</td>
+<td style="text-align:left">the</td>
+<td style="text-align:left">the</td>
+<td style="text-align:left">the</td>
+</tr>
+<tr>
+<td style="text-align:left">to</td>
+<td style="text-align:left">a</td>
+<td style="text-align:left">to</td>
+<td style="text-align:left">to</td>
+<td style="text-align:left">to</td>
+</tr>
+<tr>
+<td style="text-align:left">a</td>
+<td style="text-align:left">to</td>
+<td style="text-align:left">a</td>
+<td style="text-align:left">it</td>
+<td style="text-align:left">a</td>
+</tr>
+<tr>
+<td style="text-align:left">and</td>
+<td style="text-align:left">it</td>
+<td style="text-align:left">and</td>
+<td style="text-align:left">a</td>
+<td style="text-align:left">what</td>
+</tr>
+<tr>
+<td style="text-align:left">it</td>
+<td style="text-align:left">and</td>
+<td style="text-align:left">that</td>
+<td style="text-align:left">and</td>
+<td style="text-align:left">it</td>
+</tr>
+<tr>
+<td style="text-align:left">that</td>
+<td style="text-align:left">what</td>
+<td style="text-align:left">it</td>
+<td style="text-align:left">is</td>
+<td style="text-align:left">and</td>
+</tr>
+<tr>
+<td style="text-align:left">what</td>
+<td style="text-align:left">that</td>
+<td style="text-align:left">is</td>
+<td style="text-align:left">go</td>
+<td style="text-align:left">that</td>
+</tr>
+<tr>
+<td style="text-align:left">it’s</td>
+<td style="text-align:left">we</td>
+<td style="text-align:left">we</td>
+<td style="text-align:left">this</td>
+<td style="text-align:left">is</td>
+</tr>
+</tbody>
+</table>
+<p>Well, that’s pretty boring, isn’t it?! This can happen a lot with topic modeling; you 
+<a href="http://dx.doi.org/10.1162/tacl_a_00099" target="_blank" rel="noopener">typically don’t want to remove stop words before building topic models</a> but then the highest probability words look mostly the same from each topic.</p>
+<p>People who work with topic models have come up with alternate metrics for identifying important words. One is FREX (high frequency <em>and</em> high exclusivity) and another is lift. Look at the details at <code>?stm::calcfrex()</code> and <code>?stm::calclift()</code> to learn more about these metrics, but they measure about what they sound like they do.</p>
+<p>Before now, there was no support in tidytext for these alternate ways of identifying important words, but I just merged in new functionality for this. To use these as of today, you will need to install from GitHub via <code>devtools::install_github(&quot;juliasilge/tidytext&quot;)</code>.</p>
+<p>We can find high FREX words:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(topic_model, matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;frex&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(topic) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_head</span>(n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(rank <span style="color:#666">=</span> <span style="color:#06287e">row_number</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> <span style="color:#4070a0">&#34;topic&#34;</span>, 
+    names_glue <span style="color:#666">=</span> <span style="color:#4070a0">&#34;topic {.name}&#34;</span>,
+    values_from <span style="color:#666">=</span> term
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>rank) <span style="color:#666">%&gt;%</span>
+  knitr<span style="color:#666">::</span><span style="color:#06287e">kable</span>()
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">topic 1</th>
+<th style="text-align:left">topic 2</th>
+<th style="text-align:left">topic 3</th>
+<th style="text-align:left">topic 4</th>
+<th style="text-align:left">topic 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">red</td>
+<td style="text-align:left">cops</td>
+<td style="text-align:left">billy</td>
+<td style="text-align:left">night</td>
+<td style="text-align:left">life</td>
+</tr>
+<tr>
+<td style="text-align:left">running</td>
+<td style="text-align:left">enzo</td>
+<td style="text-align:left">cherry</td>
+<td style="text-align:left">because</td>
+<td style="text-align:left">anything</td>
+</tr>
+<tr>
+<td style="text-align:left">lucas</td>
+<td style="text-align:left">billy</td>
+<td style="text-align:left">says</td>
+<td style="text-align:left">mike</td>
+<td style="text-align:left">much</td>
+</tr>
+<tr>
+<td style="text-align:left">thought</td>
+<td style="text-align:left">suzie</td>
+<td style="text-align:left">house</td>
+<td style="text-align:left">say</td>
+<td style="text-align:left">too</td>
+</tr>
+<tr>
+<td style="text-align:left">byers</td>
+<td style="text-align:left">ghostbusters</td>
+<td style="text-align:left">building</td>
+<td style="text-align:left">dart</td>
+<td style="text-align:left">after</td>
+</tr>
+<tr>
+<td style="text-align:left">max</td>
+<td style="text-align:left">son</td>
+<td style="text-align:left">men</td>
+<td style="text-align:left">wait</td>
+<td style="text-align:left">off</td>
+</tr>
+<tr>
+<td style="text-align:left">holy</td>
+<td style="text-align:left">hi</td>
+<td style="text-align:left">two</td>
+<td style="text-align:left">last</td>
+<td style="text-align:left">nina</td>
+</tr>
+<tr>
+<td style="text-align:left">nina</td>
+<td style="text-align:left">wait</td>
+<td style="text-align:left">girl</td>
+<td style="text-align:left">move</td>
+<td style="text-align:left">old</td>
+</tr>
+<tr>
+<td style="text-align:left">eleven</td>
+<td style="text-align:left">talking</td>
+<td style="text-align:left">eddie</td>
+<td style="text-align:left">am</td>
+<td style="text-align:left">their</td>
+</tr>
+<tr>
+<td style="text-align:left">hell</td>
+<td style="text-align:left">um</td>
+<td style="text-align:left">jesus</td>
+<td style="text-align:left">wanna</td>
+<td style="text-align:left">them</td>
+</tr>
+</tbody>
+</table>
+<p>Or high lift words:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(topic_model, matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lift&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(topic) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_head</span>(n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(rank <span style="color:#666">=</span> <span style="color:#06287e">row_number</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> <span style="color:#4070a0">&#34;topic&#34;</span>, 
+    names_glue <span style="color:#666">=</span> <span style="color:#4070a0">&#34;topic {.name}&#34;</span>,
+    values_from <span style="color:#666">=</span> term
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>rank) <span style="color:#666">%&gt;%</span>
+  knitr<span style="color:#666">::</span><span style="color:#06287e">kable</span>()
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">topic 1</th>
+<th style="text-align:left">topic 2</th>
+<th style="text-align:left">topic 3</th>
+<th style="text-align:left">topic 4</th>
+<th style="text-align:left">topic 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">clarke</td>
+<td style="text-align:left">flayer</td>
+<td style="text-align:left">ray</td>
+<td style="text-align:left">jonathan</td>
+<td style="text-align:left">byers</td>
+</tr>
+<tr>
+<td style="text-align:left">dart</td>
+<td style="text-align:left">party</td>
+<td style="text-align:left">california</td>
+<td style="text-align:left">gone</td>
+<td style="text-align:left">else</td>
+</tr>
+<tr>
+<td style="text-align:left">soon</td>
+<td style="text-align:left">fact</td>
+<td style="text-align:left">dad</td>
+<td style="text-align:left">jingle</td>
+<td style="text-align:left">upside</td>
+</tr>
+<tr>
+<td style="text-align:left">better</td>
+<td style="text-align:left">flayed</td>
+<td style="text-align:left">deal</td>
+<td style="text-align:left">kids</td>
+<td style="text-align:left">fourfifty</td>
+</tr>
+<tr>
+<td style="text-align:left">girlfriend</td>
+<td style="text-align:left">children</td>
+<td style="text-align:left">hellfire</td>
+<td style="text-align:left">terry</td>
+<td style="text-align:left">demogorgon</td>
+</tr>
+<tr>
+<td style="text-align:left">late</td>
+<td style="text-align:left">hold</td>
+<td style="text-align:left">mrs</td>
+<td style="text-align:left">answer</td>
+<td style="text-align:left">lonnie</td>
+</tr>
+<tr>
+<td style="text-align:left">living</td>
+<td style="text-align:left">tied</td>
+<td style="text-align:left">tonight</td>
+<td style="text-align:left">blood</td>
+<td style="text-align:left">shut</td>
+</tr>
+<tr>
+<td style="text-align:left">sir</td>
+<td style="text-align:left">illinois</td>
+<td style="text-align:left">might</td>
+<td style="text-align:left">christmas</td>
+<td style="text-align:left">barb</td>
+</tr>
+<tr>
+<td style="text-align:left">mistakes</td>
+<td style="text-align:left">machina</td>
+<td style="text-align:left">prison</td>
+<td style="text-align:left">merry</td>
+<td style="text-align:left">chug</td>
+</tr>
+<tr>
+<td style="text-align:left">shadow</td>
+<td style="text-align:left">smirnoff</td>
+<td style="text-align:left">step</td>
+<td style="text-align:left">telling</td>
+<td style="text-align:left">missing</td>
+</tr>
+</tbody>
+</table>
+<p>These return a ranked set of words (not the underlying metrics themselves). They give us a much clearer idea of what makes each topic unique!</p>
+<p>To connect the topics back to seasons, let’s use <code>tidy()</code> again, finding the <code>&quot;gamma&quot;</code> matrix of document-topic probabilities.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">episode_gamma <span style="color:#666">&lt;-</span> <span style="color:#06287e">tidy</span>(
+  topic_model, 
+  matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gamma&#34;</span>,
+  document_names <span style="color:#666">=</span> <span style="color:#06287e">rownames</span>(dialogue_sparse)
+)
+episode_gamma
+</code></pre></div><pre><code>## # A tibble: 170 × 3
+##    document  topic    gamma
+##    &lt;chr&gt;     &lt;int&gt;    &lt;dbl&gt;
+##  1 season1_1     1 0.000817
+##  2 season1_2     1 0.000749
+##  3 season1_3     1 0.00104 
+##  4 season1_4     1 0.000758
+##  5 season1_5     1 0.000806
+##  6 season1_6     1 0.00201 
+##  7 season1_7     1 0.00125 
+##  8 season1_8     1 0.000633
+##  9 season2_1     1 0.800   
+## 10 season2_2     1 0.516   
+## # … with 160 more rows
+</code></pre>
+<p>We can parse these results to find the season info again:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">episodes_parsed <span style="color:#666">&lt;-</span> 
+  episode_gamma <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">separate</span>(document, <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;season&#34;</span>, <span style="color:#4070a0">&#34;episode&#34;</span>), sep <span style="color:#666">=</span> <span style="color:#4070a0">&#34;_&#34;</span>)
+
+episodes_parsed
+</code></pre></div><pre><code>## # A tibble: 170 × 4
+##    season  episode topic    gamma
+##    &lt;chr&gt;   &lt;chr&gt;   &lt;int&gt;    &lt;dbl&gt;
+##  1 season1 1           1 0.000817
+##  2 season1 2           1 0.000749
+##  3 season1 3           1 0.00104 
+##  4 season1 4           1 0.000758
+##  5 season1 5           1 0.000806
+##  6 season1 6           1 0.00201 
+##  7 season1 7           1 0.00125 
+##  8 season1 8           1 0.000633
+##  9 season2 1           1 0.800   
+## 10 season2 2           1 0.516   
+## # … with 160 more rows
+</code></pre>
+<p>Let’s visualize how these document-topic probabilities are distributed over the seasons.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">episodes_parsed <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(topic <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(topic)) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(topic, gamma, fill <span style="color:#666">=</span> topic)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(season)) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#06287e">expression</span>(gamma))
+</code></pre></div><img src="https://juliasilge.com/blog/stranger-things/index_files/figure-html/unnamed-chunk-13-1.png" width="1260" />
+<p>Each season mostly consists of one of these topics, with season 3 consisting of more like two topics. We could also look at how topic is related to season by using <code>stm::estimateEffect()</code>, like 
+<a href="https://juliasilge.com/blog/spice-girls/" target="_blank" rel="noopener">in this blog post</a>.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 20, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">9 minute read, 1805 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/delete-tweets/">&larr; Delete all your tweets using rtweet</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/bigfoot/">Predict the status of #TidyTuesday Bigfoot sightings &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

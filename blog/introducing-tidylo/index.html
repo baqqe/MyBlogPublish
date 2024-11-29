@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Introducing tidylo | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Introducing tidylo | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/introducing-tidylo/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Introducing tidylo">
+<meta itemprop="description" content="Today I am so pleased to introduce a new package for calculating weighted log odds ratios, tidylo.
+Often in data analysis, we want to measure how the usage or frequency of some feature, such as words, differs across some group or set, such as documents. One statistic often used to find these kinds of differences in text data is tf-idf. Another option is to use the log odds ratio, but the log odds ratio alone does not account for sampling variability."><meta itemprop="datePublished" content="2019-07-08T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2019-07-08T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1002">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Introducing tidylo</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">July 8, 2019</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+
+
+<p>Today I am so pleased to introduce a new package for calculating weighted log odds ratios, <a href="https://github.com/juliasilge/tidylo"><strong>tidylo</strong></a>.</p>
+<p>Often in data analysis, we want to measure how the usage or frequency of some <strong>feature</strong>, such as words, differs across some group or <strong>set</strong>, such as documents. One statistic often used to find these kinds of differences in text data is <a href="https://www.tidytextmining.com/tfidf.html">tf-idf</a>. Another option is to use the <a href="https://www.tidytextmining.com/twitter.html#comparing-word-usage">log odds ratio</a>, but the log odds ratio alone does not account for sampling variability. We haven’t counted every feature the same number of times so how do we know which differences are meaningful? 🤔</p>
+<div id="weighty-business" class="section level2">
+<h2>Weighty business</h2>
+<p>Instead, we can use a <strong>weighted log odds</strong>, which tidylo provides an implementation for using tidy data principles. In particular, this package uses the method outlined in <a href="https://doi.org/10.1093/pan/mpn018">Monroe, Colaresi, and Quinn (2008)</a> to weight the log odds ratio by an uninformative Dirichlet prior.</p>
+<p>I started developing this package with <a href="https://www.letslanguage.org/">Tyler Schnoebelen</a> after he wrote a post which I <em>highly</em> recommend that you go read, titled <a href="https://medium.com/@TSchnoebelen/i-dare-say-you-will-never-use-tf-idf-again-4918408b2310">“I dare say you will never use tf-idf again”</a>.</p>
+<p>It starts:</p>
+<blockquote>
+<p>Julia Silge, astrophysicist, R guru and maker of beautiful charts, a data scientist with what seem by any account to be comfortable and happy cats, united the best blessings of existence; and had lived in the world with very little to distress or vex her.</p>
+</blockquote>
+<p>Let’s just say it gets better from there. <strong>AND</strong> it walks through the benefits of using a weighted log odds ratio for text analysis when the analytical question is focused on differences in frequency across sets, in this particular case, books.</p>
+<p>Tyler and I have collaborated on this package implementing this approach, and it is now available on GitHub. You can install it via <a href="https://github.com/r-lib/remotes">remotes</a>.</p>
+<pre class="r"><code>library(remotes)
+install_github(&quot;juliasilge/tidylo&quot;)</code></pre>
+<p>Tyler and I think that “tidylo” is pronounced “tidy-low”, or maybe, if you prefer, “tidy-el-oh”.</p>
+</div>
+<div id="some-examples" class="section level2">
+<h2>Some examples</h2>
+<p>The package contains examples in the <a href="https://github.com/juliasilge/tidylo">README</a> and <a href="https://github.com/juliasilge/tidylo/blob/master/vignettes/tidy_log_odds.Rmd">vignette</a>, but let’s walk though another, different example here. This weighted log odds approach is useful for text analysis, but not <em>only</em> for text analysis. In the weeks since we’ve had this package up and running, I’ve found myself reaching for it in multiple situations, both text and not, in my real-life day job. For this example, let’s look at the <a href="https://juliasilge.com/blog/reorder-within/">same data as my last post</a>, names given to children in the US.</p>
+<p>Which names were most common in the 1950s, 1960s, 1970s, and 1980?</p>
+<pre class="r"><code>library(tidyverse)
+library(babynames)
+
+top_names &lt;- babynames %&gt;%
+    filter(year &gt;= 1950,
+           year &lt; 1990) %&gt;%
+    mutate(decade = (year %/% 10) * 10,
+           decade = paste0(decade, &quot;s&quot;)) %&gt;%
+    group_by(decade) %&gt;%
+    count(name, wt = n, sort = TRUE) %&gt;%
+    ungroup
+
+top_names</code></pre>
+<pre><code>## # A tibble: 100,527 x 3
+##    decade name         n
+##    &lt;chr&gt;  &lt;chr&gt;    &lt;int&gt;
+##  1 1950s  James   846042
+##  2 1950s  Michael 839459
+##  3 1960s  Michael 836934
+##  4 1950s  Robert  832336
+##  5 1950s  John    799658
+##  6 1950s  David   771242
+##  7 1960s  David   736583
+##  8 1960s  John    716284
+##  9 1970s  Michael 712722
+## 10 1960s  James   687905
+## # … with 100,517 more rows</code></pre>
+<p>Now let’s use the <code>bind_log_odds()</code> function from the tidylo package to find the weighted log odds for each name. What are the highest log odds names for these decades?</p>
+<pre class="r"><code>library(tidylo)
+
+name_log_odds &lt;- top_names %&gt;%
+  bind_log_odds(decade, name, n) 
+
+name_log_odds %&gt;%
+  arrange(-log_odds)</code></pre>
+<pre><code>## # A tibble: 100,527 x 4
+##    decade name          n log_odds
+##    &lt;chr&gt;  &lt;chr&gt;     &lt;int&gt;    &lt;dbl&gt;
+##  1 1980s  Ashley   357385     477.
+##  2 1980s  Jessica  471493     457.
+##  3 1950s  Linda    565481     414.
+##  4 1980s  Joshua   399131     412.
+##  5 1980s  Amanda   370873     391.
+##  6 1970s  Jason    465402     374.
+##  7 1980s  Justin   291843     363.
+##  8 1950s  Deborah  431302     348.
+##  9 1980s  Brandon  234294     331.
+## 10 1970s  Jennifer 583692     330.
+## # … with 100,517 more rows</code></pre>
+<p>These are the highest log odds names (names more likely to come from each decade, compared to the decades) when we have used weighting to account for sampling variability.</p>
+<p>We can make some visualizations to understand our results better. For example, which names are most characteristic of each decade?</p>
+<pre class="r"><code>name_log_odds %&gt;%
+    group_by(decade) %&gt;%
+    top_n(10, log_odds) %&gt;%
+    ungroup %&gt;%
+    mutate(decade = as.factor(decade),
+           name = fct_reorder(name, log_odds)) %&gt;%
+    ggplot(aes(name, log_odds, fill = decade)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~decade, scales = &quot;free_y&quot;) +
+    coord_flip() +
+    scale_y_continuous(expand = c(0,0)) +
+    labs(y = &quot;Log odds ratio, weighted by uninformative Dirichlet prior&quot;,
+         x = NULL,
+         title = &quot;What were the most specific baby names to each decade?&quot;,
+         subtitle = &quot;Via US Social Security Administration&quot;)</code></pre>
+<p><img src="/blog/2019/2019-07-08-introducing-tidylo_files/figure-html/unnamed-chunk-4-1.png" width="1440" /></p>
+<p>Wow, just reading those lists of names, I can picture how old those people are. I’m a child of the 1970s myself, and my childhood classrooms were in fact filled with Jasons, Jennifers, and Amys. Also notice that the weighted log odds ratios are higher in the 1980s than the other decades; the 1980s names are <em>more different</em> than the other decades’ names.</p>
+<p>Perhaps we want to understand one decade more deeply. For example, what are the most 1980s names, along with how common they were?</p>
+<pre class="r"><code>library(ggrepel)
+
+name_log_odds %&gt;%
+    filter(decade == &quot;1980s&quot;) %&gt;%
+    top_n(50, n) %&gt;%
+    ggplot(aes(n, log_odds, label = name)) +
+    geom_hline(yintercept = 0, lty = 2, 
+               color = &quot;gray50&quot;, alpha = 0.5, size = 1.2) +
+    geom_text_repel(family = &quot;IBMPlexSans&quot;) +
+    geom_point() +
+    scale_x_log10() +
+    labs(x = &quot;Number of babies per decade&quot;,
+         y = &quot;Log odds ratio, weighted by uninformative Dirichlet prior&quot;,
+         title = &quot;What are the baby names most specific to the 1980s?&quot;,
+         subtitle = &quot;Via US Social Security Administration&quot;)</code></pre>
+<p><img src="/blog/2019/2019-07-08-introducing-tidylo_files/figure-html/unnamed-chunk-5-1.png" width="1440" /></p>
+<p>Michael is the most popular name in the 1980s, but it is not particularly likely to be used in the 1980s compared to the other decades (it was common in other decades too). We can see in this visualization the distribution of frequency and log odds ratio.</p>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>Give this package a try and <a href="http://github.com/juliasilge/tidylo/issues">let us know if you run into problems</a>! We do plan to release this on CRAN later in the year, after it is stable and tested a bit in the real world.</p>
+</div>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 8, 2019</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 1002 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/lubridate-london-stage/">&larr; Practice using lubridate... THEATRICALLY</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/reorder-within/">Reordering and facetting for ggplot2 &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

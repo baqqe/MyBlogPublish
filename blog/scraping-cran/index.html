@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Scraping CRAN with rvest | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Packages, versions, and archiving">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Scraping CRAN with rvest | Julia Silge">
+<meta property="og:description" content="Packages, versions, and archiving" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/scraping-cran/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Scraping CRAN with rvest">
+<meta itemprop="description" content="I am one of the organizers for a session at userR 2017 this coming July that will focus on discovering and learning about R packages. How do R users find packages that meet their needs? Can we make this process easier? As somebody who is relatively new to the R world compared to many, this is a topic that resonates with me and I am happy to be part of the discussion."><meta itemprop="datePublished" content="2017-03-06T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2017-03-06T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1413">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Scraping CRAN with rvest</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">March 6, 2017</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I am one of the organizers for a session at 
+<a href="https://user2017.brussels/" target="_blank" rel="noopener">userR 2017</a> this coming July that will focus on discovering and learning about R packages. How do R users find packages that meet their needs? Can we make this process easier? As somebody who is relatively new to the R world compared to many, this is a topic that resonates with me and I am happy to be part of the discussion. I am working on this session with 
+<a href="http://web5.uottawa.ca/www2/mcs-smc/media/experts-details-iframe-93.html" target="_blank" rel="noopener">John Nash</a> and 
+<a href="https://www.r-pkg.org/maint/spencer.graves@prodsyse.com" target="_blank" rel="noopener">Spencer Graves</a>, and we hope that some useful discussion and results come out of the session.</p>
+<p>In preparation for this session, I wanted to look at the distribution of R packages by date, number of version, etc. There have been 
+<a href="http://blog.revolutionanalytics.com/2017/01/cran-10000.html" target="_blank" rel="noopener">some great plots</a> that came out around the time when CRAN passed the 10,000 package mark but most of the code to make those scripts involve packages and idioms I am less familiar with, so here is an rvest and tidyverse centered version of those analyses!</p>
+
+
+
+
+<h2 id="scraping-cran">Scraping CRAN
+  <a href="#scraping-cran"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The first thing we need to do is get all the packages that are currently available on CRAN. Let&rsquo;s use 
+<a href="https://github.com/hadley/rvest" target="_blank" rel="noopener">rvest</a> to scrape the 
+<a href="https://cran.rstudio.com/src/contrib" target="_blank" rel="noopener">page that lists all the packages currently on CRAN</a>. It also has some other directories besides packages so we can use <code>filter</code> to remove the things that don&rsquo;t look like R packages.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(rvest)
+library(stringr)
+library(lubridate)
+library(tidyverse)
+
+cran_link &lt;- function(...) {
+    file.path(&quot;https://cran.rstudio.com/src/contrib&quot;, ...)
+}
+
+pkgs_raw &lt;- read_html(cran_link()) %&gt;% 
+    html_nodes(&quot;table&quot;) %&gt;% 
+    .[[1]] %&gt;%
+    html_table()
+
+pkgs_raw &lt;- pkgs_raw[,-1]
+
+pkgs &lt;- pkgs_raw %&gt;%
+    filter(Size != &quot;-&quot;,
+           str_detect(Name, &quot;tar.gz$&quot;)) %&gt;%
+    mutate(Date = dmy_hm(`Last modified`),
+           Name = str_extract(Name, &quot;^[^_]+(?=_)&quot;)) %&gt;%
+    select(-Size, -Description) %&gt;%
+    as_tibble()
+
+pkgs
+</code></pre><pre tabindex="0"><code>## # A tibble: 10,211 × 3
+##            Name   `Last modified`                Date
+##           &lt;chr&gt;             &lt;chr&gt;              &lt;dttm&gt;
+## 1            A3 16-Aug-2015 21:05 2015-08-16 21:05:00
+## 2       ABC.RAP 20-Oct-2016 08:52 2016-10-20 08:52:00
+## 3   ABCanalysis 23-Aug-2016 12:57 2016-08-23 12:57:00
+## 4      ABCoptim 17-Nov-2016 09:04 2016-11-17 09:04:00
+## 5         ABCp2 04-Feb-2016 10:27 2016-02-04 10:27:00
+## 6  ABHgenotypeR 04-Feb-2016 10:27 2016-02-04 10:27:00
+## 7           ACA 10-Mar-2016 16:55 2016-03-10 16:55:00
+## 8        ACCLMA 29-Oct-2012 12:13 2012-10-29 12:13:00
+## 9           ACD 31-Oct-2013 19:59 2013-10-31 19:59:00
+## 10         ACDm 16-Jul-2016 10:19 2016-07-16 10:19:00
+## # ... with 10,201 more rows
+</code></pre><p>So that&rsquo;s currently available packages!</p>
+<p>Now let&rsquo;s turn to the 
+<a href="https://cran.rstudio.com/src/contrib/Archive/" target="_blank" rel="noopener">archive</a>. Let&rsquo;s do a similar operation.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">archives_raw &lt;- read_html(cran_link(&quot;Archive&quot;)) %&gt;% 
+    html_nodes(&quot;table&quot;) %&gt;% 
+    .[[1]] %&gt;%
+    html_table()
+
+archives_raw &lt;- archives_raw[,-1]
+
+archives_processed &lt;- archives_raw %&gt;%
+    filter(str_detect(Name, &quot;/$&quot;)) %&gt;%
+    mutate(Date = dmy_hm(`Last modified`),
+           Name = str_sub(Name, end = -2)) %&gt;%
+    select(-Size, -Description) %&gt;%
+    as_tibble()
+
+archives_processed
+</code></pre><pre tabindex="0"><code>## # A tibble: 8,897 × 3
+##            Name   `Last modified`                Date
+##           &lt;chr&gt;             &lt;chr&gt;              &lt;dttm&gt;
+## 1            A3 16-Aug-2015 21:05 2015-08-16 21:05:00
+## 2   ABCExtremes 19-Jun-2015 11:26 2015-06-19 11:26:00
+## 3   ABCanalysis 23-Aug-2016 12:57 2016-08-23 12:57:00
+## 4      ABCoptim 17-Nov-2016 09:04 2016-11-17 09:04:00
+## 5         ABCp2 01-Jul-2015 06:12 2015-07-01 06:12:00
+## 6  ABHgenotypeR 04-Feb-2016 10:27 2016-02-04 10:27:00
+## 7           ACD 31-Oct-2013 19:59 2013-10-31 19:59:00
+## 8          ACDm 16-Jul-2016 10:19 2016-07-16 10:19:00
+## 9          ACEt 18-Nov-2016 21:19 2016-11-18 21:19:00
+## 10         ACNE 27-Oct-2015 07:09 2015-10-27 07:09:00
+## # ... with 8,887 more rows
+</code></pre><p>That is good, but now we need to get more detailed information for packages that have been archived at least once to get the date they originally were released and how many versions they have had.</p>
+
+
+
+
+<h2 id="visiting-every-page-in-the-archive">Visiting every page in the archive
+  <a href="#visiting-every-page-in-the-archive"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s set up a function for scraping an individual page for a package and apply that to every page in the archive. This step takes A WHILE because it queries a web page for every package in the CRAN archive. I&rsquo;ve set this up with <code>map</code> from purrr; it is one of my favorite ways to organize tasks these days.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">read_page &lt;- function(name) {
+    message(name)
+    read_html(cran_link(&quot;Archive&quot;, name)) %&gt;% 
+        html_nodes(&quot;td&quot;) %&gt;% 
+        html_text()
+}
+
+archives_scraped &lt;- archives_processed %&gt;%
+    mutate(page = map(Name, read_page))
+</code></pre><p>What do these pages look like?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">archives_scraped$page[8457]
+</code></pre><pre tabindex="0"><code>## [[1]]
+##  [1] &quot;&quot;                      &quot;Parent Directory&quot;      &quot; &quot;                     &quot;  - &quot;                 
+##  [5] &quot; &quot;                     &quot;&quot;                      &quot;tidytext_0.1.0.tar.gz&quot; &quot;28-Apr-2016 09:50  &quot;  
+##  [9] &quot;1.4M&quot;                  &quot; &quot;                     &quot;&quot;                      &quot;tidytext_0.1.1.tar.gz&quot;
+## [13] &quot;25-Jun-2016 17:07  &quot;   &quot;1.5M&quot;                  &quot; &quot;
+</code></pre><p>This is exactly what we need: the dates that the packages were released and how many times they have been released. Let&rsquo;s use <code>mutate</code> and <code>map</code> again to extract these values.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">archives &lt;- archives_scraped %&gt;%
+    mutate(Date = dmy_hm(map_chr(page, ~ .[8])),
+           ArchivedVersions = map_dbl(page, ~ length(.) / 5 - 1)) %&gt;%
+    select(-page)
+
+archives
+</code></pre><pre tabindex="0"><code>## # A tibble: 8,897 × 4
+##            Name   `Last modified`                Date ArchivedVersions
+##           &lt;chr&gt;             &lt;chr&gt;              &lt;dttm&gt;            &lt;dbl&gt;
+## 1            A3 16-Aug-2015 21:05 2013-02-07 09:00:00                2
+## 2   ABCExtremes 19-Jun-2015 11:26 2013-05-15 08:45:00                1
+## 3   ABCanalysis 23-Aug-2016 12:57 2015-04-20 15:40:00                5
+## 4      ABCoptim 17-Nov-2016 09:04 2013-11-05 17:00:00                2
+## 5         ABCp2 01-Jul-2015 06:12 2013-04-10 15:04:00                2
+## 6  ABHgenotypeR 04-Feb-2016 10:27 2016-01-21 07:26:00                1
+## 7           ACD 31-Oct-2013 19:59 2012-11-27 06:43:00                2
+## 8          ACDm 16-Jul-2016 10:19 2015-07-16 12:24:00                2
+## 9          ACEt 18-Nov-2016 21:19 2016-02-14 17:48:00                7
+## 10         ACNE 27-Oct-2015 07:09 2011-09-16 17:43:00                4
+## # ... with 8,887 more rows
+</code></pre>
+
+
+
+<h2 id="putting-it-together">Putting it together
+  <a href="#putting-it-together"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now it&rsquo;s time to join the data from the currently available packages and the archives.</p>
+<ul>
+<li>Packages that are in <code>archives</code> but not <code>pkgs</code> are no longer on CRAN.</li>
+<li>Packages that are in <code>pkgs</code> but not <code>archives</code> only have one CRAN release.</li>
+<li>Packages that are in both dataframes have had more than one CRAN release.</li>
+</ul>
+<p>Sounds like a good time to use <code>anti_join</code> and <code>inner_join</code>.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">all_pkgs &lt;- bind_rows(archives %&gt;% 
+                          anti_join(pkgs, by = &quot;Name&quot;) %&gt;% 
+                          mutate(Archived = TRUE),
+                      pkgs %&gt;% 
+                          anti_join(archives, by = &quot;Name&quot;) %&gt;% 
+                          mutate(ArchivedVersions = 0,
+                                 Archived = FALSE),
+                      archives %&gt;%
+                          semi_join(pkgs, by = &quot;Name&quot;) %&gt;%
+                          mutate(Archived = FALSE)) %&gt;%
+    mutate(Versions = ifelse(Archived, ArchivedVersions, ArchivedVersions + 1)) %&gt;%
+    arrange(Name)
+
+all_pkgs
+</code></pre><pre tabindex="0"><code>## # A tibble: 11,489 × 6
+##           Name   `Last modified`                Date ArchivedVersions Archived Versions
+##          &lt;chr&gt;             &lt;chr&gt;              &lt;dttm&gt;            &lt;dbl&gt;    &lt;lgl&gt;    &lt;dbl&gt;
+## 1           A3 16-Aug-2015 21:05 2013-02-07 09:00:00                2    FALSE        3
+## 2         aaMI 30-Jul-2010 12:17 2005-06-24 15:55:00                2     TRUE        2
+## 3       abbyyR 20-Jun-2016 15:32 2015-06-12 04:43:00                7    FALSE        8
+## 4          abc 05-May-2015 09:34 2010-10-05 08:45:00               10    FALSE       11
+## 5     abc.data 05-May-2015 09:34 2015-05-05 09:34:00                0    FALSE        1
+## 6      ABC.RAP 20-Oct-2016 08:52 2016-10-20 08:52:00                0    FALSE        1
+## 7  ABCanalysis 23-Aug-2016 12:57 2015-04-20 15:40:00                5    FALSE        6
+## 8     abcdeFBA 15-Sep-2012 13:13 2011-11-05 10:48:00                3    FALSE        4
+## 9  ABCExtremes 19-Jun-2015 11:26 2013-05-15 08:45:00                1     TRUE        1
+## 10    ABCoptim 17-Nov-2016 09:04 2013-11-05 17:00:00                2    FALSE        3
+## # ... with 11,479 more rows
+</code></pre>
+
+
+
+<h2 id="plotting-results">Plotting results
+  <a href="#plotting-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s look at some results now.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">all_pkgs %&gt;%
+    filter(!Archived) %&gt;%
+    group_by(Date = floor_date(Date, unit = &quot;month&quot;)) %&gt;%
+    summarise(NewPackages = n()) %&gt;%
+    ungroup %&gt;%
+    mutate(TotalPackages = cumsum(NewPackages)) %&gt;%
+    ggplot(aes(Date, TotalPackages)) +
+    geom_line(size = 1.5, alpha = 0.8, color = &quot;midnightblue&quot;) +
+    labs(x = NULL, y = &quot;Number of available packages&quot;,
+         title = &quot;How many packages are available on CRAN?&quot;,
+         subtitle = &quot;Only packages that are still available&quot;)
+</code></pre><p><img src="/figs/2017-03-06-Scraping-CRAN/unnamed-chunk-8-1.png" alt="center"></p>
+<p>There we go! That is similar to the results we all saw going around when CRAN passed 10,000 packages, which is good.</p>
+<p>What about the number of archived vs. available packages?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">all_pkgs %&gt;%
+    ggplot(aes(Archived)) +
+    geom_histogram(stat = &quot;count&quot;, alpha = 0.8, fill = &quot;midnightblue&quot;) +
+    scale_x_discrete(labels=c(&quot;Still available&quot;, &quot;Archived, no longer available&quot;)) +
+    labs(y = &quot;Number of packages&quot;, x = NULL,
+         title = &quot;How many packages are no longer available on CRAN?&quot;,
+         subtitle = &quot;About 10% of total packages are no longer available&quot;)
+</code></pre><p><img src="/figs/2017-03-06-Scraping-CRAN/unnamed-chunk-9-1.png" alt="center"></p>
+<p>And lastly, let&rsquo;s look at the distribution of number of releases for each package.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">all_pkgs %&gt;%
+    ggplot(aes(Versions)) +
+    geom_histogram(binwidth = 10, alpha = 0.8, fill = &quot;midnightblue&quot;) +
+    labs(y = &quot;Number of packages&quot;, x = &quot;Number of versions on CRAN&quot;,
+         title = &quot;How many versions do CRAN packages have?&quot;,
+         subtitle = &quot;About 25% of packages are on their first version&quot;)
+</code></pre><p><img src="/figs/2017-03-06-Scraping-CRAN/unnamed-chunk-10-1.png" alt="center"></p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>It is pretty ironic that I worked on this code and wrote this post because I wanted to do an analysis using different packages than the ones used in the original scripts shared. That is exactly part of the challenge facing all of us as R users now that there is such a diversity of tools out there! I hope that our session at useR this summer provides some clarity and perspective for attendees on these types of issues. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2017-03-06-Scraping-CRAN.Rmd" target="_blank" rel="noopener">here</a>. 
+<a href="https://rud.is/b/" target="_blank" rel="noopener">Bob Rudis</a> has let me know that there are easier ways to get the data that I used for these plots, and I am very happy to hear about that or other feedback and questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">March 6, 2017</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1413 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/package-search/">&larr; How Do You Discover R Packages?</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/weekends-weekdays/">What Programming Languages Are Used Most on Weekends? &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Death Comes to Us All | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Causes of Death, Age Adjusted Mortality, and gganimate">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Death Comes to Us All | Julia Silge">
+<meta property="og:description" content="Causes of Death, Age Adjusted Mortality, and gganimate" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/death-comes/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Death Comes to Us All">
+<meta itemprop="description" content="I have been working with a data set on causes of death in my adopted home state of Utah for a little while now, and I had been struggling with the best way to visualize it. This week, David Robinson released the gganimate package to create animated ggplot2 plots and I thought &ldquo;AH HA! This is what I have needing.&rdquo; The data on causes of death in Utah is available here via Utah&rsquo;s Open Data Catalog and can be accessed via Socrata Open Data API."><meta itemprop="datePublished" content="2016-02-05T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-02-05T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1496">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Death Comes to Us All</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">February 5, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I have been working with a data set on causes of death in my adopted home state of Utah for a little while now, and I had been struggling with the best way to visualize it. This week, 
+<a href="https://github.com/dgrtwo/gganimate" target="_blank" rel="noopener">David Robinson released the <code>gganimate</code> package</a> to create animated <code>ggplot2</code> plots and I thought &ldquo;AH HA! This is what I have needing.&rdquo; The data on causes of death in Utah is available 
+<a href="https://opendata.utah.gov/Health/Leading-Causes-of-Death-Age-adjusted-Rate-Death-Pe/uvub-caeu" target="_blank" rel="noopener">here via Utah&rsquo;s Open Data Catalog</a> and can be accessed via Socrata Open Data API.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(RSocrata)
+deathDF &lt;- read.socrata(&quot;https://opendata.utah.gov/resource/fu2n-aa2y.csv&quot;)
+colnames(deathDF) &lt;- c(&quot;cause&quot;, &quot;year&quot;, &quot;number&quot;, &quot;notes&quot;, &quot;population&quot;, 
+                    &quot;adjustedrate&quot;, &quot;LL95CI&quot;, &quot;UL95CI&quot;, &quot;standarderror&quot;)
+</code></pre><p>I have been having a lot of fun exploring Utah&rsquo;s 
+<a href="https://opendata.utah.gov/" target="_blank" rel="noopener">Open Data Catalog</a> but I&rsquo;ve got to admit that this particular data set is a bit of a mess compared to the other ones I have used. Let&rsquo;s make this more amenable to analysis. To start with, what are we dealing with?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">dim(deathDF)
+</code></pre><pre tabindex="0"><code>## [1] 655   9
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">sapply(deathDF, class)
+</code></pre><pre tabindex="0"><code>##         cause          year        number         notes    population 
+##      &quot;factor&quot;     &quot;integer&quot;     &quot;integer&quot;      &quot;factor&quot;      &quot;factor&quot; 
+##  adjustedrate        LL95CI        UL95CI standarderror 
+##      &quot;factor&quot;      &quot;factor&quot;      &quot;factor&quot;      &quot;factor&quot;
+</code></pre><p>There are some rows that contain sums of the other rows and are not actual observations of numbers of deaths in years, so let&rsquo;s get rid of those. After that, let&rsquo;s remake the cause of death factor because it had entries that were links to a website and other not-so-useful information.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">deathDF &lt;- deathDF[!is.na(deathDF$year),]
+deathDF$cause &lt;- as.factor(as.character(deathDF$cause))
+</code></pre><p>The data set includes 46 different causes of death.</p>
+<p>The population column contains commas (!) and is a factor so let&rsquo;s get this fixed and transform it to numeric values.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">deathDF$population &lt;- as.numeric(gsub(&quot;[[:punct:]]&quot;, &quot;&quot;, deathDF$population))
+summary(deathDF$population)
+</code></pre><pre tabindex="0"><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+## 2193000 2325000 2526000 2541000 2774000 2901000      67
+</code></pre><p>There are a handful of <code>NA</code> values for some inexplicable reason, but we will deal with that in a little bit. In the columns that record the age adjusted mortality rate, 95% confidence interval, and standard error, there are double asterisks (!!!) instead of zeroes or <code>NA</code> values for years and causes of death where no one died from that cause in that year.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">deathDF[,6:9] &lt;- apply(deathDF[,6:9], 2, function(x) gsub(&quot;\\*&quot;, &quot;&quot;, x))
+deathDF[,6:9] &lt;- apply(deathDF[,6:9], 2, as.numeric)
+</code></pre><p>There are some rows in this data set that do have a zero recorded (i.e. zero people died of a certain cause in a certain year), but then there are a whole bunch missing. This is going to make analysis and plotting difficult, so let&rsquo;s complete this data frame. I 
+<a href="http://www.imachordata.com/you-complete-me/" target="_blank" rel="noopener">just read</a> a great explanation of how <code>tidyr</code> uses <code>complete</code> to fill in missing rows and turn implicit missing values into explicit missing values. In our case here, these aren&rsquo;t &ldquo;missing&rdquo; values so much as zeroes; we&rsquo;ll get to that a bit later.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidyr)
+deathDF &lt;- complete(deathDF, cause, year)
+</code></pre><p>This data set had the total number of deaths and total age adjusted mortality rate on separate rows for each year, but it will be helpful to have these as columns for each observation. Let&rsquo;s make a data frame of just the total numbers for each year and then join this data frame to the original one. This will also take care of those <code>NA</code> values in the population column.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(dplyr)
+totalDF &lt;- deathDF[deathDF$cause == &quot;Total&quot;,]
+deathDF &lt;- left_join(deathDF[,c(&quot;cause&quot;, &quot;year&quot;, &quot;number&quot;, &quot;adjustedrate&quot;)], 
+                     totalDF[,c(&quot;year&quot;, &quot;number&quot;, &quot;population&quot;, &quot;adjustedrate&quot;)], 
+                     by = &quot;year&quot;)
+colnames(deathDF) &lt;- c(&quot;cause&quot;, &quot;year&quot;, &quot;number&quot;, &quot;adjustedrate&quot;, &quot;totalnumber&quot;, 
+                       &quot;population&quot;, &quot;totaladjustedrate&quot;)
+</code></pre><p>Now let&rsquo;s replace <code>NA</code> values with zeroes for the number of deaths and age adjusted mortality rate.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">deathDF$number[is.na(deathDF$number)] &lt;- 0
+deathDF$adjustedrate[is.na(deathDF$adjustedrate)] &lt;- 0
+summary(deathDF$number)
+</code></pre><pre tabindex="0"><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##     0.0     4.0    32.5   473.2   172.2 12670.0
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">summary(deathDF$adjustedrate)
+</code></pre><pre tabindex="0"><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00    0.21    1.63   25.34    9.24  657.50
+</code></pre><p>Are we done? I think we&rsquo;re done. Let&rsquo;s look at our cleaned, tidy data.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">head(deathDF)
+</code></pre><pre tabindex="0"><code>## Source: local data frame [6 x 7]
+## 
+##                                cause  year number adjustedrate totalnumber
+##                               (fctr) (int)  (dbl)        (dbl)       (int)
+## 1 Acute bronchitis and bronchiolitis  1999      0            0        9959
+## 2 Acute bronchitis and bronchiolitis  2000      0            0       10341
+## 3 Acute bronchitis and bronchiolitis  2001      0            0       10233
+## 4 Acute bronchitis and bronchiolitis  2002      0            0       10635
+## 5 Acute bronchitis and bronchiolitis  2003      0            0       10672
+## 6 Acute bronchitis and bronchiolitis  2004      0            0       10571
+## Variables not shown: population (dbl), totaladjustedrate (dbl)
+</code></pre><p>What are the most important causes of death in Utah? Let&rsquo;s find the top 10 causes of death for the 15 years in this data set.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">top10 &lt;- deathDF[deathDF$cause != &quot;Total&quot;,] %&gt;% 
+        group_by(cause) %&gt;% summarise(adjustedrate = mean(adjustedrate)) %&gt;% 
+        top_n(10, adjustedrate) %&gt;% arrange(desc(adjustedrate))
+top10
+</code></pre><pre tabindex="0"><code>## Source: local data frame [10 x 2]
+## 
+##                                          cause adjustedrate
+##                                         (fctr)        (dbl)
+## 1                            Diseases of heart    164.78400
+## 2                          Malignant neoplasms    136.81533
+## 3                     Cerebrovascular diseases     46.25533
+## 4                       Unintentional injuries     35.82467
+## 5           Chronic lower respiratory diseases     33.51800
+## 6                            Diabetes mellitus     28.01533
+## 7                      Influenza and pneumonia     21.08067
+## 8                          Alzheimer's disease     20.86467
+## 9              Intentional self-harm (suicide)     16.72600
+## 10 Nephritis, nephrotic syndrome and nephrosis     11.73200
+</code></pre><p>Heart disease and cancer are far away the most important causes of death in Utah. Let&rsquo;s take these top 10 causes of death and make a new data frame for some plotting, although this does mean we won&rsquo;t get to talk about &ldquo;Arthropod-borne viral encephalitis&rdquo; and how people in Utah have died from that!</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">deathDFtop10 &lt;- deathDF[deathDF$cause %in% top10$cause,]
+deathDFtop10$cause &lt;- as.factor(as.character(deathDFtop10$cause))
+deathDFtop10$shortcause &lt;- deathDFtop10$cause
+levels(deathDFtop10$shortcause) &lt;- c(&quot;Alzheimer's&quot;, &quot;Stroke&quot;, &quot;COPD&quot;, &quot;Diabetes&quot;, 
+                                &quot;Heart disease&quot;, &quot;Flu/pneumonia&quot;, &quot;Suicide&quot;, 
+                                &quot;Cancer&quot;, &quot;Kidney disease&quot;, &quot;Accident&quot;)
+deathDFtop10$shortcause &lt;- as.factor(as.character(deathDFtop10$shortcause))
+</code></pre><p>I made a shorter version of the cause of death name for plotting purposes.</p>
+
+
+
+
+<h2 id="heart-disease">Heart Disease
+  <a href="#heart-disease"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s take a look at Utah&rsquo;s #1 killer, heart disease. First let&rsquo;s plot the raw number of how many people have died each year.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(ggplot2)
+ggplot(data = deathDF[deathDF$cause == &quot;Diseases of heart&quot;,], aes(x = year, y = number)) +
+        geom_line(size = 2.5, alpha = 0.7, color = &quot;mediumseagreen&quot;) +
+        geom_point(size = 0.5) + xlab(&quot;Year&quot;) + ylab(&quot;Number of deaths&quot;) +
+        ggtitle(&quot;Heart Disease Deaths in Utah&quot;)
+</code></pre><p><img src="/figs/2016-02-05-Death-Comes/unnamed-chunk-13-.gif" alt="unnamed-chunk-13"></p>
+<p>Oh no! This is very bad, right? Heart disease deaths are going up UP UP. But of course, Utah&rsquo;s population has been growing steadily during these years as well, so perhaps this is not a particularly meaningful graph. Let&rsquo;s look at the per capita number of heart disease deaths. These things are typically measured per 100,000 population.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = deathDF[deathDF$cause == &quot;Diseases of heart&quot;,], 
+       aes(x = year, y = 1e5*number/population)) +
+        geom_line(size = 2.5, alpha = 0.7, color = &quot;mediumseagreen&quot;) +
+        geom_point(size = 0.5) + xlab(&quot;Year&quot;) + ylab(&quot;Number of deaths per 100,000 population&quot;) +
+        ggtitle(&quot;Heart Disease Deaths in Utah&quot;)
+</code></pre><p><img src="/figs/2016-02-05-Death-Comes/unnamed-chunk-14-.gif" alt="unnamed-chunk-14"></p>
+<p>Very different, right? But actually, not only has the population in Utah been growing, but it has been changing in demographics significantly. Utah is very young in population compared to the United States as a whole, but it is less young than it once was. The 
+<a href="https://twitter.com/UtahData/status/686932930799665153" target="_blank" rel="noopener">birth rate in Utah is dropping</a> so the population 10 years ago was younger than the population today. What we really want to look at is the age adjusted mortality rate.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(data = deathDF[deathDF$cause == &quot;Diseases of heart&quot;,], 
+       aes(x = year, y = adjustedrate)) +
+        geom_line(size = 2.5, alpha = 0.7, color = &quot;mediumseagreen&quot;) +
+        geom_point(size = 0.5) + xlab(&quot;Year&quot;) + 
+        ylab(&quot;Age adjusted mortality (deaths per 100,000 population&quot;) +
+        ggtitle(&quot;Heart Disease Age Adjusted Mortality in Utah&quot;)
+</code></pre><p><img src="/figs/2016-02-05-Death-Comes/unnamed-chunk-15-.gif" alt="unnamed-chunk-15"></p>
+<p>By this measure, we can see that heart disease outcomes have improved in Utah during these years.</p>
+
+
+
+
+<h2 id="lets-animate-something">Let&rsquo;s Animate Something
+  <a href="#lets-animate-something"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The <code>gganimate</code> package works by using some variable in one&rsquo;s data as the frame with which to animate a plot. Let&rsquo;s start with looking at how the causes of death change over the years in the data set and animate over the causes of death. This is so nice because the plot was way too crowded when I tried to plot them all together.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">p &lt;- ggplot(data = deathDFtop10, 
+            aes(x = year, y = adjustedrate, color = cause, frame = as.character(cause))) +
+        geom_line(size = 2.5, alpha = 0.7) +
+        geom_point(size = 0.5, color = &quot;black&quot;) + xlab(&quot;Year&quot;) +
+        theme(legend.position=&quot;none&quot;) +
+        ylab(&quot;Age adjusted mortality (deaths per 100,000 population)&quot;)
+gg_animate(p)
+</code></pre><p><img src="/figs/2016-02-05-Death-Comes/unnamed-chunk-16-.gif" alt="unnamed-chunk-16"></p>
+<p>Now let&rsquo;s look at the causes of death in each year and animate over the years in the data set.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">p &lt;- ggplot(data = deathDFtop10, 
+       aes(x = shortcause, y = adjustedrate, fill = shortcause, frame = year)) +
+        geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) + 
+        theme(legend.position=&quot;none&quot;, 
+              axis.text.x= element_text(angle=45, hjust = 1)) +
+        ylab(&quot;Age adjusted mortality (deaths per 100,000 population)&quot;) +
+        xlab(&quot;Cause of death&quot;)
+gg_animate(p)
+</code></pre><p><img src="/figs/2016-02-05-Death-Comes/unnamed-chunk-17-.gif" alt="unnamed-chunk-17"></p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>This is perhaps a bit heavy and grim for the weekend, but you know, one of these 46 causes of death (or something very similar) will be written down on a death certificate for all of us one day. Carpe diem, and may you enjoy many more animated GIFs in your life.
+<br>
+<br></p>
+<iframe src="http://giphy.com/embed/b5WsjNpMc35za" width="480" height="264" frameBorder="0" class="giphy-embed"> </iframe>
+<p><a href="http://giphy.com/gifs/movie-emma-stone-thumbs-up-b5WsjNpMc35za">via GIPHY</a></p>
+<p>The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-02-05-Death-Comes.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 5, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1496 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/tall-drink-of-water/">&larr; A Tall Drink of Water</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/connecting-religion/">Connecting Religion and Demographics &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

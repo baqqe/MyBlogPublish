@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Inference for #TidyTuesday aircraft and rank of Tuskegee airmen | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Inference for #TidyTuesday aircraft and rank of Tuskegee airmen | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tuskegee-airmen/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/tuskegee-airmen/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/tuskegee-airmen/featured.png" >
+    
+    
+  <meta itemprop="name" content="Inference for #TidyTuesday aircraft and rank of Tuskegee airmen">
+<meta itemprop="description" content="The infer package is part of tidymodels and provides an expressive statistical grammar. Understand how to use infer, and celebrate Black History Month by learning more about the Tuskegee airmen."><meta itemprop="datePublished" content="2022-02-11T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-02-11T00:00:00+00:00" />
+<meta itemprop="wordCount" content="985"><meta itemprop="image" content="https://juliasilge.com/blog/tuskegee-airmen/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Inference for #TidyTuesday aircraft and rank of Tuskegee airmen</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">February 11, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages. Instead of predictive modeling, this screencast focuses on statistical inference using one of the tidymodels package, 
+<a href="http://infer.tidymodels.org/" target="_blank" rel="noopener">infer</a>. We are celebrating Black History Month by learning more from the 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on the Tuskegee airmen. ✈️</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/8PSnKiegGGg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our statistical analysis goal is to understand the relationship between aircraft flown and rank at graduation for 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2022/2022-02-08/readme.md" target="_blank" rel="noopener">the Tuskegee airmen</a>. What kind of aircraft did the airmen pilot?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+airmen_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-08/airmen.csv&#34;</span>)
+
+airmen_raw <span style="color:#666">%&gt;%</span> <span style="color:#06287e">count</span>(pilot_type)
+</code></pre></div><pre><code>## # A tibble: 5 × 2
+##   pilot_type        n
+##   &lt;chr&gt;         &lt;int&gt;
+## 1 Liaison pilot    50
+## 2 Liason pilot      1
+## 3 Service pilot    11
+## 4 Single engine   697
+## 5 Twin engine     247
+</code></pre>
+<p>Let’s fix the spelling error and visualize the relationship between the type of aircraft piloted and the rank at graduation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">airmen <span style="color:#666">&lt;-</span>
+  airmen_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(pilot_type <span style="color:#666">=</span> <span style="color:#06287e">str_replace</span>(pilot_type, <span style="color:#4070a0">&#34;Liason&#34;</span>, <span style="color:#4070a0">&#34;Liaison&#34;</span>))
+
+airmen <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(pilot_type, fill <span style="color:#666">=</span> rank_at_graduation)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bar</span>(stat <span style="color:#666">=</span> <span style="color:#4070a0">&#34;count&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/tuskegee-airmen/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>A lieutenant is a higher rank than a flight officer. The categories with the most airmen are single and twin engine aircraft, as well as flight officers and second lieutenants, so let’s focus on those.</p>
+
+
+
+
+<h2 id="using-infer">Using <strong>infer</strong>
+  <a href="#using-infer"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The 
+<a href="http://infer.tidymodels.org/" target="_blank" rel="noopener">infer</a> package provides an expressive grammar for statistical inference. We start out by using <code>specify()</code> to declare our response and explanatory variables. Then we can start generating resamples, like bootstrap resamples and permutations.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(infer)
+
+aircraft <span style="color:#666">&lt;-</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Single engine&#34;</span>, <span style="color:#4070a0">&#34;Twin engine&#34;</span>)
+ranks <span style="color:#666">&lt;-</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;Flight Officer&#34;</span>, <span style="color:#4070a0">&#34;2nd Lt&#34;</span>)
+
+pilot_vs_rank <span style="color:#666">&lt;-</span>
+  airmen <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(pilot_type <span style="color:#666">%in%</span> aircraft, rank_at_graduation <span style="color:#666">%in%</span> ranks) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">specify</span>(pilot_type <span style="color:#666">~</span> rank_at_graduation, success <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Twin engine&#34;</span>)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+bootstrapped <span style="color:#666">&lt;-</span>
+  pilot_vs_rank <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">generate</span>(reps <span style="color:#666">=</span> <span style="color:#40a070">1000</span>, type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;bootstrap&#34;</span>)
+
+bootstrapped
+</code></pre></div><pre><code>## Response: pilot_type (factor)
+## Explanatory: rank_at_graduation (factor)
+## # A tibble: 917,000 × 3
+## # Groups:   replicate [1,000]
+##    replicate pilot_type    rank_at_graduation
+##        &lt;int&gt; &lt;fct&gt;         &lt;fct&gt;             
+##  1         1 Single engine 2nd Lt            
+##  2         1 Single engine 2nd Lt            
+##  3         1 Twin engine   Flight Officer    
+##  4         1 Single engine 2nd Lt            
+##  5         1 Single engine 2nd Lt            
+##  6         1 Twin engine   Flight Officer    
+##  7         1 Single engine 2nd Lt            
+##  8         1 Single engine 2nd Lt            
+##  9         1 Twin engine   Flight Officer    
+## 10         1 Twin engine   Flight Officer    
+## # … with 916,990 more rows
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+permuted <span style="color:#666">&lt;-</span>
+  pilot_vs_rank <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">hypothesize</span>(null <span style="color:#666">=</span> <span style="color:#4070a0">&#34;independence&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">generate</span>(reps <span style="color:#666">=</span> <span style="color:#40a070">1000</span>, type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;permute&#34;</span>)
+
+permuted
+</code></pre></div><pre><code>## Response: pilot_type (factor)
+## Explanatory: rank_at_graduation (factor)
+## Null Hypothesis: independence
+## # A tibble: 917,000 × 3
+## # Groups:   replicate [1,000]
+##    pilot_type    rank_at_graduation replicate
+##    &lt;fct&gt;         &lt;fct&gt;                  &lt;int&gt;
+##  1 Single engine 2nd Lt                     1
+##  2 Single engine 2nd Lt                     1
+##  3 Single engine 2nd Lt                     1
+##  4 Single engine 2nd Lt                     1
+##  5 Single engine 2nd Lt                     1
+##  6 Single engine 2nd Lt                     1
+##  7 Single engine 2nd Lt                     1
+##  8 Single engine 2nd Lt                     1
+##  9 Single engine 2nd Lt                     1
+## 10 Single engine 2nd Lt                     1
+## # … with 916,990 more rows
+</code></pre>
+
+
+
+
+<h2 id="chi-squared-statistic">Chi-squared statistic
+  <a href="#chi-squared-statistic"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now that we have different kinds of resampled datasets, we can compute some statistics. Let’s start with the chi-squared statistic; this is a number that tells us how much difference exists between our observed counts (aircraft types, ranks at graduation) and the counts we would expect if there were no relationship in the population of airmen.</p>
+<p>We can compute the chi-squared statistic in our real sample:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">observed <span style="color:#666">&lt;-</span>
+  pilot_vs_rank <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">calculate</span>(stat <span style="color:#666">=</span> <span style="color:#4070a0">&#34;chisq&#34;</span>, order <span style="color:#666">=</span> ranks)
+
+observed
+</code></pre></div><pre><code>## Response: pilot_type (factor)
+## Explanatory: rank_at_graduation (factor)
+## # A tibble: 1 × 1
+##    stat
+##   &lt;dbl&gt;
+## 1  37.8
+</code></pre>
+<p>That seems big (indicating that aircraft type and rank are related) but how do we know if it’s meaningful for our dataset? I mean, we are pretty sure it is, based on our EDA, but how can we check? We can compute the statistic for our bootstrapped resamples and find a confidence interval:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">airmen_chisq <span style="color:#666">&lt;-</span>
+  bootstrapped <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">calculate</span>(stat <span style="color:#666">=</span> <span style="color:#4070a0">&#34;chisq&#34;</span>, order <span style="color:#666">=</span> ranks)
+
+<span style="color:#06287e">get_ci</span>(airmen_chisq)
+</code></pre></div><pre><code>## # A tibble: 1 × 2
+##   lower_ci upper_ci
+##      &lt;dbl&gt;    &lt;dbl&gt;
+## 1     16.7     64.1
+</code></pre>
+<p>We can also visualize the distribution together with the confidence interval.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">visualize</span>(airmen_chisq) <span style="color:#666">+</span>
+  <span style="color:#06287e">shade_ci</span>(
+    endpoints <span style="color:#666">=</span> <span style="color:#06287e">get_ci</span>(airmen_chisq),
+    fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>,
+    color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>,
+    lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/tuskegee-airmen/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<p>What if we want to understand how extreme this value is? We can compute the statistic for the permuted data (which breaks the relationship between aircraft and rank) and see how our real <code>observed</code> statistic compares.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">permuted <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">calculate</span>(stat <span style="color:#666">=</span> <span style="color:#4070a0">&#34;chisq&#34;</span>, order <span style="color:#666">=</span> ranks) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">visualize</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">shade_p_value</span>(obs_stat <span style="color:#666">=</span> observed, direction <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray40&#34;</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/tuskegee-airmen/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>Well, the p-value for that would be tiny! Using resampling and simulation instead of a regular <code>chisq.test()</code> with a p-value can help us understand the statistical relationships here.</p>
+
+
+
+
+<h2 id="odds-ratio">Odds ratio
+  <a href="#odds-ratio"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I’ll be honest that the chi-squared statistic isn’t one I have a ton of intuition about. Odds ratios, on the other hand, make a lot of sense to me. One great thing about infer is that we can switch out the <code>stat</code> we compute and do any of the previous steps again. Let’s make a visualization of the bootstrapped odds ratio distribution.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">odds_desc <span style="color:#666">&lt;-</span> <span style="color:#06287e">paste</span>(
+  <span style="color:#4070a0">&#34;Flight officers were more likely to pilot twin engine aircraft&#34;</span>,
+  <span style="color:#4070a0">&#34;2nd Lts were more likely to pilot single engine aircraft&#34;</span>,
+  sep <span style="color:#666">=</span> <span style="color:#4070a0">&#34;\n&#34;</span>
+)
+
+bootstrapped <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">calculate</span>(stat <span style="color:#666">=</span> <span style="color:#4070a0">&#34;odds ratio&#34;</span>, order <span style="color:#666">=</span> ranks) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">visualize</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Bootstrap distribution of Tuskegee airmen&#39;s rank by aircraft type&#34;</span>,
+    subtitle <span style="color:#666">=</span> odds_desc,
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Odds ratio of twin vs. single engine (for flight officers compared to 2nd Lt)&#34;</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/tuskegee-airmen/index_files/figure-html/unnamed-chunk-9-1.png" width="2400" />
+<p>When comparing twin and single engines, flight officers are 2 or 3 times more likely to pilot a twin engine than a second lieutenant.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 11, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 985 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/rstats-vignettes/">&larr; Poisson regression for #TidyTuesday counts of R package vignettes</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/board-games/">Predict ratings for #TidyTuesday board games &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

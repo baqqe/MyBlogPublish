@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Estimate change in #TidyTuesday CEO departures with bootstrap resampling | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Estimate change in #TidyTuesday CEO departures with bootstrap resampling | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/ceo-departures/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/ceo-departures/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/ceo-departures/featured.png" >
+    
+    
+  <meta itemprop="name" content="Estimate change in #TidyTuesday CEO departures with bootstrap resampling">
+<meta itemprop="description" content="Are more CEO departures involuntary now than in the past? We can use tidymodels&#39; bootstrap resampling and generalized linear models to understand change over time."><meta itemprop="datePublished" content="2021-04-28T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-04-28T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1054"><meta itemprop="image" content="https://juliasilge.com/blog/ceo-departures/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Estimate change in #TidyTuesday CEO departures with bootstrap resampling</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">April 28, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just starting out to tuning more complex models with many hyperparameters. Today’s screencast walks through how to use bootstrap resampling, with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on CEO departures. 👋</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/UwSBDLcUQP0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to estimate how 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-04-27/readme.md" target="_blank" rel="noopener">involuntary CEO departures</a> are changing with time. Let’s start by reading in the data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+departures_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-27/departures.csv&#34;</span>)
+</code></pre></div><p>How are involuntary departures changing with time? What about the rest of the CEO departures?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">departures_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(departure_code <span style="color:#666">&lt;</span> <span style="color:#40a070">9</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(involuntary <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(departure_code <span style="color:#666">%in%</span> <span style="color:#40a070">3</span><span style="color:#666">:</span><span style="color:#40a070">4</span>, <span style="color:#4070a0">&#34;involuntary&#34;</span>, <span style="color:#4070a0">&#34;other&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(fyear <span style="color:#666">&gt;</span> <span style="color:#40a070">1995</span>, fyear <span style="color:#666">&lt;</span> <span style="color:#40a070">2019</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(fyear, involuntary) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(fyear, n, color <span style="color:#666">=</span> involuntary)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(size <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(method <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lm&#34;</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(limits <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#007020;font-weight:bold">NA</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of CEO departures&#34;</span>, color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/ceo-departures/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Looks like proportionally more departures are involuntary over time, but that is what we’ll work on estimating. Let’s create a data set to use for modeling.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">departures <span style="color:#666">&lt;-</span> departures_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(departure_code <span style="color:#666">&lt;</span> <span style="color:#40a070">9</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(involuntary <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(departure_code <span style="color:#666">%in%</span> <span style="color:#40a070">3</span><span style="color:#666">:</span><span style="color:#40a070">4</span>, <span style="color:#4070a0">&#34;involuntary&#34;</span>, <span style="color:#4070a0">&#34;other&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(fyear <span style="color:#666">&gt;</span> <span style="color:#40a070">1995</span>, fyear <span style="color:#666">&lt;</span> <span style="color:#40a070">2019</span>)
+
+departures
+</code></pre></div><pre><code>## # A tibble: 6,942 x 20
+##    dismissal_datase… coname  gvkey fyear co_per_rol exec_fullname departure_code
+##                &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;                  &lt;dbl&gt;
+##  1            559043 SONICB… 27903  2002         -1 L. Gregory B…              7
+##  2                12 AMERIC…  1045  1997          1 Robert L. Cr…              5
+##  3                13 AMERIC…  1045  2002          3 Donald J. Ca…              3
+##  4                31 ABBOTT…  1078  1998          6 Duane L. Bur…              5
+##  5                43 ADVANC…  1161  2001         11 Walter Jerem…              5
+##  6                51 AETNA …  1177  1997         16 Ronald Edwar…              5
+##  7                63 AHMANS…  1194  1997         22 Charles R. R…              7
+##  8                65 AIR PR…  1209  2000         28 Harold A. Wa…              5
+##  9                76 ALBERT…  1239  2007         34 Howard B. Be…              5
+## 10                78 ALBERT…  1240  2000         38 Gary Glenn M…              3
+## # … with 6,932 more rows, and 13 more variables: ceo_dismissal &lt;dbl&gt;,
+## #   interim_coceo &lt;chr&gt;, tenure_no_ceodb &lt;dbl&gt;, max_tenure_ceodb &lt;dbl&gt;,
+## #   fyear_gone &lt;dbl&gt;, leftofc &lt;dttm&gt;, still_there &lt;chr&gt;, notes &lt;chr&gt;,
+## #   sources &lt;chr&gt;, eight_ks &lt;chr&gt;, cik &lt;dbl&gt;, _merge &lt;chr&gt;, involuntary &lt;chr&gt;
+</code></pre>
+
+
+
+
+<h2 id="bootstrapping-a-model">Bootstrapping a model
+  <a href="#bootstrapping-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can count up the two kinds of departures per financial year and fit the model once, for the whole data set.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(broom)
+
+df <span style="color:#666">&lt;-</span> departures <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(fyear, involuntary) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(names_from <span style="color:#666">=</span> involuntary, values_from <span style="color:#666">=</span> n)
+
+mod <span style="color:#666">&lt;-</span> <span style="color:#06287e">glm</span>(<span style="color:#06287e">cbind</span>(involuntary, other) <span style="color:#666">~</span> fyear, data <span style="color:#666">=</span> df, family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;binomial&#34;</span>)
+<span style="color:#06287e">summary</span>(mod)
+</code></pre></div><pre><code>## 
+## Call:
+## glm(formula = cbind(involuntary, other) ~ fyear, family = &quot;binomial&quot;, 
+##     data = df)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.9858  -1.2075  -0.1947   0.7302   3.6816  
+## 
+## Coefficients:
+##               Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -33.236731   8.949722  -3.714 0.000204 ***
+## fyear         0.015875   0.004459   3.560 0.000370 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 78.421  on 22  degrees of freedom
+## Residual deviance: 65.722  on 21  degrees of freedom
+## AIC: 200.86
+## 
+## Number of Fisher Scoring iterations: 4
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(mod, exponentiate <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code>## # A tibble: 2 x 5
+##   term        estimate std.error statistic  p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept) 3.68e-15   8.95        -3.71 0.000204
+## 2 fyear       1.02e+ 0   0.00446      3.56 0.000370
+</code></pre>
+<p>When we use <code>exponentiate = TRUE</code>, we get the model coefficients on the linear scale instead of the logistic scale.</p>
+<p>What we want to do is fit a model like this a whole bunch of times, instead of just once. Let’s create bootstrap resamples.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(rsample)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+ceo_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(departures, times <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>)
+ceo_folds
+</code></pre></div><pre><code>## # Bootstrap sampling 
+## # A tibble: 1,000 x 2
+##    splits              id           
+##    &lt;list&gt;              &lt;chr&gt;        
+##  1 &lt;split [6942/2543]&gt; Bootstrap0001
+##  2 &lt;split [6942/2557]&gt; Bootstrap0002
+##  3 &lt;split [6942/2509]&gt; Bootstrap0003
+##  4 &lt;split [6942/2554]&gt; Bootstrap0004
+##  5 &lt;split [6942/2542]&gt; Bootstrap0005
+##  6 &lt;split [6942/2530]&gt; Bootstrap0006
+##  7 &lt;split [6942/2509]&gt; Bootstrap0007
+##  8 &lt;split [6942/2553]&gt; Bootstrap0008
+##  9 &lt;split [6942/2586]&gt; Bootstrap0009
+## 10 &lt;split [6942/2625]&gt; Bootstrap0010
+## # … with 990 more rows
+</code></pre>
+<p>Now we need to make a function to count up the departures by year and type, fit our model, and return the coefficients we want.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">fit_binom <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(split) {
+  df <span style="color:#666">&lt;-</span> <span style="color:#06287e">analysis</span>(split) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">count</span>(fyear, involuntary) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">pivot_wider</span>(names_from <span style="color:#666">=</span> involuntary, values_from <span style="color:#666">=</span> n)
+
+  mod <span style="color:#666">&lt;-</span> <span style="color:#06287e">glm</span>(<span style="color:#06287e">cbind</span>(involuntary, other) <span style="color:#666">~</span> fyear, data <span style="color:#666">=</span> df, family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;binomial&#34;</span>)
+  <span style="color:#06287e">tidy</span>(mod, exponentiate <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+}
+</code></pre></div><p>We can apply that function to all our bootstrap resamples with <code>purrr::map()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">boot_models <span style="color:#666">&lt;-</span> ceo_folds <span style="color:#666">%&gt;%</span> <span style="color:#06287e">mutate</span>(coef_info <span style="color:#666">=</span> <span style="color:#06287e">map</span>(splits, fit_binom))
+boot_models
+</code></pre></div><pre><code>## # Bootstrap sampling 
+## # A tibble: 1,000 x 3
+##    splits              id            coef_info       
+##    &lt;list&gt;              &lt;chr&gt;         &lt;list&gt;          
+##  1 &lt;split [6942/2543]&gt; Bootstrap0001 &lt;tibble [2 × 5]&gt;
+##  2 &lt;split [6942/2557]&gt; Bootstrap0002 &lt;tibble [2 × 5]&gt;
+##  3 &lt;split [6942/2509]&gt; Bootstrap0003 &lt;tibble [2 × 5]&gt;
+##  4 &lt;split [6942/2554]&gt; Bootstrap0004 &lt;tibble [2 × 5]&gt;
+##  5 &lt;split [6942/2542]&gt; Bootstrap0005 &lt;tibble [2 × 5]&gt;
+##  6 &lt;split [6942/2530]&gt; Bootstrap0006 &lt;tibble [2 × 5]&gt;
+##  7 &lt;split [6942/2509]&gt; Bootstrap0007 &lt;tibble [2 × 5]&gt;
+##  8 &lt;split [6942/2553]&gt; Bootstrap0008 &lt;tibble [2 × 5]&gt;
+##  9 &lt;split [6942/2586]&gt; Bootstrap0009 &lt;tibble [2 × 5]&gt;
+## 10 &lt;split [6942/2625]&gt; Bootstrap0010 &lt;tibble [2 × 5]&gt;
+## # … with 990 more rows
+</code></pre>
+
+
+
+
+<h2 id="explore-results">Explore results
+  <a href="#explore-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>What did we find? We can compute bootstrap confidence intervals with <code>int_pctl()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">percentile_intervals <span style="color:#666">&lt;-</span> <span style="color:#06287e">int_pctl</span>(boot_models, coef_info)
+percentile_intervals
+</code></pre></div><pre><code>## # A tibble: 2 x 6
+##   term          .lower .estimate      .upper .alpha .method   
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     
+## 1 (Intercept) 6.03e-23 0.0000273 0.000000246   0.05 percentile
+## 2 fyear       1.01e+ 0 1.02      1.03          0.05 percentile
+</code></pre>
+<p>We can also visualize the results as well.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">boot_models <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(coef_info) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">==</span> <span style="color:#4070a0">&#34;fyear&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(xintercept <span style="color:#666">=</span> <span style="color:#40a070">1</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, size <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Annual increase in involuntary CEO departures&#34;</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Over this time period, CEO departures are increasingly involuntary&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Each passing year corresponds to a departure being 1-2% more likely to be involuntary&#34;</span>
+  )
+</code></pre></div><img src="https://juliasilge.com/blog/ceo-departures/index_files/figure-html/unnamed-chunk-10-1.png" width="2400" />
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 28, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 1054 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/water-sources/">&larr; Predict availability in #TidyTuesday water sources with random forest models</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/netflix-titles/">Which #TidyTuesday Netflix titles are movies and which are TV shows? &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

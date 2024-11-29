@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>The game is afoot! Topic modeling of Sherlock Holmes stories | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="The game is afoot! Topic modeling of Sherlock Holmes stories | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/sherlock-holmes-stm/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="The game is afoot! Topic modeling of Sherlock Holmes stories">
+<meta itemprop="description" content="In a recent release of tidytext, we added tidiers and support for building Structural Topic Models from the stm package. This is my current favorite implementation of topic modeling in R, so let’s walk through an example of how to get started with this kind of modeling, using The Adventures of Sherlock Holmes.
+via GIPHYYou can watch along as I demonstrate how to start with the raw text of these short stories, prepare the data, and then implement topic modeling in this video tutorial!"><meta itemprop="datePublished" content="2018-01-25T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2018-01-25T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1445">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">The game is afoot! Topic modeling of Sherlock Holmes stories</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">January 25, 2018</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+
+
+<p>In a <a href="https://juliasilge.com/blog/tidytext-0-1-4/">recent release of tidytext</a>, we added tidiers and support for building <a href="http://www.structuraltopicmodel.com/">Structural Topic Models</a> from the <a href="https://cran.r-project.org/package=stm">stm</a> package. This is my current favorite implementation of topic modeling in R, so let’s walk through an example of how to get started with this kind of modeling, using <a href="https://www.gutenberg.org/ebooks/1661"><em>The Adventures of Sherlock Holmes</em></a>.</p>
+<iframe src="https://giphy.com/embed/3o7TKVSE5isogWqnwk" width="480" height="267" frameBorder="0" class="giphy-embed" allowFullScreen>
+</iframe>
+<p>
+<a href="https://giphy.com/gifs/sherlock-3o7TKVSE5isogWqnwk">via GIPHY</a>
+</p>
+<p>You can watch along as I demonstrate how to start with the raw text of these short stories, prepare the data, and then implement topic modeling in this video tutorial! 🎉🎉🎉</p>
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/evTuL-RcRpc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+
+<p>In the video, I am working on IBM Cloud with IBM’s environment for data scientists, the <a href="https://www.ibm.com/cloud/data-science-experience?cm_mmc=OSocial_Blog-_-Analytics_Watson+Data+Platform-_-IUK_WW-_-Stack+Overflow&amp;cm_mmca1=000024JM&amp;cm_mmca2=10004107&amp;">Data Science Experience</a>. I worked in a browser and my code, packages, plots, etc all lived in this cloud environment, instead of locally on my own computer.</p>
+<p>Let’s walk through the code again in more detail, or if you are not in a video watching mood!</p>
+<p>First up, let’s download the text of this collection of short stories from Project Gutenberg using the <a href="https://github.com/ropenscilabs/gutenbergr">gutenbergr</a> package. Then, let’s do some data manipulation to prepare this text. We can create a new column <code>story</code> that keeps track of which of the twelve short stories each line of text comes from, and remove the preliminary material that comes before the first story actually starts.</p>
+<pre class="r"><code>library(tidyverse)
+library(gutenbergr)
+
+sherlock_raw &lt;- gutenberg_download(1661)
+
+sherlock &lt;- sherlock_raw %&gt;%
+    mutate(story = ifelse(str_detect(text, &quot;ADVENTURE&quot;),
+                          text,
+                          NA)) %&gt;%
+    fill(story) %&gt;%
+    filter(story != &quot;THE ADVENTURES OF SHERLOCK HOLMES&quot;) %&gt;%
+    mutate(story = factor(story, levels = unique(story)))
+
+sherlock</code></pre>
+<pre><code>## # A tibble: 12,624 x 3
+##    gutenberg_id
+##           &lt;int&gt;
+##  1         1661
+##  2         1661
+##  3         1661
+##  4         1661
+##  5         1661
+##  6         1661
+##  7         1661
+##  8         1661
+##  9         1661
+## 10         1661
+##    text                                        story                 
+##    &lt;chr&gt;                                       &lt;fct&gt;                 
+##  1 ADVENTURE I. A SCANDAL IN BOHEMIA           ADVENTURE I. A SCANDA…
+##  2 &quot;&quot;                                          ADVENTURE I. A SCANDA…
+##  3 I.                                          ADVENTURE I. A SCANDA…
+##  4 &quot;&quot;                                          ADVENTURE I. A SCANDA…
+##  5 To Sherlock Holmes she is always THE woman… ADVENTURE I. A SCANDA…
+##  6 him mention her under any other name. In h… ADVENTURE I. A SCANDA…
+##  7 and predominates the whole of her sex. It … ADVENTURE I. A SCANDA…
+##  8 any emotion akin to love for Irene Adler. … ADVENTURE I. A SCANDA…
+##  9 one particularly, were abhorrent to his co… ADVENTURE I. A SCANDA…
+## 10 admirably balanced mind. He was, I take it… ADVENTURE I. A SCANDA…
+## # ... with 12,614 more rows</code></pre>
+<p>Next, let’s transform this text data into a tidy data structure using <code>unnest_tokens()</code>. We can also remove stop words at this point because they will not do us any favors during the topic modeling process. Using the <code>stop_words</code> dataset as a whole removes a LOT of stop words; you can be more discriminating and choose specific sets of stop words if appropriate for your purpose. Let’s also remove the word “holmes” because it is so common and used neutrally in all twelve stories.</p>
+<pre class="r"><code>library(tidytext)
+
+tidy_sherlock &lt;- sherlock %&gt;%
+    mutate(line = row_number()) %&gt;%
+    unnest_tokens(word, text) %&gt;%
+    anti_join(stop_words) %&gt;%
+    filter(word != &quot;holmes&quot;)
+
+tidy_sherlock %&gt;%
+    count(word, sort = TRUE)</code></pre>
+<pre><code>## # A tibble: 7,437 x 2
+##    word        n
+##    &lt;chr&gt;   &lt;int&gt;
+##  1 time      151
+##  2 door      144
+##  3 matter    125
+##  4 house     123
+##  5 hand      120
+##  6 night     114
+##  7 heard     113
+##  8 found     108
+##  9 day       106
+## 10 morning   102
+## # ... with 7,427 more rows</code></pre>
+<p>What are the highest tf-idf words in these twelve stories? The statistic <a href="https://www.tidytextmining.com/tfidf.html">tf-idf</a> identifies words that are important to a document in a collection of documents; in this case, we’ll see which words are important in one of the stories compared to the others.</p>
+<pre class="r"><code>library(drlib)
+
+sherlock_tf_idf &lt;- tidy_sherlock %&gt;%
+    count(story, word, sort = TRUE) %&gt;%
+    bind_tf_idf(word, story, n) %&gt;%
+    arrange(-tf_idf) %&gt;%
+    group_by(story) %&gt;%
+    top_n(10) %&gt;%
+    ungroup
+
+sherlock_tf_idf %&gt;%
+    mutate(word = reorder_within(word, tf_idf, story)) %&gt;%
+    ggplot(aes(word, tf_idf, fill = story)) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    facet_wrap(~ story, scales = &quot;free&quot;, ncol = 3) +
+    scale_x_reordered() +
+    coord_flip() +
+    theme(strip.text=element_text(size=11)) +
+    labs(x = NULL, y = &quot;tf-idf&quot;,
+         title = &quot;Highest tf-idf words in Sherlock Holmes short stories&quot;,
+         subtitle = &quot;Individual stories focus on different characters and narrative elements&quot;)</code></pre>
+<p><img src="/blog/2018/2018-01-25-sherlock-holmes-stm_files/figure-html/unnamed-chunk-3-1.png" width="2520" /></p>
+<p>We see lots of proper names here, as well as specific narrative elements for individual stories, like GEESE. 🐦 Exploring tf-idf can be helpful before training topic models.</p>
+<p>Speaking of which… let’s get started on a topic model! I am really a fan of the <a href="https://github.com/bstewart/stm">stm</a> package these days because it is easy to install (no rJava dependency! 💀), it is fast (written in Rcpp! 😎), and I have gotten excellent results when experimenting with it. The <code>stm()</code> function take as its input a document-term matrix, either as a sparse matrix or a <code>dfm</code> from quanteda.</p>
+<pre class="r"><code>library(quanteda)
+library(stm)
+
+sherlock_dfm &lt;- tidy_sherlock %&gt;%
+    count(story, word, sort = TRUE) %&gt;%
+    cast_dfm(story, word, n)
+
+sherlock_sparse &lt;- tidy_sherlock %&gt;%
+    count(story, word, sort = TRUE) %&gt;%
+    cast_sparse(story, word, n)</code></pre>
+<p>You could use either of these objects (<code>sherlock_dfm</code> or <code>sherlock_sparse</code>) as the input to <code>stm()</code>; in the video, I use the quanteda object, so let’s go with that. In this example I am training a topic model with 6 topics, but the stm includes lots of functions and support for choosing an appropriate number of topics for your model.</p>
+<pre class="r"><code>topic_model &lt;- stm(sherlock_dfm, K = 6, 
+                   verbose = FALSE, init.type = &quot;Spectral&quot;)</code></pre>
+<p>The stm package has a <code>summary()</code> method for trained topic models like these that will print out some details to your screen, but I want to get back to a tidy data frame so I can use dplyr and ggplot2 for data manipulation and data visualization. I can use <code>tidy()</code> on the output of an stm model, and then I will get the probabilities that each word is generated from each topic.</p>
+<pre class="r"><code>td_beta &lt;- tidy(topic_model)
+
+td_beta %&gt;%
+    group_by(topic) %&gt;%
+    top_n(10, beta) %&gt;%
+    ungroup() %&gt;%
+    mutate(topic = paste0(&quot;Topic &quot;, topic),
+           term = reorder_within(term, beta, topic)) %&gt;%
+    ggplot(aes(term, beta, fill = as.factor(topic))) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    facet_wrap(~ topic, scales = &quot;free_y&quot;) +
+    coord_flip() +
+    scale_x_reordered() +
+    labs(x = NULL, y = expression(beta),
+         title = &quot;Highest word probabilities for each topic&quot;,
+         subtitle = &quot;Different words are associated with different topics&quot;)</code></pre>
+<p><img src="/blog/2018/2018-01-25-sherlock-holmes-stm_files/figure-html/unnamed-chunk-6-1.png" width="1620" /></p>
+<p>This topic modeling process is a great example of the kind of workflow I often use with text and tidy data principles.</p>
+<ul>
+<li>I use tidy tools like dplyr, tidyr, and ggplot2 for initial data exploration and preparation.</li>
+<li>Then I <strong>cast</strong> to a non-tidy structure to perform some machine learning algorithm.</li>
+<li>I then <strong>tidy</strong> the results of my statistical modeling so I can use tidy data principles again to understand my model results.</li>
+</ul>
+<p>Now let’s look at another kind of probability we get as output from topic modeling, the probability that each document is generated from each topic.</p>
+<pre class="r"><code>td_gamma &lt;- tidy(topic_model, matrix = &quot;gamma&quot;,                    
+                 document_names = rownames(sherlock_dfm))
+
+ggplot(td_gamma, aes(gamma, fill = as.factor(topic))) +
+  geom_histogram(alpha = 0.8, show.legend = FALSE) +
+  facet_wrap(~ topic, ncol = 3) +
+  labs(title = &quot;Distribution of document probabilities for each topic&quot;,
+       subtitle = &quot;Each topic is associated with 1-3 stories&quot;,
+       y = &quot;Number of stories&quot;, x = expression(gamma))</code></pre>
+<p><img src="/blog/2018/2018-01-25-sherlock-holmes-stm_files/figure-html/unnamed-chunk-7-1.png" width="1260" /></p>
+<p>In this case, each short story is strongly associated with a single topic. Topic modeling doesn’t always work out this way, but I built a model here with a small number of documents (only 12) and a relatively large number of topics compared to the number of documents. In any case, this is how we interpret these gamma probabilities; they tell us which topics are coming from which documents.</p>
+<p>I built a <a href="https://juliasilge.shinyapps.io/sherlock-holmes/">Shiny app</a> to explore the results of this topic modeling procedure in more detail.</p>
+<p><a href="https://juliasilge.shinyapps.io/sherlock-holmes/"><img src="/figs/2018-01-25-sherlock-holmes-stm/shiny-sherlock.gif" /></a></p>
+<p>We can see some interesting things; there are shifts through the collection as topic 3 stories come at the beginning and topic 5 stories come at the end. Topic 5 focuses on words that sound like spooky mysteries happening at night, in houses with doors, and events that you see or hear, topic 1 is about lords, ladies, and wives, and topic 2 is about… GEESE. You can use each tab <a href="https://juliasilge.shinyapps.io/sherlock-holmes/">in the app</a> to explore the topic modeling results in different ways.</p>
+<p>Let me know if you have any questions about using the stm package in this way, or getting started with topic modeling using tidy data principles! <a href="http://www.structuraltopicmodel.com/">Structural topic models</a> allow you to train more complex models as well, with document-level covariates, and the package contains functions to evaluate the performance of your model. I’ve had great results with this package and I am looking forward to putting together more posts about how to use it!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">January 25, 2018</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1445 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/stack-questions-cities/">&larr; Stack Overflow questions around the world</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/tidytext-0-1-6/">tidytext 0.1.6 &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

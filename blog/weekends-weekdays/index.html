@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>What Programming Languages Are Used Most on Weekends? | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="An analysis using StackLite, a Kaggle dataset of Stack Overflow questions and tags">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="What Programming Languages Are Used Most on Weekends? | Julia Silge">
+<meta property="og:description" content="An analysis using StackLite, a Kaggle dataset of Stack Overflow questions and tags" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/weekends-weekdays/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="What Programming Languages Are Used Most on Weekends?">
+<meta itemprop="description" content="Note: Cross-posted with the Stack Overflow blog. Check out the code for this analysis on Kaggle.
+For me, the weekends are mostly about spending time with my family, reading for leisure, and working on the open-source projects I am involved in. These weekend projects overlap with the work that I do in my day job here at Stack Overflow, but are not exactly the same. Many developers tinker with side projects for learning or career development (or just for fun!"><meta itemprop="datePublished" content="2017-02-07T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2017-02-07T00:00:00+00:00" />
+<meta itemprop="wordCount" content="882">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">What Programming Languages Are Used Most on Weekends?</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">February 7, 2017</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p><em>Note: Cross-posted 
+<a href="https://stackoverflow.blog/2017/02/What-Programming-Languages-Weekends/" target="_blank" rel="noopener">with the Stack Overflow blog</a>. Check out the code for this analysis 
+<a href="https://www.kaggle.com/juliasilge/d/stackoverflow/stacklite/weekends-and-weekdays/code" target="_blank" rel="noopener">on Kaggle</a>.</em></p>
+<p>For me, the weekends are mostly about spending time with my family, reading for leisure, and working on the open-source projects I am involved in. These weekend projects overlap with the work that I do in my day job here at Stack Overflow, but are not exactly the same. Many developers tinker with side projects for learning or career development (or just for fun!) and at Stack Overflow, we support all types of technologies, from professional to hobbyist. Whenever people are working, we&rsquo;re available to answer their questions. But what languages tend to be asked about on weekends, as opposed to weekdays?</p>
+<p>Let&rsquo;s use our public 
+<a href="https://www.kaggle.com/stackoverflow/stacklite" target="_blank" rel="noopener">StackLite dataset</a> on Kaggle to explore differences between questions that are posted on weekdays and weekends. This dataset is available for anyone to analyze; you can use a Kaggle Kernel to get started on your own question about Stack Overflow questions and tags.</p>
+
+
+
+
+<h2 id="comparing-tags">Comparing tags
+  <a href="#comparing-tags"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>For this analysis, we will use non-deleted questions and tags used on more than 10,000 questions. We defined weekends using UTC dates, which may not exactly overlap the weekend for all users. Overall, this includes 10,451,274 questions on weekdays and 2,132,073 questions on weekends. The difference in number there is mostly due to people largely using Stack Overflow for their jobs on weekdays, and we see this pattern both in questions posted and traffic to our site.</p>
+<p>Because of this weekday/weekend pattern, we&rsquo;re not interested in whether tags were busier on weekends than weekdays; basically all tags are busier on weekdays. Instead, let&rsquo;s explore which tags made up a larger share of weekend questions than they did of weekday questions, and vice versa.</p>
+<p>Which question tags have the biggest difference in relative frequency?</p>
+<p><img src="/figs/2017-02-07-Weekends-Weekdays/tag_by_weekday_weekend_graph-1.png" alt="comparing weekends and weekdays"></p>
+<p>To explain this a bit more, let&rsquo;s look at some numbers. The programming language Haskell makes up 0.365% of weekend questions in this dataset, but only 0.21% of weekday questions, showing it is unusually popular on weekends. Sharepoint makes up 0.0683% of weekend questions, and 0.188% of weekday questions, showing it is more often used on weekdays.</p>
+<p>It brings me great delight that the functional programming language Haskell leads up the weekend-shifted technologies, because this is basically me:</p>
+<p><img src="/figs/2017-02-07-Weekends-Weekdays/learn_haskell.jpg" alt="Haskell cat"></p>
+<p>I haven&rsquo;t learned Haskell. But kudos to all of you who are using your weekends to do so! And now enjoy 
+<a href="https://xkcd.com/1312/" target="_blank" rel="noopener">this joke</a> about Haskell, which is a language popular among academics and mathematicians but not typically used in corporate environments.</p>
+<p>Let&rsquo;s make some other observations!</p>
+<ul>
+<li>We see some low-level technologies are popular on weekends, such as C, C++, pointers, and assembly, as well as tags related to math, such as algorithm, recursion, and (of course) math.</li>
+<li>Heroku and Meteor are app platforms often used for rapid prototyping, which may suggest they are being used for weekend hobbyist projects.</li>
+<li>Many of the weekday-shifted technologies are connected to Microsoft, including tags related to Excel, SQL Server, VBA, and T-SQL. Others include enterprise technologies such as Oracle.</li>
+</ul>
+<p>We can also visualize these relationships by comparing the total number of questions to the relative frequencies.</p>
+<p><img src="/figs/2017-02-07-Weekends-Weekdays/tag_by_weekday_weekend_scatter-1.png" alt="weekday weekend scatterplot"></p>
+<p>Tags that are further to the right in this plot (JavaScript, Java, C#, PHP, etc.) have more questions asked about them, and tags that are further to the left have fewer questions asked about them. Tags that appear close to the dashed line have about an equal share of weekend questions as weekday questions, and tags that are farthest from the dashed line exhibit the largest weekend/weekday differences.</p>
+<p>We can see again that most of the popular tags that are weekday-shifted are connected to Microsoft (C#, ASP.NET, SQL Server, Excel, VBA) and many of the weekend-shifted tags include technologies like C and C++, as well as newer languages such as Swift and Node.js.</p>
+
+
+
+
+<h2 id="working-for-the-weekend">Working for the weekend
+  <a href="#working-for-the-weekend"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can also use this dataset to examine how developers have changed how they use these technologies over time. We can use modeling to find the tags whose weekend proportion (the percentage of questions that are asked on the weekend) has changed the most over time. For tags with more than 20,000 questions, which ones are being posted about less on weekends now compared to the past?</p>
+<p><img src="/figs/2017-02-07-Weekends-Weekdays/decreasing-1.png" alt="decreasing"></p>
+<p>We see tags here like Ruby on Rails and Scala that developers used at a higher rate on weekends several years ago, but now use at a lower rate on weekends and more on weekdays. These technologies were more weekend-oriented in the past, but are now proportionally part of more developers' weekday work lives. The version control system SVN also decreased in weekend use over these years; most likely the advent of GitHub (launched in 2008) has led to fewer people using SVN to manage code for personal weekend projects.</p>
+<p><img src="/figs/2017-02-07-Weekends-Weekdays/increasing-1.png" alt="increasing"></p>
+<p>If we look for the tags that have increased the most in weekend activity, we see the game engine Unity3D, as well as a number of tags used for building mobile apps. It looks like developers are designing more games and apps on the weekends now than in previous years. A good way to spend a weekend!</p>
+<p>We used 
+<a href="https://www.kaggle.com/stackoverflow/stacklite" target="_blank" rel="noopener">openly accessible data</a> to do this analysis, and look forward to seeing what other developers in our community may find by exploring the data products that we make available.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 7, 2017</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 882 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/scraping-cran/">&larr; Scraping CRAN with rvest</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/women-survey/">Women in the 2016 Stack Overflow Survey &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

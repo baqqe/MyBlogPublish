@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Supervised Machine Learning for Text Analysis in R | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Supervised Machine Learning for Text Analysis in R | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/smltar-announce/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/smltar-announce/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/smltar-announce/featured.png" >
+    
+    
+  <meta itemprop="name" content="Supervised Machine Learning for Text Analysis in R">
+<meta itemprop="description" content="Announcing our new book, to be published in the Chapman &amp; Hall/CRC Data Science Series!"><meta itemprop="datePublished" content="2020-07-24T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-07-24T00:00:00+00:00" />
+<meta itemprop="wordCount" content="380"><meta itemprop="image" content="https://juliasilge.com/blog/smltar-announce/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Supervised Machine Learning for Text Analysis in R</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">July 24, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Today, 
+<a href="https://www.hvitfeldt.me/" target="_blank" rel="noopener">Emil Hvitfeldt</a> and I led a 
+<a href="https://user2020.r-project.org/" target="_blank" rel="noopener">useR! 2020</a> online tutorial on predictive modeling with text using tidy data principles. This tutorial was hosted by 
+<a href="https://github.com/RLadiesEnArgentina/user2020tutorial" target="_blank" rel="noopener">R-Ladies en Argentina</a>; huge thanks to the organizers for their leadership and effort in making this tutorial possible.</p>
+<p><img src="featured.png" alt="tutorial flyer"></p>
+<p>Materials for this tutorial are 
+<a href="https://github.com/EmilHvitfeldt/useR2020-text-modeling-tutorial" target="_blank" rel="noopener">available on GitHub</a>, with two main resources in the repo:</p>
+<ul>
+<li>Slides, which you can 
+<a href="https://emilhvitfeldt.github.io/useR2020-text-modeling-tutorial/" target="_blank" rel="noopener">see rendered here</a> and the 
+<a href="https://github.com/EmilHvitfeldt/useR2020-text-modeling-tutorial/blob/master/index.Rmd" target="_blank" rel="noopener">source for here</a></li>
+<li>An 
+<a href="https://github.com/EmilHvitfeldt/useR2020-text-modeling-tutorial/blob/master/text_modeling.Rmd" target="_blank" rel="noopener">R Markdown file to work through</a></li>
+</ul>
+<p>If you start working through these materials and get stuck, you can 
+<a href="https://rstd.io/tidymodels-community" target="_blank" rel="noopener">post on RStudio Community</a> or 
+<a href="https://github.com/EmilHvitfeldt/useR2020-text-modeling-tutorial/issues" target="_blank" rel="noopener">post a question as an issue on the repo</a>. Our goal in designing this tutorial was to create resources for async learning.</p>
+<p>The content for this tutorial is largely based on a new project that Emil and I are working on, which we are thrilled to publicly announce as of today: our book 
+<a href="https://smltar.com/" target="_blank" rel="noopener"><em>Supervised Machine Learning for Text Analysis in R</em></a> to be published in the Chapman &amp; Hall/CRC Data Science Series!</p>
+<p><img src="https://media.giphy.com/media/HBblEmWutaXQY/giphy.gif" alt="oh yeah"></p>
+<p>That title is a bit of a mouthful, so we like to call our project <strong>SMLTAR</strong>, which is also the 
+<a href="https://smltar.com/" target="_blank" rel="noopener">URL</a> where you can and will always be able to find the online version of this book. We invite you to take a look at the work we&rsquo;ve done already, and explore how unstructured text data can be used for supervised predictive models. The book is divided into three sections.</p>
+<ul>
+<li>
+<p><strong>Natural language features:</strong> How do we transform text data into a representation useful for modeling? In these chapters, we explore the most common preprocessing steps for text, when they are helpful, and when they are not. This section is in good shape already!</p>
+</li>
+<li>
+<p><strong>Machine learning methods:</strong> We investigate the power of some of the simpler and more lightweight models in our toolbox. We drew from these chapters in our 
+<a href="https://github.com/EmilHvitfeldt/useR2020-text-modeling-tutorial" target="_blank" rel="noopener">useR tutorial</a>.</p>
+</li>
+<li>
+<p><strong>Deep learning methods:</strong> Given more time and resources, we see what is possible once we turn to neural networks. This section is still to come.</p>
+</li>
+</ul>
+<p>Already, we have so many people to thank for their contributions and support, including our Chapman &amp; Hall editor John Kimmel, the helpful technical reviewers, and Desirée De Leon for the site design of the book&rsquo;s website. We hope you get a chance to check out this project!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">July 24, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">2 minute read, 380 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/palmer-penguins/">&larr; Get started with tidymodels and #TidyTuesday Palmer penguins</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/astronaut-missions-bagging/">Bagging with tidymodels and #TidyTuesday astronaut missions &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

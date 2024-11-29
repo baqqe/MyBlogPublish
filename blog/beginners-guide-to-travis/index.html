@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>A Beginner&#39;s Guide to Travis-CI for R | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="The Blind Leading the Blind">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="A Beginner&#39;s Guide to Travis-CI for R | Julia Silge">
+<meta property="og:description" content="The Blind Leading the Blind" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/beginners-guide-to-travis/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="A Beginner&#39;s Guide to Travis-CI for R">
+<meta itemprop="description" content="Have you seen all those attractive green badges on other people&rsquo;s R packages and thought, &ldquo;I want a lovely green badge!&rdquo;
+OF COURSE YOU DO. Well, let&rsquo;s give it a shot, because today I am going to attempt a beginner&rsquo;s guide to using Travis-CI for continuous integration for R packages. It is going to be a beginner&rsquo;s guide because that is all I could possibly write; my knowledge and experience with Travis is limited."><meta itemprop="datePublished" content="2016-05-20T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-05-20T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1506">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">A Beginner&#39;s Guide to Travis-CI for R</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">May 20, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Have you seen all those attractive green badges on other people&rsquo;s R packages and thought, &ldquo;<em>I</em> want a lovely green badge!&rdquo;</p>
+<p>OF COURSE YOU DO. Well, let&rsquo;s give it a shot, because today I am going to attempt a beginner&rsquo;s guide to using Travis-CI for continuous integration for R packages. It is going to be a <em>beginner&rsquo;s</em> guide because that is all I could possibly write; my knowledge and experience with Travis is limited. Sometimes it can be helpful to have someone walk you through something new that she herself has only recently come to grips with, though, so here we go!</p>
+
+
+
+
+<h2 id="what-is-this-and-why-and-who-is-travis">What Is This? And Why? And Who Is Travis?!
+  <a href="#what-is-this-and-why-and-who-is-travis"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you have written an R package, you probably have gotten into the habit of running <code>R CMD check</code> on a (hopefully) regular basis to check for common problems. It automatically detects lots of problems that can arise that you might not otherwise notice. Also you probably have put your package on GitHub, for version control and also to be able to share your code with other people and track issues and whatnot. The idea behind continuous integration is that CI will automatically run <code>R CMD check</code> (along with your tests, etc.) every time you push a commit to GitHub. You don&rsquo;t have to remember to do this; CI automatically checks the code after every commit. 
+<a href="https://travis-ci.org/" target="_blank" rel="noopener">Travis-CI</a> is a continuous integration service that builds and tests projects that are hosted on GitHub; if your R package is open source (i.e., not private), then using Travis-CI is free.</p>
+<p>What are some reasons that you would want to do this (if you aren&rsquo;t already convinced by the very idea of automated checking)? If you plan to submit your package to CRAN, using Travis-CI is a way to check your package on a platform (Ubuntu) that you might not have access to otherwise, much like using <code>build_win()</code>. You can 
+<a href="https://github.com/juliasilge/tidytext/blob/3a679c815210dee26e56d50dbb730e7058ad144d/cran-comments.md" target="_blank" rel="noopener">look here</a> to see how I explained the different test environments I checked for the tidytext package. If you <em>don&rsquo;t</em> plan to submit your package to CRAN, for whatever reason, then having your package passing on Travis signals to possible users that this package is probably not a hot mess and is more likely to be worth investing time in downloading and learning how to use.</p>
+
+
+
+
+<h2 id="getting-started-with-travis">Getting Started with Travis
+  <a href="#getting-started-with-travis"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To get started with Travis-CI, you mosey on over to 
+<a href="https://travis-ci.org/" target="_blank" rel="noopener">their website</a> and make an account that is connected to your GitHub account. After you do that, you will see all your GitHub repositories with switches that you can switch from off to on. Pick a repository (in this case, a repository for an R package) that you want to build on Travis and switch it on.</p>
+<p>Now, we need to tell Travis what to do by adding a <code>.travis.yml</code> file to the R package. Many packages need only a minimal <code>.travis.yml</code> that looks like this:</p>
+<pre tabindex="0"><code> language: R
+ cache: packages
+</code></pre><p>This isn&rsquo;t R code or anything; it is telling Travis how to go about building the package. (And FYI, this file needs to be added to <code>.Rbuildignore</code> because it is not part of the R package from the point of view of R.) You can use <code>devtools::use_travis()</code> to automatically add a minimal <code>.travis.yml</code> to your package, add <code>.travis.yml</code> to <code>.Rbuildignore</code>, and add the code for the badge to your README. This kind of simple <code>.travis.yml</code> is what I have for my 
+<a href="https://github.com/juliasilge/janeaustenr/blob/2008066a02558ec36bddd9f3deb7d81469684a48/.travis.yml" target="_blank" rel="noopener">janeaustenr package</a>. Once you have made this file and then push it to GitHub, the push triggers Travis to build and check the package. Every commit you push to GitHub after this will trigger a new build on Travis that will go through all the automated checking and testing.</p>
+<p>If you are lucky, your package will build on Travis successfully and you can add your beautiful green badge to your README on GitHub, if you haven&rsquo;t already added it via <code>devtools::use_travis()</code> or copy/pasting from elsewhere. If you are less than lucky, well&hellip; 😩</p>
+<p>If a build on Travis is erroring or failing (which are different), I tend to think of the problems being of two possible types:</p>
+<ul>
+<li>either the code/package itself has a problem(s) or</li>
+<li>I have not told Travis how to build the package correctly.</li>
+</ul>
+<p>One example might be that your package depends on a package from GitHub that is not on CRAN. Travis knows to look in your <code>DESCRIPTION</code> file and will install all your package&rsquo;s dependencies from CRAN to build your package. What if one of your package&rsquo;s dependencies is not on CRAN? Then you need to list them as <code>Remotes:</code> in your <code>DESCRIPTION</code> file. You can check out the 
+<a href="https://cran.r-project.org/web/packages/devtools/vignettes/dependencies.html" target="_blank" rel="noopener"><code>Remotes:</code> vignette from devtools</a> to see more details on this, and here are 
+<a href="https://github.com/ropenscilabs/geojsonlint/blob/7f8c02925c7bca1fb0d5aa7ea750db1b5dd01fc8/DESCRIPTION" target="_blank" rel="noopener">two example</a> 
+<a href="https://github.com/jennybc/googlesheets/blob/df2fc3c227848878627bb44477162b2337b9ba71/DESCRIPTION" target="_blank" rel="noopener"><code>DESCRIPTION</code> files</a> that use <code>Remotes:</code>. Both of those packages have <code>.travis.yml</code> files that are more complicated than the simplest version, but that is not because of a GitHub package dependency.</p>
+<p>Speaking of which, another possibility is that you will need to tell Travis about some system requirements to get your package to build. For the tidytext package, we have some dependencies on packages that have system requirements. For one, we have a dependency on 
+<a href="https://cran.r-project.org/web/packages/quanteda/index.html" target="_blank" rel="noopener">quanteda</a>, which has a dependency on the 
+<a href="https://cran.r-project.org/web/packages/XML/index.html" target="_blank" rel="noopener">XML package</a>. If you check out that 
+<a href="https://cran.r-project.org/web/packages/XML/index.html" target="_blank" rel="noopener">link for the XML package on CRAN</a>, you&rsquo;ll notice that it says:</p>
+<pre tabindex="0"><code> SystemRequirements: libxml2 (&gt;= 2.6.3)
+</code></pre><p>This means that wherever you want to build/use the XML package, you need <code>libxml2</code>. Thus, to build our package tidytext (which depends on quanteda which depends on XML) we need to get this library installed. The <code>.travis.yml</code> for tidytext (which has two such system requirements) looks like this:</p>
+<pre tabindex="0"><code> language: R
+ cache: packages
+ sudo: false
+
+ addons:
+   apt:
+     packages:
+       - libgsl0-dev # for topicmodels
+       - libxml2-dev # for XML, a dependency of quanteda
+</code></pre>
+
+
+
+<h2 id="thoughts-on-debugging-travis-problems">Thoughts on Debugging Travis Problems
+  <a href="#thoughts-on-debugging-travis-problems"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>You may be thinking at this point, &ldquo;How did she know to do those things specifically?&rdquo; and that is an excellent question. If you browse the 
+<a href="https://github.com/juliasilge/tidytext/commits/master/.travis.yml" target="_blank" rel="noopener">history</a> of the <code>.travis.yml</code> for tidytext, you can see that things were a MESS for a while.</p>
+<p><a href="https://imgflip.com/i/14hqh5"><img src="https://i.imgflip.com/14hqh5.jpg" title="Build Failing"/></a></p>
+<p>Let me share some of the things that have been helpful for me as I have tried to solve problems with building packages on Travis.</p>
+<p>Hadley Wickham&rsquo;s <em>R Packages</em> book has a 
+<a href="http://r-pkgs.had.co.nz/check.html#travis" target="_blank" rel="noopener">section on Travis</a> that is short but helpful; it is within the section on 
+<a href="http://r-pkgs.had.co.nz/check.html" target="_blank" rel="noopener">automated checking</a> that also has relevant helpful information. The 
+<a href="https://docs.travis-ci.com/user/languages/r/" target="_blank" rel="noopener">R docs at Travis</a> itself are also quite helpful, although when I am having a real headscratcher of a problem I always wish there was more detail.</p>
+<p>I tend to end up Googling a lot of things when I am having a problem, looking for packages similar to mine to see how they have solved similar challenges. One thing to be aware of in that situation is that the way Travis has dealt with R projects has changed pretty significantly in the not-so-distant past. If you find an R package that started building on Travis before certain changes took place, their <code>.travis.yml</code> will look VERY different than what you will need to use, given that you are starting a new project today. There were changes with containers, sudo, etc. so a slightly older package will be grandfathered in to an older way of building on Travis than a new project. I ran into this in a pretty significant way when trying to solve the problem with building the XML package. Finding other packages that depended on the XML package <em>did</em> help me eventually fix my problems, but I couldn&rsquo;t do it in the same way as the older packages.</p>
+
+
+
+
+<h2 id="unit-tests">Unit Tests
+  <a href="#unit-tests"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>One other aspect I want to mention specifically is that Travis will also run all the unit tests in your package (such as those you have written using 
+<a href="http://r-pkgs.had.co.nz/tests.html" target="_blank" rel="noopener">testthat</a>) and the build will fail if any of your tests fail. I am very new to the worlds of unit testing and code coverage and all of that, but even so, I have seen how valuable it has been to immediately know when a change I have made breaks something in the code somewhere. Formal automated testing plus continuous integration equals less headache.</p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I would like to thank 
+<a href="http://www.jimhester.com/" target="_blank" rel="noopener">Jim Hester</a>, who gave me feedback on a draft of this post and also helped me when I was struggling with getting Travis set up on my first R package. I&rsquo;ll be honest; it was pretty rough and perplexing that first time I tried to set things up. Every time I have used CI since then has gone more smoothly and left me feeling more knowledgeable, though, and I am a believer now in the benefits and importance of this tool. At the same time, I am far from an expert, so feel free to chime in with feedback or thoughts, especially if I have said anything actually wrong about using Travis for continuous integration for R projects (please noooooooooooo&hellip;). I have shared pretty much the extent of my knowledge here, but I will attempt to answer questions if anyone has any.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 20, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1506 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/term-frequency-tf-idf/">&larr; Term Frequency and tf-idf Using Tidy Data Principles</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/life-changing-magic/">The Life-Changing Magic of Tidying Text &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

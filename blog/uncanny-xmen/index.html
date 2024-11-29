@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>The Bechdel test and the X-Mansion with tidymodels and #TidyTuesday | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="The Bechdel test and the X-Mansion with tidymodels and #TidyTuesday | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/uncanny-xmen/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/uncanny-xmen/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/uncanny-xmen/featured.png" >
+    
+    
+  <meta itemprop="name" content="The Bechdel test and the X-Mansion with tidymodels and #TidyTuesday">
+<meta itemprop="description" content="Explore data from the Claremont Run Project on Uncanny X-Men with bootstrap resampling."><meta itemprop="datePublished" content="2020-06-30T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-06-30T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1321"><meta itemprop="image" content="https://juliasilge.com/blog/uncanny-xmen/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">The Bechdel test and the X-Mansion with tidymodels and #TidyTuesday</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">June 30, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Lately I&rsquo;ve been publishing 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> framework, from first steps in modeling to how to evaluate complex models. Today&rsquo;s screencast focuses on using bootstrap resampling with this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> from the 
+<a href="http://www.claremontrun.com/" target="_blank" rel="noopener">Claremont Run Project</a> about issues of the comic book series Uncanny X-Men. 🦸</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/EIcEAu94sf8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="read-in-the-data">Read in the data
+  <a href="#read-in-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to use information about speech bubbles, thought bubbles, narrative statements, and character depictions 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-06-30/readme.md" target="_blank" rel="noopener">from this week&rsquo;s #TidyTuesday dataset</a> to understand more about characteristics of individual comic book issues. Let&rsquo;s focus on two modeling questions.</p>
+<ul>
+<li>Does a given issue have the X-Mansion as a location?</li>
+<li>Does a given issue pass the 
+<a href="https://en.wikipedia.org/wiki/Bechdel_test" target="_blank" rel="noopener">Bechdel test</a>?</li>
+</ul>
+<p>We&rsquo;re going to use three of the datasets from this week.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+character_visualization <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-30/character_visualization.csv&#34;</span>)
+xmen_bechdel <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-30/xmen_bechdel.csv&#34;</span>)
+locations <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-30/locations.csv&#34;</span>)
+</code></pre></div><p>The <code>character_visualization</code> dataset counts up each time one of the main 25 character speaks, thinks, is involved in narrative statements, or is depicted total.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">character_visualization
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 9,800 x 7
+##    issue costume character                     speech thought narrative depicted
+##    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;                          &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+##  1    97 Costume Editor narration                   0       0         0        0
+##  2    97 Costume Omnipresent narration              0       0         0        0
+##  3    97 Costume Professor X = Charles Xavier…      0       0         0        0
+##  4    97 Costume Wolverine = Logan                  7       0         0       10
+##  5    97 Costume Cyclops = Scott Summers           24       3         0       23
+##  6    97 Costume Marvel Girl/Phoenix = Jean G…      0       0         0        0
+##  7    97 Costume Storm = Ororo Munroe              11       0         0        9
+##  8    97 Costume Colossus = Peter (Piotr) Ras…      9       0         0       17
+##  9    97 Costume Nightcrawler = Kurt Wagner        10       0         0       17
+## 10    97 Costume Banshee = Sean Cassidy             0       0         0        5
+## # … with 9,790 more rows
+</code></pre><p>Let&rsquo;s aggregate this dataset to the issue level so we can build models using per-issue differences in speaking, thinking, narrative, and total depictions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">per_issue <span style="color:#666">&lt;-</span> character_visualization <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(issue) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(<span style="color:#06287e">across</span>(speech<span style="color:#666">:</span>depicted, sum)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>()
+
+per_issue
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 196 x 5
+##    issue speech thought narrative depicted
+##    &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+##  1    97    146      13        71      168
+##  2    98    172       9        29      180
+##  3    99    105      22        29      124
+##  4   100    141      28         7      122
+##  5   101    158      27        58      191
+##  6   102     78      27        33      133
+##  7   103     91       6        25      121
+##  8   104    142      15        25      165
+##  9   105     83      12        24      128
+## 10   106     20       6        20       16
+## # … with 186 more rows
+</code></pre><p>I&rsquo;m not doing a ton of EDA here but there are lots of great examples out there to explore on 
+<a href="https://twitter.com/hashtag/TidyTuesday" target="_blank" rel="noopener">Twitter</a>!</p>
+
+
+
+
+<h2 id="which-issues-have-the-x-mansion-as-a-location">Which issues have the X-Mansion as a location?
+  <a href="#which-issues-have-the-x-mansion-as-a-location"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s start with our first model. The X-Mansion is the most frequently used location, but it does not appear in every episode.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">x_mansion <span style="color:#666">&lt;-</span> locations <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(issue) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(mansion <span style="color:#666">=</span> <span style="color:#4070a0">&#34;X-Mansion&#34;</span> <span style="color:#666">%in%</span> location)
+
+locations_joined <span style="color:#666">&lt;-</span> per_issue <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">inner_join</span>(x_mansion)
+
+locations_joined <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(mansion <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(mansion, <span style="color:#4070a0">&#34;X-Mansion&#34;</span>, <span style="color:#4070a0">&#34;No mansion&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(speech<span style="color:#666">:</span>depicted, names_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;visualization&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(visualization <span style="color:#666">=</span> <span style="color:#06287e">fct_inorder</span>(visualization)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(mansion, value, fill <span style="color:#666">=</span> visualization)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_dotplot</span>(
+    binaxis <span style="color:#666">=</span> <span style="color:#4070a0">&#34;y&#34;</span>, stackdir <span style="color:#666">=</span> <span style="color:#4070a0">&#34;center&#34;</span>,
+    binpositions <span style="color:#666">=</span> <span style="color:#4070a0">&#34;all&#34;</span>,
+    show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>visualization, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Which issues contain the X-Mansion as a location?&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Comparing the top 25 characters&#39; speech, thought, narrative portrayal, and total depictions&#34;</span>,
+    caption <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Data from the Claremont Run Project&#34;</span>
+  )
+</code></pre></div><img src="/blog/uncanny-xmen/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>Now let&rsquo;s create bootstrap resamples and fit a logistic regression model to each resample. What are the bootstrap confidence intervals on the model parameters?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+boots <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(locations_joined, times <span style="color:#666">=</span> <span style="color:#40a070">1000</span>, apparent <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+
+boot_models <span style="color:#666">&lt;-</span> boots <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    model <span style="color:#666">=</span> <span style="color:#06287e">map</span>(
+      splits,
+      <span style="color:#666">~</span> <span style="color:#06287e">glm</span>(mansion <span style="color:#666">~</span> speech <span style="color:#666">+</span> thought <span style="color:#666">+</span> narrative <span style="color:#666">+</span> depicted,
+        family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;binomial&#34;</span>, data <span style="color:#666">=</span> <span style="color:#06287e">analysis</span>(.)
+      )
+    ),
+    coef_info <span style="color:#666">=</span> <span style="color:#06287e">map</span>(model, tidy)
+  )
+
+boot_coefs <span style="color:#666">&lt;-</span> boot_models <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(coef_info)
+
+<span style="color:#06287e">int_pctl</span>(boot_models, coef_info)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 5 x 6
+##   term          .lower .estimate    .upper .alpha .method   
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     
+## 1 (Intercept) -2.42     -1.29    -0.277      0.05 percentile
+## 2 depicted     0.00193   0.0103   0.0196     0.05 percentile
+## 3 narrative   -0.0106    0.00222  0.0143     0.05 percentile
+## 4 speech      -0.0148   -0.00716  0.000617   0.05 percentile
+## 5 thought     -0.0143   -0.00338  0.00645    0.05 percentile
+</code></pre><p>How are the parameters distributed?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">boot_coefs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(term <span style="color:#666">=</span> <span style="color:#06287e">fct_inorder</span>(term)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate, fill <span style="color:#666">=</span> term)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(
+    xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>,
+    alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">25</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>term, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Which issues contain the X-Mansion as a location?&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Comparing the top 25 characters&#39; speech, thought, narrative portrayal, and total depictions&#34;</span>,
+    caption <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Data from the Claremont Run Project&#34;</span>
+  )
+</code></pre></div><img src="/blog/uncanny-xmen/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<ul>
+<li>Issues with more depictions of the main 25 characters (i.e. large groups of X-Men) are more likely to occur in the X-Mansion.</li>
+<li>Issues with more speech bubbles from these characters are less likely to occur in the X-Mansion.</li>
+</ul>
+<p>Apparently issues with lots of talking are more likely to occur elsewhere!</p>
+
+
+
+
+<h2 id="now-lets-do-the-bechdel-test">Now let&rsquo;s do the Bechdel test
+  <a href="#now-lets-do-the-bechdel-test"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you haven&rsquo;t heard about the Bechdel test, 
+<a href="https://www.youtube.com/watch?v=bLF6sAAMb4s" target="_blank" rel="noopener">this video</a> (now over 10 years old!) is a nice explainer. We can use the same approach from the previous section but replace the data about issue locations with the Bechdel test data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">bechdel_joined <span style="color:#666">&lt;-</span> per_issue <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">inner_join</span>(xmen_bechdel) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(pass_bechdel <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(pass_bechdel <span style="color:#666">==</span> <span style="color:#4070a0">&#34;yes&#34;</span>, <span style="color:#007020;font-weight:bold">TRUE</span>, <span style="color:#007020;font-weight:bold">FALSE</span>))
+
+bechdel_joined <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(pass_bechdel <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(pass_bechdel, <span style="color:#4070a0">&#34;Passes Bechdel&#34;</span>, <span style="color:#4070a0">&#34;Fails Bechdel&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(speech<span style="color:#666">:</span>depicted, names_to <span style="color:#666">=</span> <span style="color:#4070a0">&#34;visualization&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(visualization <span style="color:#666">=</span> <span style="color:#06287e">fct_inorder</span>(visualization)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(pass_bechdel, value, fill <span style="color:#666">=</span> visualization)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_dotplot</span>(
+    binaxis <span style="color:#666">=</span> <span style="color:#4070a0">&#34;y&#34;</span>, stackdir <span style="color:#666">=</span> <span style="color:#4070a0">&#34;center&#34;</span>,
+    binpositions <span style="color:#666">=</span> <span style="color:#4070a0">&#34;all&#34;</span>,
+    show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>visualization, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Which Uncanny X-Men issues pass the Bechdel test?&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Comparing the top 25 characters&#39; speech, thought, narrative portrayal, and total depictions&#34;</span>,
+    caption <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Data from the Claremont Run Project&#34;</span>
+  )
+</code></pre></div><img src="/blog/uncanny-xmen/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>We can again create bootstrap resamples, fit logistic regression models, and compute bootstrap confidence intervals.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+boots <span style="color:#666">&lt;-</span> <span style="color:#06287e">bootstraps</span>(bechdel_joined, times <span style="color:#666">=</span> <span style="color:#40a070">1000</span>, apparent <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+
+boot_models <span style="color:#666">&lt;-</span> boots <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    model <span style="color:#666">=</span> <span style="color:#06287e">map</span>(
+      splits,
+      <span style="color:#666">~</span> <span style="color:#06287e">glm</span>(pass_bechdel <span style="color:#666">~</span> speech <span style="color:#666">+</span> thought <span style="color:#666">+</span> narrative <span style="color:#666">+</span> depicted,
+        family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;binomial&#34;</span>, data <span style="color:#666">=</span> <span style="color:#06287e">analysis</span>(.)
+      )
+    ),
+    coef_info <span style="color:#666">=</span> <span style="color:#06287e">map</span>(model, tidy)
+  )
+
+boot_coefs <span style="color:#666">&lt;-</span> boot_models <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(coef_info)
+
+<span style="color:#06287e">int_pctl</span>(boot_models, coef_info)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 5 x 6
+##   term           .lower .estimate    .upper .alpha .method   
+##   &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     
+## 1 (Intercept) -1.18      -0.248    0.699      0.05 percentile
+## 2 depicted    -0.0232    -0.0111  -0.000509   0.05 percentile
+## 3 narrative   -0.00405    0.00966  0.0260     0.05 percentile
+## 4 speech       0.00521    0.0151   0.0285     0.05 percentile
+## 5 thought      0.000561   0.0155   0.0361     0.05 percentile
+</code></pre><p>How are <em>these</em> parameters distributed?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">boot_coefs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(term <span style="color:#666">=</span> <span style="color:#06287e">fct_inorder</span>(term)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(estimate, fill <span style="color:#666">=</span> term)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_vline</span>(
+    xintercept <span style="color:#666">=</span> <span style="color:#40a070">0</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>,
+    alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">25</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>term, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Which Uncanny X-Men issues pass the Bechdel test?&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Comparing the top 25 characters&#39; speech, thought, narrative portrayal, and total depictions&#34;</span>,
+    caption <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Data from the Claremont Run Project&#34;</span>
+  )
+</code></pre></div><img src="/blog/uncanny-xmen/index_files/figure-html/unnamed-chunk-10-1.png" width="2400" />
+<ul>
+<li>Issues with more depictions of the main 25 characters (i.e. more characters in them) are less likely to pass the Bechdel test.</li>
+<li>Issues with more speech bubbles from these characters are more likely to pass the Bechdel test. (Perhaps also issues with more thought bubbles.)</li>
+</ul>
+<p>I think it makes sense that issues with lots of speaking are more likely to pass the Bechdel test, which is about characters speaking to each other. Interesting that the issues with lots of character depictions are <em>less</em> likely to pass!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 30, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1321 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/astronaut-missions-bagging/">&larr; Bagging with tidymodels and #TidyTuesday astronaut missions</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/captive-africans-voyages/">Impute missing data for #TidyTuesday voyages of captive Africans with tidymodels &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

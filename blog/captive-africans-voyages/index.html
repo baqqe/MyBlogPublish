@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Impute missing data for #TidyTuesday voyages of captive Africans with tidymodels | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Impute missing data for #TidyTuesday voyages of captive Africans with tidymodels | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/captive-africans-voyages/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/captive-africans-voyages/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/captive-africans-voyages/featured.png" >
+    
+    
+  <meta itemprop="name" content="Impute missing data for #TidyTuesday voyages of captive Africans with tidymodels">
+<meta itemprop="description" content="Understand more about the forced transport of African people using the Slave Voyages database."><meta itemprop="datePublished" content="2020-06-17T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-06-17T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1786"><meta itemprop="image" content="https://juliasilge.com/blog/captive-africans-voyages/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Impute missing data for #TidyTuesday voyages of captive Africans with tidymodels</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">June 17, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> datasets</a> reflect on Juneteenth, the date when the law abolishing slavery in the United States was finally enforced throughout the American South, and specifically Texas. My own education as a white woman in the United States has been gravely lacking in the history of enslaved people, their experiences, and their impact and legacy; I&rsquo;m glad to spend some time in this screencast understanding more about the forced transport of African people using the 
+<a href="https://www.slavevoyages.org/resources/about#african-names-database/0/en/" target="_blank" rel="noopener">Slave Voyages African Names</a> database.</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/z4oQh_5YMVk" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>You can find my other 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> framework as well, if you are interested.</p>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to estimate whether some characteristics of the people trafficked by enslavers changed 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-06-16/readme.md" target="_blank" rel="noopener">over the last several decades of the trans-Atlantic slave trade</a>. Missing data can be a challenge with historical data, so we&rsquo;ll use imputation.</p>
+<p>Let&rsquo;s read in the data on African names and use 
+<a href="https://docs.ropensci.org/skimr/" target="_blank" rel="noopener">skimr</a> to see what&rsquo;s there.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-16/african_names.csv&#34;</span>)
+
+skimr<span style="color:#666">::</span><span style="color:#06287e">skim</span>(african_names)
+</code></pre></div><pre tabindex="0"><code>## ── Data Summary ────────────────────────
+##                            Values       
+## Name                       african_names
+## Number of rows             91490        
+## Number of columns          11           
+## _______________________                 
+## Column type frequency:                  
+##   character                6            
+##   numeric                  5            
+## ________________________                
+## Group variables            None         
+## 
+## ── Variable type: character ────────────────────────────────────────────────────
+##   skim_variable  n_missing complete_rate   min   max empty n_unique whitespace
+## 1 name                   0         1         2    24     0    62330          0
+## 2 gender             12878         0.859     3     5     0        4          0
+## 3 ship_name              1         1.00      2    59     0      443          0
+## 4 port_disembark         0         1         6    19     0        5          0
+## 5 port_embark         1126         0.988     4    31     0       59          0
+## 6 country_origin     79404         0.132     3    31     0      563          0
+## 
+## ── Variable type: numeric ──────────────────────────────────────────────────────
+##   skim_variable n_missing complete_rate    mean       sd     p0    p25    p50
+## 1 id                    0         1     62122.  51305.      1   22935. 45822.
+## 2 voyage_id             0         1     17698.  82017.    557    2443   2871 
+## 3 age                1126         0.988    18.9     8.60    0.5    11     20 
+## 4 height             4820         0.947    58.6     6.84    0      54     60 
+## 5 year_arrival          0         1      1831.      9.52 1808    1826   1832 
+##       p75   p100 hist 
+## 1 101264. 199932 ▇▆▃▁▂
+## 2   3601  500082 ▇▁▁▁▁
+## 3     26      77 ▆▇▁▁▁
+## 4     64      85 ▁▁▂▇▁
+## 5   1837    1862 ▂▆▇▃▁
+</code></pre><p>There is data missing in both the gender and age variables, two I am interested in.</p>
+<p>This is a dataset of individual people who were liberated from slave ships. Where did the people in this dataset <em>leave</em> their ships?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(port_disembark, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">kable</span>()
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">port_disembark</th>
+<th style="text-align:right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Freetown</td>
+<td style="text-align:right">81009</td>
+</tr>
+<tr>
+<td style="text-align:left">Havana</td>
+<td style="text-align:right">10058</td>
+</tr>
+<tr>
+<td style="text-align:left">Bahamas unspecified</td>
+<td style="text-align:right">183</td>
+</tr>
+<tr>
+<td style="text-align:left">Kingston, Jamaica</td>
+<td style="text-align:right">144</td>
+</tr>
+<tr>
+<td style="text-align:left">St. Helena</td>
+<td style="text-align:right">96</td>
+</tr>
+</tbody>
+</table>
+<p>Most of the freed captives in this database were liberated in either Freetown, Sierra Leone (so on the eastern side of the Atlantic) or Havana, Cuba (on the western side). Both cities had tribunals/courts to judge ships seized by anti-slaving patrols after European countries outlawed or restricted slavery.</p>
+<p>Where did these people start their forced journeys?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_count</span>(port_embark) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(port_embark <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    n <span style="color:#666">&lt;</span> <span style="color:#40a070">4000</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Other&#34;</span>,
+    <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> port_embark
+  )) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(port_embark, year_arrival, fill <span style="color:#666">=</span> port_embark)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.4</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Year&#34;</span>)
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>When is this data from?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year_arrival)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">20</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">comma_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of liberated individuals&#34;</span>,
+    x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>
+  )
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>What is the pattern of missing data?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(naniar)
+
+african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(gender, age, height, year_arrival) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">gg_miss_upset</span>()
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-6-1.png" width="2400" />
+<p>Gender has the highest proportion of missing data, and there is not much data missing from the <code>age</code> column. Fortunately for our attempt to impute missing values, not many rows have all three of these missing.</p>
+<p>What is the relationship between gender and year of arrival?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(gender, year_arrival, fill <span style="color:#666">=</span> gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.4</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Year&#34;</span>)
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<p>Gender was coded as both man/woman and boy/girl, but there is a fair amount of overlap in ages (children coded as &ldquo;man&rdquo;, for example).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(gender, age, fill <span style="color:#666">=</span> gender)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.4</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Year&#34;</span>)
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-8-1.png" width="2400" />
+<p>What is the relationship between age and year of arrival?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(year_arrival <span style="color:#666">&lt;</span> <span style="color:#40a070">1850</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(year_arrival) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(age <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(age, na.rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year_arrival, age)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_line</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.6</span>, size <span style="color:#666">=</span> <span style="color:#40a070">1.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_smooth</span>(method <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lm&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_continuous</span>(limits <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">0</span>, <span style="color:#007020;font-weight:bold">NA</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Mean age&#34;</span>)
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-9-1.png" width="2400" />
+<p>Overall, the age is drifting up slightly, although the previous plot on boys/girls/men/women calls this into question. We can use modeling to explore this better.</p>
+<p>One of the most unique and valuable characteristics of this dataset is the names. We can make a scatterplot to understand more about the distribution of ages and year of arrival.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(ggrepel)
+
+african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(name) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">summarise</span>(
+    n <span style="color:#666">=</span> <span style="color:#06287e">n</span>(),
+    age <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(age, na.rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>),
+    year_arrival <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(year_arrival, na.rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(<span style="color:#666">-</span>n) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">30</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(year_arrival, age)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_text_repel</span>(<span style="color:#06287e">aes</span>(label <span style="color:#666">=</span> name), size <span style="color:#666">=</span> <span style="color:#40a070">3</span>, family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IBMPlexSans&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(<span style="color:#06287e">aes</span>(size <span style="color:#666">=</span> n), color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Mean year of arrival&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Mean age&#34;</span>,
+    size <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Number of people&#34;</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Age and year of arrival for most common names of transported captives&#34;</span>,
+    caption <span style="color:#666">=</span> <span style="color:#4070a0">&#34;African Names Database from slavevoyages.org&#34;</span>
+  )
+</code></pre></div><img src="/blog/captive-africans-voyages/index_files/figure-html/unnamed-chunk-10-1.png" width="3000" />
+<p>I&rsquo;m looking forward to how else folks explore this #TidyTuesday dataset and share on 
+<a href="https://twitter.com/hashtag/TidyTuesday" target="_blank" rel="noopener">Twitter</a>.</p>
+
+
+
+
+<h2 id="impute-missing-data">Impute missing data
+  <a href="#impute-missing-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to estimate whether some characteristics, say age and gender, of trafficked Africans changed during this time period. Some data is missing, so let&rsquo;s try to impute gender and age, with the help of height. When we do imputation, we aren&rsquo;t adding new information to our dataset, but we are using the patterns in our dataset so that we don&rsquo;t have to throw away the data that have some variables missing.</p>
+<p>First, let&rsquo;s filter to only the data from before 1850 and recode the <code>gender</code> variable.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">liberated_df <span style="color:#666">&lt;-</span> african_names <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(year_arrival <span style="color:#666">&lt;</span> <span style="color:#40a070">1850</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(gender <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+    gender <span style="color:#666">==</span> <span style="color:#4070a0">&#34;Boy&#34;</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Man&#34;</span>,
+    gender <span style="color:#666">==</span> <span style="color:#4070a0">&#34;Girl&#34;</span> <span style="color:#666">~</span> <span style="color:#4070a0">&#34;Woman&#34;</span>,
+    <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> gender
+  )) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate_if</span>(is.character, factor)
+
+liberated_df
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 91,394 x 11
+##       id voyage_id name  gender   age height ship_name year_arrival
+##    &lt;dbl&gt;     &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;fct&gt;            &lt;dbl&gt;
+##  1     1      2314 Bora  Man       30   62.5 NS de Re…         1819
+##  2     2      2315 Flam  Man       30   64   Fabiana           1819
+##  3     3      2315 Dee   Man       28   65   Fabiana           1819
+##  4     4      2315 Pao   Man       22   62.5 Fabiana           1819
+##  5     5      2315 Mufa  Man       16   59   Fabiana           1819
+##  6     6      2315 Latty Man       22   67.5 Fabiana           1819
+##  7     7      2315 So    Man       20   62   Fabiana           1819
+##  8     8      2315 Trua  Man       30   65.5 Fabiana           1819
+##  9     9      2315 Tou   Man       18   61.5 Fabiana           1819
+## 10    10      2315 Quaco Man       23   62   Fabiana           1819
+## # … with 91,384 more rows, and 3 more variables: port_disembark &lt;fct&gt;,
+## #   port_embark &lt;fct&gt;, country_origin &lt;fct&gt;
+</code></pre><p>Next, let&rsquo;s impute the missing data using a recipe.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(recipes)
+
+impute_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(year_arrival <span style="color:#666">~</span> gender <span style="color:#666">+</span> age <span style="color:#666">+</span> height, data <span style="color:#666">=</span> liberated_df) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_meanimpute</span>(height) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_knnimpute</span>(<span style="color:#06287e">all_predictors</span>())
+</code></pre></div><p>Let&rsquo;s walk through the steps in this recipe.</p>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what&rsquo;s going on with our model what data we are using (notice we did not split into training and testing, because of our specific modeling goals).</li>
+<li>Next, we impute the missing values for height with the mean value for height. Height has a low value of missingness, and we are only going to use it to impute age and gender, not for modeling.</li>
+<li>Next, we impute the missing values for age and gender using a nearest neighbors model with all three predictors.</li>
+</ul>
+<p>Once we have the recipe defined, we can estimate the parameters needed to apply it using <code>prep()</code>. In this case, that means finding the mean for height (fast) and training the nearest neighbor model to find gender and age (not so fast). Then we can use <code>juice()</code> to get that imputed data back out. (If we wanted to apply the recipe to other data, like new data we hadn&rsquo;t seen before, 
+<a href="https://stackoverflow.com/questions/62189885/what-is-the-difference-among-prep-bake-juice-in-the-r-package-recipes/62205555#62205555" target="_blank" rel="noopener">we would use <code>bake()</code> instead</a>.)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">imputed <span style="color:#666">&lt;-</span> <span style="color:#06287e">prep</span>(impute_rec) <span style="color:#666">%&gt;%</span> <span style="color:#06287e">juice</span>()
+</code></pre></div><p>How did the imputation turn out?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(liberated_df<span style="color:#666">$</span>age)
+</code></pre></div><pre tabindex="0"><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+##    0.50   11.00   20.00   18.89   26.00   77.00    1030
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(imputed<span style="color:#666">$</span>age)
+</code></pre></div><pre tabindex="0"><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.50   11.00   19.00   18.77   26.00   77.00
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(liberated_df<span style="color:#666">$</span>gender)
+</code></pre></div><pre tabindex="0"><code>##   Man Woman  NA's 
+## 52723 25889 12782
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(imputed<span style="color:#666">$</span>gender)
+</code></pre></div><pre tabindex="0"><code>##   Man Woman 
+## 60992 30402
+</code></pre><p>No more <code>NA</code> values, and the distributions look about the same. I like to keep in mind that the point of imputation like this is to be able to use the information we have in the dataset without throwing it away, which feels especially important when dealing with historical data on individuals who experienced enslavement.</p>
+
+
+
+
+<h2 id="fit-a-model">Fit a model
+  <a href="#fit-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The distribution of year of arrival was a bit wonky, so that is good to keep in mind when training a linear model.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">fit_lm <span style="color:#666">&lt;-</span> <span style="color:#06287e">lm</span>(year_arrival <span style="color:#666">~</span> gender <span style="color:#666">+</span> age, data <span style="color:#666">=</span> imputed)
+</code></pre></div><p>We can check out the model results.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(fit_lm)
+</code></pre></div><pre tabindex="0"><code>## 
+## Call:
+## lm(formula = year_arrival ~ gender + age, data = imputed)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -23.7206  -5.3343   0.9842   5.6828  17.0903 
+## 
+## Coefficients:
+##               Estimate Std. Error   t value Pr(&gt;|t|)    
+## (Intercept)  1.832e+03  8.163e-02 22440.485  &lt; 2e-16 ***
+## genderWoman -3.014e-01  6.724e-02    -4.482 7.40e-06 ***
+## age         -2.123e-02  3.665e-03    -5.793 6.95e-09 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 9.476 on 91391 degrees of freedom
+## Multiple R-squared:  0.0005149,	Adjusted R-squared:  0.000493 
+## F-statistic: 23.54 on 2 and 91391 DF,  p-value: 6.012e-11
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(fit_lm) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">kable</span>(digits <span style="color:#666">=</span> <span style="color:#40a070">3</span>)
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">term</th>
+<th style="text-align:right">estimate</th>
+<th style="text-align:right">std.error</th>
+<th style="text-align:right">statistic</th>
+<th style="text-align:right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">(Intercept)</td>
+<td style="text-align:right">1831.869</td>
+<td style="text-align:right">0.082</td>
+<td style="text-align:right">22440.485</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">genderWoman</td>
+<td style="text-align:right">-0.301</td>
+<td style="text-align:right">0.067</td>
+<td style="text-align:right">-4.482</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td style="text-align:left">age</td>
+<td style="text-align:right">-0.021</td>
+<td style="text-align:right">0.004</td>
+<td style="text-align:right">-5.793</td>
+<td style="text-align:right">0</td>
+</tr>
+</tbody>
+</table>
+<p>During the years (about 1810 to 1850) included here, as time passed, there were some gradual shifts in the population of who was found on (i.e. liberated from) these slave ships.</p>
+<ul>
+<li>There is evidence for a modest shift to younger ages as time passed. (The plot showing increasing age with time was, it turns out, 
+<a href="https://en.wikipedia.org/wiki/Simpson%27s_paradox" target="_blank" rel="noopener">an example of Simpson&rsquo;s paradox</a>.)</li>
+<li>In the earlier years, there were more proportionally more women while in the later years, there were proportionally more men.</li>
+</ul>
+<p>I am very open to feedback on how to engage on these topics better, especially from folks who are personally impacted by this part of our history.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 17, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">9 minute read, 1786 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/uncanny-xmen/">&larr; The Bechdel test and the X-Mansion with tidymodels and #TidyTuesday</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/cocktail-recipes-umap/">PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

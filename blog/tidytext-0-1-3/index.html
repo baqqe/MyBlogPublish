@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>tidytext 0.1.3 | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="tidytext 0.1.3 | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/tidytext-0-1-3/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="tidytext 0.1.3">
+<meta itemprop="description" content="I am pleased to announce that tidytext 0.1.3 is now on CRAN!
+In this release, my collaborator David Robinson and I have fixed a handful of bugs, added tidiers for LDA models from the mallet package, and updated functions for changes to quanteda’s API. You can check out the NEWS for more details on changes.
+One enhancement in this release is the addition of the Loughran and McDonald sentiment lexicon of words specific to financial reporting."><meta itemprop="datePublished" content="2017-06-18T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2017-06-18T00:00:00+00:00" />
+<meta itemprop="wordCount" content="887">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">tidytext 0.1.3</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">June 18, 2017</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+
+
+<p>I am pleased to announce that tidytext 0.1.3 is <a href="https://cran.r-project.org/package=tidytext">now on CRAN</a>!</p>
+<p>In this release, my collaborator <a href="http://varianceexplained.org/">David Robinson</a> and I have fixed a handful of bugs, added tidiers for LDA models from the <a href="https://cran.r-project.org/package=mallet">mallet</a> package, and updated functions for changes to <a href="https://github.com/kbenoit/quanteda">quanteda’s</a> API. You can check out the <a href="https://github.com/juliasilge/tidytext/blob/master/NEWS.md">NEWS</a> for more details on changes.</p>
+<p>One enhancement in this release is the addition of the <a href="https://www3.nd.edu/~mcdonald/Word_Lists.html">Loughran and McDonald sentiment lexicon</a> of words specific to financial reporting. Sentiment lexicons are lists of words that are used to assess the emotion or opinion content of text by adding up the sentiment scores of individual words within that text; the tidytext package contains three general purpose English sentiment lexicons. The positive or negative meaning of a word can depend on its context, though. A word like “risk” has a negative meaning in most general contexts but may be more neutral for financial reporting. Context-specific sentiment lexicons like the Loughran-McDonald dictionary provide a way to deal with this.</p>
+<p>This financial lexicon labels words with six possible sentiments.</p>
+<pre class="r"><code>library(tidytext)
+library(tidyverse)
+
+get_sentiments(&quot;loughran&quot;) %&gt;%
+    count(sentiment, sort = TRUE)</code></pre>
+<pre><code>## # A tibble: 6 x 2
+##      sentiment     n
+##          &lt;chr&gt; &lt;int&gt;
+## 1     negative  2355
+## 2    litigious   903
+## 3     positive   354
+## 4  uncertainty   297
+## 5 constraining   184
+## 6  superfluous    56</code></pre>
+<div id="an-example" class="section level2">
+<h2>An example</h2>
+<p>I recently saw <a href="http://michaeltoth.me/sentiment-analysis-of-warren-buffetts-letters-to-shareholders.html">a sentiment analysis by Michael Toth</a> of Warren Buffett’s letters to shareholders. It’s a super interesting analysis, done well, but we can see from some of the plots in that analysis that the specifically financial nature of these documents would make a financial sentiment lexicon a great choice. Let’s scrape the letters from Berkshire Hathaway, Warren Buffett’s company, and then implement a sentiment analysis using this new lexicon.</p>
+<pre class="r"><code>library(rvest)
+library(pdftools)
+
+urls_oldest &lt;- paste0(&quot;http://www.berkshirehathaway.com/letters/&quot;, 
+                     seq(1977, 1997), &quot;.html&quot;)
+html_urls &lt;- c(urls_oldest,
+               &quot;http://www.berkshirehathaway.com/letters/1998htm.html&quot;,
+               &quot;http://www.berkshirehathaway.com/letters/1999htm.html&quot;,
+               &quot;http://www.berkshirehathaway.com/2000ar/2000letter.html&quot;,
+               &quot;http://www.berkshirehathaway.com/2001ar/2001letter.html&quot;)
+
+letters_html &lt;- html_urls %&gt;%
+    map_chr(~ read_html(.) %&gt;% 
+                html_text())
+
+urls_newest &lt;- paste0(&quot;http://www.berkshirehathaway.com/letters/&quot;, 
+                      seq(2003, 2016), &quot;ltr.pdf&quot;)
+
+pdf_urls &lt;- c(&quot;http://www.berkshirehathaway.com/letters/2002pdf.pdf&quot;,
+              urls_newest)
+
+letters_pdf &lt;- pdf_urls %&gt;%
+    map_chr(~ pdf_text(.) %&gt;% paste(collapse = &quot; &quot;))
+
+letters &lt;- data_frame(year = seq(1977, 2016),
+                      text = c(letters_html, letters_pdf))</code></pre>
+<p>Now we have the letters, and can convert this to a tidy text format.</p>
+<pre class="r"><code>tidy_letters &lt;- letters %&gt;%
+    unnest_tokens(word, text) %&gt;%
+    add_count(year) %&gt;%
+    rename(year_total = n)
+
+tidy_letters</code></pre>
+<pre><code>## # A tibble: 486,560 x 3
+##     year         word year_total
+##    &lt;int&gt;        &lt;chr&gt;      &lt;int&gt;
+##  1  1977   chairman&#39;s       3063
+##  2  1977       letter       3063
+##  3  1977         1977       3063
+##  4  1977    berkshire       3063
+##  5  1977     hathaway       3063
+##  6  1977          inc       3063
+##  7  1977           to       3063
+##  8  1977          the       3063
+##  9  1977 stockholders       3063
+## 10  1977           of       3063
+## # ... with 486,550 more rows</code></pre>
+<p>Next, let’s implement the sentiment analysis.</p>
+<pre class="r"><code>letter_sentiment &lt;- tidy_letters %&gt;%
+    inner_join(get_sentiments(&quot;loughran&quot;))
+
+letter_sentiment</code></pre>
+<pre><code>## # A tibble: 20,921 x 4
+##     year        word year_total   sentiment
+##    &lt;int&gt;       &lt;chr&gt;      &lt;int&gt;       &lt;chr&gt;
+##  1  1977      better       3063    positive
+##  2  1977 anticipated       3063 uncertainty
+##  3  1977       gains       3063    positive
+##  4  1977       gains       3063    positive
+##  5  1977      losses       3063    negative
+##  6  1977       gains       3063    positive
+##  7  1977      losses       3063    negative
+##  8  1977 anticipated       3063 uncertainty
+##  9  1977   indemnity       3063   litigious
+## 10  1977      better       3063    positive
+## # ... with 20,911 more rows</code></pre>
+<p>Now we have all we need to see the relative changes in these sentiments over the years.</p>
+<pre class="r"><code>letter_sentiment %&gt;%
+    count(year, year_total, sentiment) %&gt;%
+    filter(sentiment %in% c(&quot;positive&quot;, &quot;negative&quot;, 
+                            &quot;uncertainty&quot;, &quot;litigious&quot;)) %&gt;%
+    mutate(sentiment = factor(sentiment, levels = c(&quot;negative&quot;,
+                                                    &quot;positive&quot;,
+                                                    &quot;uncertainty&quot;,
+                                                    &quot;litigious&quot;))) %&gt;%
+    ggplot(aes(year, n / year_total, fill = sentiment)) +
+    geom_area(position = &quot;identity&quot;, alpha = 0.5) +
+    labs(y = &quot;Relative frequency&quot;, x = NULL,
+         title = &quot;Sentiment analysis of Warren Buffett&#39;s shareholder letters&quot;,
+         subtitle = &quot;Using the Loughran-McDonald lexicon&quot;)</code></pre>
+<p><img src="/blog/2017/2017-06-18-tidytext-0-1-3_files/figure-html/sentiment-1.png" width="1440" /></p>
+<p>We see negative sentiment spiking, higher than positive sentiment, during the financial upheaval of 2008, the collapse of the dot-com bubble in the early 2000s, and the recession of the 1990s. Overall, though, notice that the balance of positive to negative sentiment is not as skewed to positive as when you use <a href="http://michaeltoth.me/sentiment-analysis-of-warren-buffetts-letters-to-shareholders.html">one of the general purpose sentiment lexicons</a>.</p>
+<p>This happens because of the words that are driving the sentiment score in these different cases. When using the financial sentiment lexicon, the words have specifically been chosen for a financial context. What words are driving these sentiment scores?</p>
+<pre class="r"><code>letter_sentiment %&gt;%
+    count(sentiment, word) %&gt;%
+    filter(sentiment %in% c(&quot;positive&quot;, &quot;negative&quot;, 
+                            &quot;uncertainty&quot;, &quot;litigious&quot;)) %&gt;%
+    group_by(sentiment) %&gt;%
+    top_n(15) %&gt;%
+    ungroup %&gt;%
+    mutate(word = reorder(word, n)) %&gt;%
+    mutate(sentiment = factor(sentiment, levels = c(&quot;negative&quot;,
+                                                    &quot;positive&quot;,
+                                                    &quot;uncertainty&quot;,
+                                                    &quot;litigious&quot;))) %&gt;%
+    ggplot(aes(word, n, fill = sentiment)) +
+    geom_col(alpha = 0.8, show.legend = FALSE) +
+    coord_flip() +
+    scale_y_continuous(expand = c(0,0)) +
+    facet_wrap(~sentiment, scales = &quot;free&quot;) +
+    labs(x = NULL, y = &quot;Total number of occurrences&quot;,
+         title = &quot;Words driving sentiment scores in Warren Buffett&#39;s shareholder letters&quot;,
+         subtitle = &quot;From the Loughran-McDonald lexicon&quot;)</code></pre>
+<p><img src="/blog/2017/2017-06-18-tidytext-0-1-3_files/figure-html/by_word-1.png" width="1260" /></p>
+</div>
+<div id="the-end" class="section level2">
+<h2>The End</h2>
+<p>Checking which words are driving a sentiment score is not only important when dealing with financial text, <a href="http://tidytextmining.com/sentiment.html#most-positive-negative">but all text</a>; using tidy data principles makes it possible and not too difficult to dig into such an analysis. Our upcoming book <a href="https://www.amazon.com/Text-Mining-R-tidy-approach/dp/1491981652/"><em>Text Mining with R</em></a> explores how applying tidy data principles to this and lots of other text mining tasks makes your time and energy well spent. In the meantime, get the new version of <a href="https://cran.r-project.org/package=tidytext">tidytext</a> and let us know on <a href="https://github.com/juliasilge/tidytext/issues">GitHub</a> if you run into any issues!</p>
+</div>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 18, 2017</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">5 minute read, 887 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/using-tidycensus/">&larr; Using tidycensus and leaflet to map Census data</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/mining-cran-description/">Mining CRAN DESCRIPTION Files &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

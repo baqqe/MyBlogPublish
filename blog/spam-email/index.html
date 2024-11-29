@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Evaluate multiple modeling approaches for #TidyTuesday spam email | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Evaluate multiple modeling approaches for #TidyTuesday spam email | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/spam-email/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/spam-email/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/spam-email/featured.png" >
+    
+    
+  <meta itemprop="name" content="Evaluate multiple modeling approaches for #TidyTuesday spam email">
+<meta itemprop="description" content="Use workflowsets to evaluate multiple possible models to predict whether email is spam."><meta itemprop="datePublished" content="2023-09-01T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-09-01T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1470"><meta itemprop="image" content="https://juliasilge.com/blog/spam-email/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Evaluate multiple modeling approaches for #TidyTuesday spam email</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">September 1, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! This screencast focuses on how to evaluate multiple possible models via 
+<a href="https://workflowsets.tidymodels.org/" target="_blank" rel="noopener">workflowsets</a>, using this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on spam email. 📧</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/5LvTiy9dqrI" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict which 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-08-15/readme.md" target="_blank" rel="noopener">emails are spam</a>, based on some text features that have been prepared ahead of time. Let’s start by reading in the data:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+spam <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-08-15/spam.csv&#39;</span>)
+<span style="color:#06287e">glimpse</span>(spam)
+</code></pre></div><pre><code>## Rows: 4,601
+## Columns: 7
+## $ crl.tot &lt;dbl&gt; 278, 1028, 2259, 191, 191, 54, 112, 49, 1257, 749, 21, 184, 26…
+## $ dollar  &lt;dbl&gt; 0.000, 0.180, 0.184, 0.000, 0.000, 0.000, 0.054, 0.000, 0.203,…
+## $ bang    &lt;dbl&gt; 0.778, 0.372, 0.276, 0.137, 0.135, 0.000, 0.164, 0.000, 0.181,…
+## $ money   &lt;dbl&gt; 0.00, 0.43, 0.06, 0.00, 0.00, 0.00, 0.00, 0.00, 0.15, 0.00, 0.…
+## $ n000    &lt;dbl&gt; 0.00, 0.43, 1.16, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.19, 0.…
+## $ make    &lt;dbl&gt; 0.00, 0.21, 0.06, 0.00, 0.00, 0.00, 0.00, 0.00, 0.15, 0.06, 0.…
+## $ yesno   &lt;chr&gt; &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y&quot;, &quot;y…
+</code></pre>
+<p>The <code>yesno</code> variable tells us whether the email is spam or not, and we have information on the total length of UNINTERRUPTED CAPITAL LETTERS as well as occurrences of $, !, the word “money”, the string “000”, and the word “make” (all as proportions of characters or words). Notice that a lot of feature engineering has gone into preparing the dataset; we don’t have the raw email contents but instead a set of features engineered from that text. This means that we don’t need to think much about feature engineering for our example here.</p>
+<p>How is the number of UNINTERRUPTED CAPITAL LETTERS distributed?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">spam <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(crl.tot, fill <span style="color:#666">=</span> yesno, color <span style="color:#666">=</span> yesno)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_density</span>(linewidth <span style="color:#666">=</span> <span style="color:#40a070">1.2</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Spam?&#34;</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Spam?&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/spam-email/index_files/figure-html/unnamed-chunk-3-1.png" width="1260" />
+<p>How about those other features? Since those proportions have lots of zeroes, let’s compare zero with greater than zero visually:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">spam <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">pivot_longer</span>(dollar<span style="color:#666">:</span>make) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(
+    yesno <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(yesno <span style="color:#666">==</span> <span style="color:#4070a0">&#34;n&#34;</span>, <span style="color:#4070a0">&#34;Not spam&#34;</span>, <span style="color:#4070a0">&#34;Spam&#34;</span>),
+    value <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(value <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>, <span style="color:#4070a0">&#34;Greater than zero&#34;</span>, <span style="color:#4070a0">&#34;Zero&#34;</span>)
+  ) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(value, fill <span style="color:#666">=</span> yesno)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_bar</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position<span style="color:#666">=</span><span style="color:#4070a0">&#34;bottom&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/spam-email/index_files/figure-html/unnamed-chunk-4-1.png" width="1800" />
+<p>These features look like they exhibit some <em>big</em> differences between spam and not-spam email.</p>
+
+
+
+
+<h2 id="build-and-compare-models">Build and compare models
+  <a href="#build-and-compare-models"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We can start by loading the tidymodels metapackage, splitting our data into training and testing sets, and creating cross-validation resamples. Think about this stage as <em>spending your data budget</em>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+spam_split <span style="color:#666">&lt;-</span>
+  spam <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">mutate</span>(yesno <span style="color:#666">=</span> <span style="color:#06287e">as.factor</span>(yesno)) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> yesno)
+
+spam_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(spam_split)
+spam_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(spam_split)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+spam_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(spam_train, strata <span style="color:#666">=</span> yesno)
+spam_folds
+</code></pre></div><pre><code>## #  10-fold cross-validation using stratification 
+## # A tibble: 10 × 2
+##    splits             id    
+##    &lt;list&gt;             &lt;chr&gt; 
+##  1 &lt;split [3104/346]&gt; Fold01
+##  2 &lt;split [3105/345]&gt; Fold02
+##  3 &lt;split [3105/345]&gt; Fold03
+##  4 &lt;split [3105/345]&gt; Fold04
+##  5 &lt;split [3105/345]&gt; Fold05
+##  6 &lt;split [3105/345]&gt; Fold06
+##  7 &lt;split [3105/345]&gt; Fold07
+##  8 &lt;split [3105/345]&gt; Fold08
+##  9 &lt;split [3105/345]&gt; Fold09
+## 10 &lt;split [3106/344]&gt; Fold10
+</code></pre>
+<p>Let’s say that we don’t know what kind of modeling approach might work best with this data, as is often the case with a new modeling project, so we want to try out several options. Let’s start with a naive Bayes classifier, which incidentally is one of the 
+<a href="https://en.wikipedia.org/wiki/Naive_Bayes_spam_filtering" target="_blank" rel="noopener">real ways spam email has been identified</a> (although in a real application, naive Bayes is used with the whole email text contents, not features like these). Let’s also include a MARS model and random forest model. Each of these has hyperparameters, so let’s include both a model specification where we tune a hyperparameter or two together with one that uses model defaults.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(discrim)
+
+nb_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">naive_Bayes</span>()
+nb_spec_tune <span style="color:#666">&lt;-</span> <span style="color:#06287e">naive_Bayes</span>(smoothness <span style="color:#666">=</span> <span style="color:#06287e">tune</span>())
+mars_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">mars</span>() <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>)
+mars_spec_tune <span style="color:#666">&lt;-</span> <span style="color:#06287e">mars</span>(num_terms <span style="color:#666">=</span> <span style="color:#06287e">tune</span>()) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>)
+rf_spec <span style="color:#666">&lt;-</span> <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>)
+rf_spec_tune <span style="color:#666">&lt;-</span> <span style="color:#06287e">rand_forest</span>(trees <span style="color:#666">=</span> <span style="color:#40a070">1e3</span>, mtry <span style="color:#666">=</span> <span style="color:#06287e">tune</span>(), min_n <span style="color:#666">=</span> <span style="color:#06287e">tune</span>()) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;classification&#34;</span>)
+</code></pre></div><p>Now we can put all these together in a 
+<a href="https://workflowsets.tidymodels.org/" target="_blank" rel="noopener">workflowset</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">spam_models <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow_set</span>(
+    preproc <span style="color:#666">=</span> <span style="color:#06287e">list</span>(formula <span style="color:#666">=</span> yesno <span style="color:#666">~</span> .),
+    models <span style="color:#666">=</span> <span style="color:#06287e">list</span>(
+      nb <span style="color:#666">=</span> nb_spec, 
+      mars <span style="color:#666">=</span> mars_spec, 
+      rf <span style="color:#666">=</span> rf_spec,
+      nb_tune <span style="color:#666">=</span> nb_spec_tune, 
+      mars_tune <span style="color:#666">=</span> mars_spec_tune, 
+      rf_tune <span style="color:#666">=</span> rf_spec_tune
+    )
+  )
+
+spam_models
+</code></pre></div><pre><code>## # A workflow set/tibble: 6 × 4
+##   wflow_id          info             option    result    
+##   &lt;chr&gt;             &lt;list&gt;           &lt;list&gt;    &lt;list&gt;    
+## 1 formula_nb        &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 2 formula_mars      &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 3 formula_rf        &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 4 formula_nb_tune   &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 5 formula_mars_tune &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+## 6 formula_rf_tune   &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
+</code></pre>
+<p>Since half of these model specifications have tuning parameters, let’s use <code>tune_grid()</code> to evaluate how each performs; for the models without any tuning parameters, it will automatically use <code>fit_resamples()</code> instead. I want to see how the model does for both spam and not spam, so I’ll add some specific metrics as well.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+spam_res <span style="color:#666">&lt;-</span>
+    spam_models <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">workflow_map</span>(
+        <span style="color:#4070a0">&#34;tune_grid&#34;</span>,
+        resamples <span style="color:#666">=</span> spam_folds,
+        metrics <span style="color:#666">=</span> <span style="color:#06287e">metric_set</span>(accuracy, sensitivity, specificity)
+    )
+</code></pre></div><p>How did all these models do?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">autoplot</span>(spam_res)
+</code></pre></div><img src="https://juliasilge.com/blog/spam-email/index_files/figure-html/unnamed-chunk-9-1.png" width="1800" />
+<p>All of the models do better identifying the positive class (<code>&quot;n&quot;</code>) than the negative class (<code>&quot;y&quot;</code>) but the naive Bayes classifier does even worse than the other two; it does the worst job at identifying real spam email as spam. (Remember that this isn’t the same situation as real spam classifiers, which deal with the whole text.) That random forest is looking pretty good!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">rank_results</span>(spam_res, rank_metric <span style="color:#666">=</span> <span style="color:#4070a0">&#34;accuracy&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 81 × 9
+##    wflow_id        .config  .metric  mean std_err     n preprocessor model  rank
+##    &lt;chr&gt;           &lt;chr&gt;    &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;        &lt;chr&gt; &lt;int&gt;
+##  1 formula_rf      Preproc… accura… 0.881 0.00650    10 formula      rand…     1
+##  2 formula_rf      Preproc… sensit… 0.940 0.00605    10 formula      rand…     1
+##  3 formula_rf      Preproc… specif… 0.792 0.0110     10 formula      rand…     1
+##  4 formula_rf_tune Preproc… accura… 0.880 0.00650    10 formula      rand…     2
+##  5 formula_rf_tune Preproc… sensit… 0.934 0.00520    10 formula      rand…     2
+##  6 formula_rf_tune Preproc… specif… 0.798 0.0107     10 formula      rand…     2
+##  7 formula_rf_tune Preproc… accura… 0.880 0.00605    10 formula      rand…     3
+##  8 formula_rf_tune Preproc… sensit… 0.935 0.00523    10 formula      rand…     3
+##  9 formula_rf_tune Preproc… specif… 0.795 0.0106     10 formula      rand…     3
+## 10 formula_rf_tune Preproc… accura… 0.880 0.00634    10 formula      rand…     4
+## # ℹ 71 more rows
+</code></pre>
+<p>It turns out that it is the random forest <em>without tuning</em> that is the absolute best, although there is not much difference in performance between the different random forest configurations. This is a great example of why we love random forest and it is used so much! Often turns out great and is low-maintenace about hyperparameters.</p>
+
+
+
+
+<h2 id="train-and-evaluate-final-model">Train and evaluate final model
+  <a href="#train-and-evaluate-final-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s go with that no-tuning random forest as our final choice for predicting spam from these features. Let’s also update the model specification so it computes feature importance during training.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">spam_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>(
+    yesno <span style="color:#666">~</span> ., 
+    rf_spec <span style="color:#666">|&gt;</span> <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;ranger&#34;</span>, importance <span style="color:#666">=</span> <span style="color:#4070a0">&#34;impurity&#34;</span>)
+)
+spam_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">last_fit</span>(spam_wf, spam_split)
+spam_fit
+</code></pre></div><pre><code>## # Resampling results
+## # Manual resampling 
+## # A tibble: 1 × 6
+##   splits              id               .metrics .notes   .predictions .workflow 
+##   &lt;list&gt;              &lt;chr&gt;            &lt;list&gt;   &lt;list&gt;   &lt;list&gt;       &lt;list&gt;    
+## 1 &lt;split [3450/1151]&gt; train/test split &lt;tibble&gt; &lt;tibble&gt; &lt;tibble&gt;     &lt;workflow&gt;
+</code></pre>
+<p>What does the confusion matrix look like?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(spam_fit) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">conf_mat</span>(yesno, .pred_class)
+</code></pre></div><pre><code>##           Truth
+## Prediction   n   y
+##          n 664 106
+##          y  33 348
+</code></pre>
+<p>It’s definitely easier to identify email that is not spam than is spam, but remember that this model did better at that than the other ones we tried. What about an ROC curve?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">collect_predictions</span>(spam_fit) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">roc_curve</span>(yesno, .pred_n) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">autoplot</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/spam-email/index_files/figure-html/unnamed-chunk-13-1.png" width="1260" />
+<p>Since we updated the random forest model specification to compute variable importance, we can see those results now:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vip)
+
+<span style="color:#06287e">extract_workflow</span>(spam_fit) <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">extract_fit_parsnip</span>() <span style="color:#666">|&gt;</span>
+  <span style="color:#06287e">vip</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/spam-email/index_files/figure-html/unnamed-chunk-14-1.png" width="1260" />
+<p>When we have lots of ‼️‼️‼️‼️an email has a high likelihood of being spam.</p>
+
+
+
+
+<h2 id="create-a-deployable-model-object">Create a deployable model object
+  <a href="#create-a-deployable-model-object"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you wanted to deploy this model, the next step is to create a deployable model object with 
+<a href="https://vetiver.rstudio.com/" target="_blank" rel="noopener">vetiver</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(vetiver)
+
+v <span style="color:#666">&lt;-</span> <span style="color:#06287e">extract_workflow</span>(spam_fit) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">vetiver_model</span>(<span style="color:#4070a0">&#34;spam-email-rf&#34;</span>)
+v
+</code></pre></div><pre><code>## 
+## ── spam-email-rf ─ &lt;bundled_workflow&gt; model for deployment 
+## A ranger classification modeling workflow using 6 features
+</code></pre>
+<p>Check out the video for what it looks like to run this API locally.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(plumber)
+<span style="color:#06287e">pr</span>() <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">vetiver_api</span>(v) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">pr_run</span>()
+</code></pre></div><p>I am teaching a workshop at 
+<a href="https://pos.it/conf" target="_blank" rel="noopener">posit::conf()</a> in just a couple weeks on how to deploy and maintain models with vetiver, and there are just a few spots left! Join me if you are interested in learning more about this part of the modeling process, or 
+<a href="https://www.youtube.com/playlist?list=PL9HYL-VRX0oROlETlHRDAt0FzqnfkoG84" target="_blank" rel="noopener">check out all the other workshops</a> being put together for later this month.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">September 1, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">7 minute read, 1470 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/roy-kent/">&larr; How often does Roy Kent say &#34;F*CK&#34;?</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/gpt-detectors/">Classification metrics for #TidyTuesday GPT detectors &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

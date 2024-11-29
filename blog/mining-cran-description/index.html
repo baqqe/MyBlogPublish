@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Mining CRAN DESCRIPTION Files | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Text analysis and more">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Mining CRAN DESCRIPTION Files | Julia Silge">
+<meta property="og:description" content="Text analysis and more" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/mining-cran-description/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Mining CRAN DESCRIPTION Files">
+<meta itemprop="description" content="A couple of weeks ago, I saw on Dirk Eddelbuettel&rsquo;s blog that R 3.4.0 was going to include a function for obtaining information about packages currently on CRAN, including basically everything in DESCRIPTION files. When R 3.4.0 was released, this was one of the things I was most immediately excited about exploring, because although I recently dabbled in scraping CRAN to try to get this kind of information, it was rather onerous."><meta itemprop="datePublished" content="2017-05-04T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2017-05-04T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1515">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Mining CRAN DESCRIPTION Files</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">May 4, 2017</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>A couple of weeks ago, I saw 
+<a href="http://dirk.eddelbuettel.com/blog/2017/04/06/" target="_blank" rel="noopener">on Dirk Eddelbuettel&rsquo;s blog</a> that R 3.4.0 was going to include a function for obtaining information about packages currently on CRAN, including basically everything in DESCRIPTION files. When R 3.4.0 was released, this was one of the things I was most immediately excited about exploring, because although 
+<a href="http://juliasilge.com/blog/Scraping-CRAN/" target="_blank" rel="noopener">I recently dabbled in scraping CRAN</a> to try to get this kind of information, it was rather onerous.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidyverse)
+
+cran &lt;- tools::CRAN_package_db()
+
+# the returned data frame has two columns with the same name???
+cran &lt;- cran[,-65]
+
+# make it a tibble
+cran &lt;- tbl_df(cran)
+
+cran
+</code></pre><pre tabindex="0"><code>## # A tibble: 10,542 × 64
+##        Package Version Priority                                             Depends
+##          &lt;chr&gt;   &lt;chr&gt;    &lt;chr&gt;                                               &lt;chr&gt;
+## 1           A3   1.0.0     &lt;NA&gt;                      R (&gt;= 2.15.0), xtable, pbapply
+## 2       abbyyR   0.5.1     &lt;NA&gt;                                        R (&gt;= 3.2.0)
+## 3          abc     2.1     &lt;NA&gt; R (&gt;= 2.10), abc.data, nnet, quantreg, MASS, locfit
+## 4  ABCanalysis   1.2.1     &lt;NA&gt;                                         R (&gt;= 2.10)
+## 5     abc.data     1.0     &lt;NA&gt;                                         R (&gt;= 2.10)
+## 6     abcdeFBA     0.4     &lt;NA&gt;              Rglpk,rgl,corrplot,lattice,R (&gt;= 2.10)
+## 7     ABCoptim  0.14.0     &lt;NA&gt;                                                &lt;NA&gt;
+## 8        ABCp2     1.2     &lt;NA&gt;                                                MASS
+## 9      ABC.RAP   0.9.0     &lt;NA&gt;                                        R (&gt;= 3.1.0)
+## 10       abcrf     1.5     &lt;NA&gt;                                           R(&gt;= 3.1)
+##                                   Imports LinkingTo
+##                                     &lt;chr&gt;     &lt;chr&gt;
+## 1                                    &lt;NA&gt;      &lt;NA&gt;
+## 2  httr, XML, curl, readr, plyr, progress      &lt;NA&gt;
+## 3                                    &lt;NA&gt;      &lt;NA&gt;
+## 4                                 plotrix      &lt;NA&gt;
+## 5                                    &lt;NA&gt;      &lt;NA&gt;
+## 6                                    &lt;NA&gt;      &lt;NA&gt;
+## 7                                    Rcpp      Rcpp
+## 8                                    &lt;NA&gt;      &lt;NA&gt;
+## 9                  graphics, stats, utils      &lt;NA&gt;
+## 10 readr, MASS, ranger, parallel, stringr      &lt;NA&gt;
+## # ... with 10,532 more rows, and 58 more variables: Suggests &lt;chr&gt;, Enhances &lt;chr&gt;, License &lt;chr&gt;,
+## #   License_is_FOSS &lt;chr&gt;, License_restricts_use &lt;chr&gt;, OS_type &lt;chr&gt;, Archs &lt;chr&gt;, MD5sum &lt;chr&gt;,
+## #   NeedsCompilation &lt;chr&gt;, Additional_repositories &lt;chr&gt;, Author &lt;chr&gt;, `Authors@R` &lt;chr&gt;, Biarch &lt;chr&gt;,
+## #   BugReports &lt;chr&gt;, BuildKeepEmpty &lt;chr&gt;, BuildManual &lt;chr&gt;, BuildResaveData &lt;chr&gt;, BuildVignettes &lt;chr&gt;,
+## #   Built &lt;chr&gt;, ByteCompile &lt;chr&gt;, `Classification/ACM` &lt;chr&gt;, `Classification/ACM-2012` &lt;chr&gt;,
+## #   `Classification/JEL` &lt;chr&gt;, `Classification/MSC` &lt;chr&gt;, `Classification/MSC-2010` &lt;chr&gt;, Collate &lt;chr&gt;,
+## #   Collate.unix &lt;chr&gt;, Collate.windows &lt;chr&gt;, Contact &lt;chr&gt;, Copyright &lt;chr&gt;, Date &lt;chr&gt;, Description &lt;chr&gt;,
+## #   Encoding &lt;chr&gt;, KeepSource &lt;chr&gt;, Language &lt;chr&gt;, LazyData &lt;chr&gt;, LazyDataCompression &lt;chr&gt;, LazyLoad &lt;chr&gt;,
+## #   MailingList &lt;chr&gt;, Maintainer &lt;chr&gt;, Note &lt;chr&gt;, Packaged &lt;chr&gt;, RdMacros &lt;chr&gt;, SysDataCompression &lt;chr&gt;,
+## #   SystemRequirements &lt;chr&gt;, Title &lt;chr&gt;, Type &lt;chr&gt;, URL &lt;chr&gt;, VignetteBuilder &lt;chr&gt;, ZipData &lt;chr&gt;,
+## #   Published &lt;chr&gt;, Path &lt;chr&gt;, `X-CRAN-Comment` &lt;chr&gt;, `Reverse depends` &lt;chr&gt;, `Reverse imports` &lt;chr&gt;, `Reverse
+## #   linking to` &lt;chr&gt;, `Reverse suggests` &lt;chr&gt;, `Reverse enhances` &lt;chr&gt;
+</code></pre><p>There you go, all the packages currently on CRAN!</p>
+
+
+
+
+<h2 id="practices-of-cran-maintainers">Practices of CRAN maintainers
+  <a href="#practices-of-cran-maintainers"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Some of the fields in the DESCRIPTION file of an R package tell us a bit about how a CRAN maintainer works, and in aggregate we can see how R package developers are operating.</p>
+<p>How many packages have a URL, a place to go like GitHub to see the code and check out what is going on?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">cran %&gt;% 
+    summarise(URL = mean(!is.na(URL)))
+</code></pre><pre tabindex="0"><code>## # A tibble: 1 × 1
+##         URL
+##       &lt;dbl&gt;
+## 1 0.4176627
+</code></pre><p>What about a URL for bug reports?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">cran %&gt;% 
+    summarise(BugReports = mean(!is.na(BugReports)))
+</code></pre><pre tabindex="0"><code>## # A tibble: 1 × 1
+##   BugReports
+##        &lt;dbl&gt;
+## 1  0.2165623
+</code></pre><p>How many packages have a package designated as a <code>VignetteBuilder</code>?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">cran %&gt;% 
+    count(VignetteBuilder, sort = TRUE)
+</code></pre><pre tabindex="0"><code>## # A tibble: 23 × 2
+##     VignetteBuilder     n
+##               &lt;chr&gt; &lt;int&gt;
+## 1              &lt;NA&gt;  8633
+## 2             knitr  1773
+## 3             R.rsp    83
+## 4      knitr, R.rsp    14
+## 5  knitr, rmarkdown     7
+## 6         highlight     6
+## 7      utils, knitr     5
+## 8  rmarkdown, knitr     3
+## 9       packagedocs     2
+## 10           R.rsp,     2
+## # ... with 13 more rows
+</code></pre><p>Are there packages that have vignettes but also have <code>NA</code> for <code>VignetteBuilder</code>? Yes, those would be packages that use 
+<a href="https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Non_002dSweave-vignettes" target="_blank" rel="noopener">Sweave, the built-in vignette engine</a> that comes with R. This must be biased toward older packages and it can&rsquo;t be a large proportion of the total, given 
+<a href="http://juliasilge.com/blog/Scraping-CRAN/" target="_blank" rel="noopener">when CRAN has been growing the fastest</a>. I know there are still packages with Sweave vignettes, but these days, having something in <code>VignetteBuilder</code> is at least somewhat indicative of whether a package has a vignette. There isn&rsquo;t anything else in the DESCRIPTION file, to my knowledge, that indicates whether a package has a vignette or not.</p>
+<p>How many packages use testthat or RUnit for unit tests?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(stringr)
+
+cran %&gt;% 
+    mutate(tests = ifelse(str_detect(Suggests, &quot;testthat|RUnit&quot;), TRUE, FALSE),
+           tests = ifelse(is.na(tests), FALSE, tests)) %&gt;%
+    summarise(tests = mean(tests))
+</code></pre><pre tabindex="0"><code>## # A tibble: 1 × 1
+##       tests
+##       &lt;dbl&gt;
+## 1 0.1950294
+</code></pre><p>(Another handful of packages have these testing suites in Imports or Depends, but not enough to change that proportion much.)</p>
+<p>Is it the same ~20% of packages that are embracing the practices of unit tests, building vignettes, and providing a URL for bug reports?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">cran %&gt;%
+    mutate(tests = ifelse(str_detect(Suggests, &quot;testthat|RUnit&quot;), TRUE, FALSE),
+           tests = ifelse(is.na(tests), FALSE, tests),
+           bug_report = ifelse(is.na(BugReports), FALSE, TRUE),
+           vignette = ifelse(is.na(VignetteBuilder), FALSE, TRUE)) %&gt;%
+    count(tests, bug_report, vignette)
+</code></pre><pre tabindex="0"><code>## # A tibble: 8 × 4
+##   tests bug_report vignette     n
+##   &lt;lgl&gt;      &lt;lgl&gt;    &lt;lgl&gt; &lt;int&gt;
+## 1 FALSE      FALSE    FALSE  6849
+## 2 FALSE      FALSE     TRUE   594
+## 3 FALSE       TRUE    FALSE   715
+## 4 FALSE       TRUE     TRUE   328
+## 5  TRUE      FALSE    FALSE   510
+## 6  TRUE      FALSE     TRUE   306
+## 7  TRUE       TRUE    FALSE   559
+## 8  TRUE       TRUE     TRUE   681
+</code></pre><p>Huh, so no, actually. I would have guessed that there would have been more packages in the <code>TRUE/TRUE/TRUE</code> bin in this data frame and fewer in the bins that are mixes of <code>TRUE</code> and <code>FALSE</code>. What does that distribution look like?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidyr)
+
+cran %&gt;%
+    mutate(tests = ifelse(str_detect(Suggests, &quot;testthat|RUnit&quot;), &quot;Tests&quot;, &quot;No tests&quot;),
+           tests = ifelse(is.na(tests), &quot;No tests&quot;, tests),
+           bug_report = ifelse(is.na(BugReports), &quot;No bug report&quot;, &quot;Bug report&quot;),
+           vignette = ifelse(is.na(VignetteBuilder), &quot;No vignette builder&quot;, &quot;Vignette builder&quot;)) %&gt;%
+    count(tests, bug_report, vignette) %&gt;%
+    mutate(percent = n / sum(n)) %&gt;%
+    arrange(desc(percent)) %&gt;%
+    unite(practices, tests, bug_report, vignette, sep = &quot;\n&quot;) %&gt;%
+    mutate(practices = reorder(practices, -percent)) %&gt;%
+    ggplot(aes(practices, percent, fill = practices)) +
+    geom_col(alpha = 0.7, show.legend = FALSE) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    labs(x = NULL, y = &quot;% of CRAN pacakges&quot;,
+         title = &quot;How many packages on CRAN have units tests, a URL for bug reports, or a vignette builder?&quot;,
+         subtitle = &quot;About 6% of packages currently on CRAN have all three&quot;)
+</code></pre><p><img src="/figs/2017-05-04-Mining-CRAN-DESCRIPTION/practices-1.png" alt="center"></p>
+<p>Maybe I should not be surprised, since a 
+<a href="https://github.com/juliasilge/janeaustenr" target="_blank" rel="noopener">package that I myself maintain</a> has unit tests and a URL for bug reports but no vignette. And remember that a few of the &ldquo;No vignette builder&rdquo; packages are maintainers choosing to produce vignettes via Sweave, OLD SCHOOL.</p>
+
+
+
+
+<h2 id="yo-dawg-i-heard-you-like-descriptions-in-your-description">Yo dawg I heard you like Descriptions in your DESCRIPTION
+  <a href="#yo-dawg-i-heard-you-like-descriptions-in-your-description"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>One of the fields in the DESCRIPTION file for an R package is the <code>Description</code> for the package.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">cran %&gt;%
+    filter(Package == &quot;tidytext&quot;) %&gt;%
+    select(Description)
+</code></pre><pre tabindex="0"><code>## # A tibble: 1 × 1
+##                                                                                                   Description
+##                                                                                                         &lt;chr&gt;
+## 1 Text mining for word processing and sentiment analysis using\n    'dplyr', 'ggplot2', and other tidy tools.
+</code></pre><p>Let&rsquo;s use the 
+<a href="https://github.com/juliasilge/tidytext" target="_blank" rel="noopener">tidytext</a> package that I have developed with 
+<a href="http://varianceexplained.org/" target="_blank" rel="noopener">David Robinson</a> to take a look at the words maintainers use to describe their packages. What words do they use the most often?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidytext)
+
+tidy_cran &lt;- cran %&gt;%
+    unnest_tokens(word, Description)
+
+word_totals &lt;- tidy_cran %&gt;%
+    anti_join(stop_words) %&gt;%
+    count(word, sort = TRUE)
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">word_totals %&gt;%
+    top_n(20) %&gt;%
+    mutate(word = reorder(word, n)) %&gt;%
+    ggplot(aes(word, n)) +
+    geom_col(fill = &quot;cyan4&quot;, alpha = 0.8) +
+    coord_flip() +
+    scale_y_continuous(expand = c(0,0)) +
+    labs(x = NULL, y = &quot;Number of uses in CRAN descriptions&quot;,
+         title = &quot;What are the most commonly used words in CRAN package descriptions?&quot;,
+         subtitle = &quot;After removing stop words&quot;)
+</code></pre><p><img src="/figs/2017-05-04-Mining-CRAN-DESCRIPTION/common_words-1.png" alt="center"></p>
+<p>Now let&rsquo;s see what the relationships between all these description words are. Let&rsquo;s look at how words are correlated together within description fields and make a word network.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(igraph)
+library(ggraph)
+library(widyr)
+
+word_cors &lt;- tidy_cran %&gt;%
+    anti_join(stop_words) %&gt;%
+    group_by(word) %&gt;%
+    filter(n() &gt; 150) %&gt;% # filter for words used at least 150 times
+    ungroup %&gt;%
+    pairwise_cor(word, Package, sort = TRUE)
+
+filtered_cors &lt;- word_cors %&gt;%
+  filter(correlation &gt; 0.2,
+         item1 %in% word_totals$word,
+         item2 %in% word_totals$word)
+
+vertices &lt;- word_totals %&gt;%
+    filter(word %in% filtered_cors$item1)
+
+set.seed(1234)
+filtered_cors %&gt;%
+    graph_from_data_frame(vertices = vertices) %&gt;%
+    ggraph(layout = &quot;fr&quot;) +
+    geom_edge_link(aes(edge_alpha = correlation), width = 2) +
+    geom_node_point(aes(size = n), color = &quot;cyan4&quot;) +
+    geom_node_text(aes(label = name), repel = TRUE, point.padding = unit(0.2, &quot;lines&quot;),
+                   family = &quot;RobotoCondensed-Regular&quot;) +
+    theme_graph(base_family = &quot;RobotoCondensed-Regular&quot;) +
+    theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;)) +
+    scale_size_continuous(range = c(1, 15)) +
+    labs(size = &quot;Number of uses&quot;,
+         edge_alpha = &quot;Correlation&quot;,
+         title = &quot;Word correlations in R package descriptions&quot;,
+         subtitle = &quot;Which words are more likely to occur together than with other words?&quot;)
+</code></pre><p><img src="/figs/2017-05-04-Mining-CRAN-DESCRIPTION/network-1.png" alt="center"></p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>If you are interested in this approach to text analysis in R, check out the 
+<a href="amazon.com/Text-Mining-R-tidy-approach/dp/1491981652/">book Dave and I are publishing with O&rsquo;Reilly</a>, to be released this summer, 
+<a href="http://tidytextmining.com/" target="_blank" rel="noopener">available online as well</a>. I found it really interesting to get a glimpse into this ecosystem that is such an important part of my professional and open-source life, both to see the overlap with the areas that I work in and the vast areas that I do not! The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2017-05-04-Mining-CRAN-DESCRIPTION.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback and questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 4, 2017</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1515 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/tidytext-0-1-3/">&larr; tidytext 0.1.3</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/gender-pronouns/">Gender Roles with Text Mining and N-grams &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

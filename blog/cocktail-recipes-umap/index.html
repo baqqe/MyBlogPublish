@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/cocktail-recipes-umap/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/cocktail-recipes-umap/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/cocktail-recipes-umap/featured.png" >
+    
+    
+  <meta itemprop="name" content="PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes">
+<meta itemprop="description" content="Use tidymodels for unsupervised dimensionality reduction."><meta itemprop="datePublished" content="2020-05-27T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-05-27T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1516"><meta itemprop="image" content="https://juliasilge.com/blog/cocktail-recipes-umap/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">May 27, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Lately I&rsquo;ve been publishing 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> framework, from first steps in modeling to how to evaluate complex models. Today&rsquo;s screencast isn&rsquo;t about predictive modeling, but about <strong>unsupervised machine learning</strong> using with this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on cocktail recipes. 🍸</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/_1msVvPE_KY" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to use unsupervised algorithms for dimensionality reduction with 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-05-26/readme.md" target="_blank" rel="noopener">cocktail recipes from this week&rsquo;s #TidyTuesday dataset</a>. In my 
+<a href="https://juliasilge.com/blog/tidylo-cran/" target="_blank" rel="noopener">earlier blog post</a> this week, I used one of the cocktail datasets included and here let&rsquo;s use the other one.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">boston_cocktails <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-26/boston_cocktails.csv&#34;</span>)
+
+boston_cocktails <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(ingredient, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 569 x 2
+##    ingredient            n
+##    &lt;chr&gt;             &lt;int&gt;
+##  1 Gin                 176
+##  2 Fresh lemon juice   138
+##  3 Simple Syrup        115
+##  4 Vodka               114
+##  5 Light Rum           113
+##  6 Dry Vermouth        107
+##  7 Fresh Lime Juice    107
+##  8 Triple Sec          107
+##  9 Powdered Sugar       90
+## 10 Grenadine            85
+## # … with 559 more rows
+</code></pre><p>There&rsquo;s a bit of data cleaning to do to start, both for the <code>ingredient</code> column and the <code>measure</code> column.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">cocktails_parsed <span style="color:#666">&lt;-</span> boston_cocktails <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    ingredient <span style="color:#666">=</span> <span style="color:#06287e">str_to_lower</span>(ingredient),
+    ingredient <span style="color:#666">=</span> <span style="color:#06287e">str_replace_all</span>(ingredient, <span style="color:#4070a0">&#34;-&#34;</span>, <span style="color:#4070a0">&#34; &#34;</span>),
+    ingredient <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(ingredient, <span style="color:#4070a0">&#34; liqueur$&#34;</span>),
+    ingredient <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(ingredient, <span style="color:#4070a0">&#34; (if desired)$&#34;</span>),
+    ingredient <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+      <span style="color:#06287e">str_detect</span>(ingredient, <span style="color:#4070a0">&#34;bitters&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;bitters&#34;</span>,
+      <span style="color:#06287e">str_detect</span>(ingredient, <span style="color:#4070a0">&#34;lemon&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;lemon juice&#34;</span>,
+      <span style="color:#06287e">str_detect</span>(ingredient, <span style="color:#4070a0">&#34;lime&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;lime juice&#34;</span>,
+      <span style="color:#06287e">str_detect</span>(ingredient, <span style="color:#4070a0">&#34;grapefruit&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;grapefruit juice&#34;</span>,
+      <span style="color:#06287e">str_detect</span>(ingredient, <span style="color:#4070a0">&#34;orange&#34;</span>) <span style="color:#666">~</span> <span style="color:#4070a0">&#34;orange juice&#34;</span>,
+      <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> ingredient
+    ),
+    measure <span style="color:#666">=</span> <span style="color:#06287e">case_when</span>(
+      <span style="color:#06287e">str_detect</span>(ingredient, <span style="color:#4070a0">&#34;bitters&#34;</span>) <span style="color:#666">~</span> <span style="color:#06287e">str_replace</span>(measure, <span style="color:#4070a0">&#34;oz$&#34;</span>, <span style="color:#4070a0">&#34;dash&#34;</span>),
+      <span style="color:#007020;font-weight:bold">TRUE</span> <span style="color:#666">~</span> measure
+    ),
+    measure <span style="color:#666">=</span> <span style="color:#06287e">str_replace</span>(measure, <span style="color:#4070a0">&#34; ?1/2&#34;</span>, <span style="color:#4070a0">&#34;.5&#34;</span>),
+    measure <span style="color:#666">=</span> <span style="color:#06287e">str_replace</span>(measure, <span style="color:#4070a0">&#34; ?3/4&#34;</span>, <span style="color:#4070a0">&#34;.75&#34;</span>),
+    measure <span style="color:#666">=</span> <span style="color:#06287e">str_replace</span>(measure, <span style="color:#4070a0">&#34; ?1/4&#34;</span>, <span style="color:#4070a0">&#34;.25&#34;</span>),
+    measure_number <span style="color:#666">=</span> <span style="color:#06287e">parse_number</span>(measure),
+    measure_number <span style="color:#666">=</span> <span style="color:#06287e">if_else</span>(<span style="color:#06287e">str_detect</span>(measure, <span style="color:#4070a0">&#34;dash$&#34;</span>),
+      measure_number <span style="color:#666">/</span> <span style="color:#40a070">50</span>,
+      measure_number
+    )
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_count</span>(ingredient) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">15</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>n) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">distinct</span>(row_id, ingredient, .keep_all <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>()
+
+cocktails_parsed
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 2,542 x 7
+##    name     category   row_id ingredient_numb… ingredient measure measure_number
+##    &lt;chr&gt;    &lt;chr&gt;       &lt;dbl&gt;            &lt;dbl&gt; &lt;chr&gt;      &lt;chr&gt;            &lt;dbl&gt;
+##  1 Gauguin  Cocktail …      1                1 light rum  2 oz              2   
+##  2 Gauguin  Cocktail …      1                3 lemon jui… 1 oz              1   
+##  3 Gauguin  Cocktail …      1                4 lime juice 1 oz              1   
+##  4 Fort La… Cocktail …      2                1 light rum  1.5 oz            1.5 
+##  5 Fort La… Cocktail …      2                2 sweet ver… .5 oz             0.5 
+##  6 Fort La… Cocktail …      2                3 orange ju… .25 oz            0.25
+##  7 Fort La… Cocktail …      2                4 lime juice .25 oz            0.25
+##  8 Cuban C… Cocktail …      4                1 lime juice .5 oz             0.5 
+##  9 Cuban C… Cocktail …      4                2 powdered … .5 oz             0.5 
+## 10 Cuban C… Cocktail …      4                3 light rum  2 oz              2   
+## # … with 2,532 more rows
+</code></pre><p>I typically do my data cleaning with data in a tidy format, like <code>boston_cocktails</code> or <code>cocktails_parsed</code>. When it&rsquo;s time for modeling, we usually need the data in a wider format, so let&rsquo;s use <code>pivot_wider()</code> to reshape our data.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">cocktails_df <span style="color:#666">&lt;-</span> cocktails_parsed <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>ingredient_number, <span style="color:#666">-</span>row_id, <span style="color:#666">-</span>measure) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(names_from <span style="color:#666">=</span> ingredient, values_from <span style="color:#666">=</span> measure_number, values_fill <span style="color:#666">=</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  janitor<span style="color:#666">::</span><span style="color:#06287e">clean_names</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>()
+
+cocktails_df
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 937 x 42
+##    name  category light_rum lemon_juice lime_juice sweet_vermouth orange_juice
+##    &lt;chr&gt; &lt;chr&gt;        &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;          &lt;dbl&gt;        &lt;dbl&gt;
+##  1 Gaug… Cocktai…      2           1          1               0           0   
+##  2 Fort… Cocktai…      1.5         0          0.25            0.5         0.25
+##  3 Cuba… Cocktai…      2           0          0.5             0           0   
+##  4 Cool… Cocktai…      0           0          0               0           1   
+##  5 John… Whiskies      0           1          0               0           0   
+##  6 Cher… Cocktai…      1.25        0          0               0           0   
+##  7 Casa… Cocktai…      2           0          1.5             0           0   
+##  8 Cari… Cocktai…      0.5         0          0               0           0   
+##  9 Ambe… Cordial…      0           0.25       0               0           0   
+## 10 The … Whiskies      0           0.5        0               0           0   
+## # … with 927 more rows, and 35 more variables: powdered_sugar &lt;dbl&gt;,
+## #   dark_rum &lt;dbl&gt;, cranberry_juice &lt;dbl&gt;, pineapple_juice &lt;dbl&gt;,
+## #   bourbon_whiskey &lt;dbl&gt;, simple_syrup &lt;dbl&gt;, cherry_flavored_brandy &lt;dbl&gt;,
+## #   light_cream &lt;dbl&gt;, triple_sec &lt;dbl&gt;, maraschino &lt;dbl&gt;, amaretto &lt;dbl&gt;,
+## #   grenadine &lt;dbl&gt;, apple_brandy &lt;dbl&gt;, brandy &lt;dbl&gt;, gin &lt;dbl&gt;,
+## #   anisette &lt;dbl&gt;, dry_vermouth &lt;dbl&gt;, apricot_flavored_brandy &lt;dbl&gt;,
+## #   bitters &lt;dbl&gt;, straight_rye_whiskey &lt;dbl&gt;, benedictine &lt;dbl&gt;,
+## #   egg_white &lt;dbl&gt;, half_and_half &lt;dbl&gt;, vodka &lt;dbl&gt;, grapefruit_juice &lt;dbl&gt;,
+## #   blended_scotch_whiskey &lt;dbl&gt;, port &lt;dbl&gt;, white_creme_de_cacao &lt;dbl&gt;,
+## #   citrus_flavored_vodka &lt;dbl&gt;, whole_egg &lt;dbl&gt;, egg_yolk &lt;dbl&gt;,
+## #   blended_whiskey &lt;dbl&gt;, dubonnet &lt;dbl&gt;, blanco_tequila &lt;dbl&gt;,
+## #   old_mr_boston_dry_gin &lt;dbl&gt;
+</code></pre><p>There are lots more great examples of #TidyTuesday EDA out there to explore on 
+<a href="https://twitter.com/hashtag/TidyTuesday" target="_blank" rel="noopener">Twitter</a>!</p>
+
+
+
+
+<h2 id="principal-component-analysis">Principal component analysis
+  <a href="#principal-component-analysis"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>This dataset is especially delightful because we get to use 
+<a href="https://recipes.tidymodels.org/" target="_blank" rel="noopener">recipes</a> with <strong>recipes</strong>. 😍 Let&rsquo;s load the tidymodels metapackage and implement principal component analysis with a recipe.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+pca_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(<span style="color:#666">~</span>., data <span style="color:#666">=</span> cocktails_df) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">update_role</span>(name, category, new_role <span style="color:#666">=</span> <span style="color:#4070a0">&#34;id&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_normalize</span>(<span style="color:#06287e">all_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_pca</span>(<span style="color:#06287e">all_predictors</span>())
+
+pca_prep <span style="color:#666">&lt;-</span> <span style="color:#06287e">prep</span>(pca_rec)
+
+pca_prep
+</code></pre></div><pre tabindex="0"><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          2
+##  predictor         40
+## 
+## Training data contained 937 data points and no missing data.
+## 
+## Operations:
+## 
+## Centering and scaling for light_rum, lemon_juice, ... [trained]
+## PCA extraction with light_rum, lemon_juice, ... [trained]
+</code></pre><p>Let&rsquo;s walk through the steps in this recipe.</p>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what&rsquo;s going on with our model (notice the formula with <em>no outcome</em>) and what data we are using.</li>
+<li>Next, we update the role for cocktail name and category, since these are variables we want to keep around for convenience as identifiers for rows but are not a predictor or outcome.</li>
+<li>We need to center and scale the numeric predictors, because we are about to implement PCA.</li>
+<li>Finally, we use <code>step_pca()</code> for the actual principal component analysis.</li>
+</ul>
+<p>Before using <code>prep()</code> these steps have been defined but not actually run or implemented. The <code>prep()</code> function is where everything gets evaluated.</p>
+<p>Once we have that done, we can both explore the results of the PCA. Let&rsquo;s start with checking out how the PCA turned out. We can <code>tidy()</code> any of our recipe steps, including the PCA step, which is the second step. Then let&rsquo;s make a visualization to see what the components look like.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tidied_pca <span style="color:#666">&lt;-</span> <span style="color:#06287e">tidy</span>(pca_prep, <span style="color:#40a070">2</span>)
+
+tidied_pca <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(component <span style="color:#666">%in%</span> <span style="color:#06287e">paste0</span>(<span style="color:#4070a0">&#34;PC&#34;</span>, <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">5</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(component <span style="color:#666">=</span> <span style="color:#06287e">fct_inorder</span>(component)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(value, terms, fill <span style="color:#666">=</span> terms)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>(show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>component, nrow <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="/blog/cocktail-recipes-umap/index_files/figure-html/unnamed-chunk-6-1.png" width="3000" />
+<p>The biggest difference in PC1 is powdered sugar vs. simple syrup; recipes are not likely to have both, which makes sense! Let&rsquo;s zoom in on the first four components, and understand which cocktail ingredients contribute in the positive and negative directions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+tidied_pca <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(component <span style="color:#666">%in%</span> <span style="color:#06287e">paste0</span>(<span style="color:#4070a0">&#34;PC&#34;</span>, <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">4</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">group_by</span>(component) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">top_n</span>(<span style="color:#40a070">8</span>, <span style="color:#06287e">abs</span>(value)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ungroup</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(terms <span style="color:#666">=</span> <span style="color:#06287e">reorder_within</span>(terms, <span style="color:#06287e">abs</span>(value), component)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#06287e">abs</span>(value), terms, fill <span style="color:#666">=</span> value <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_col</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">facet_wrap</span>(<span style="color:#666">~</span>component, scales <span style="color:#666">=</span> <span style="color:#4070a0">&#34;free_y&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_reordered</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Absolute value of contribution&#34;</span>,
+    y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Positive?&#34;</span>
+  )
+</code></pre></div><img src="/blog/cocktail-recipes-umap/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" />
+<p>So PC1 is about powdered sugar + egg + gin drinks vs. simple syrup + lime + tequila drinks. This is the component that explains the most variation in drinks. PC2 is mostly about vermouth, both sweet and dry.</p>
+<p>How are the cocktails distributed in the plane of the first two components?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">juice</span>(pca_prep) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(PC1, PC2, label <span style="color:#666">=</span> name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(<span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> category), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, size <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_text</span>(check_overlap <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>, hjust <span style="color:#666">=</span> <span style="color:#4070a0">&#34;inward&#34;</span>, family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IBMPlexSans&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="/blog/cocktail-recipes-umap/index_files/figure-html/unnamed-chunk-8-1.png" width="3600" />
+<ul>
+<li>Fizzy, egg, powdered sugar drinks are to the left.</li>
+<li>Simple syrup, lime, tequila drinks are to the right.</li>
+<li>Vermouth drinks are more to the top.</li>
+</ul>
+<p>You can change out <code>PC2</code> for <code>PC4</code>, for example, to instead see where drinks with more grenadine are.</p>
+
+
+
+
+<h2 id="umap">UMAP
+  <a href="#umap"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>One of the benefits of the tidymodels ecosystem is the flexibility and ease of trying different approaches for the same kind of task. For example, we can switch out PCA for 
+<a href="https://umap-learn.readthedocs.io/en/latest/how_umap_works.html" target="_blank" rel="noopener">UMAP</a>, an entirely different algorithm for dimensionality reduction based on ideas from topological data analysis. The 
+<a href="https://embed.tidymodels.org/" target="_blank" rel="noopener">embed</a> package provides recipe steps for ways to create embeddings including UMAP. Let&rsquo;s switch out the PCA step for the UMAP step.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(embed)
+
+umap_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(<span style="color:#666">~</span>., data <span style="color:#666">=</span> cocktails_df) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">update_role</span>(name, category, new_role <span style="color:#666">=</span> <span style="color:#4070a0">&#34;id&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_normalize</span>(<span style="color:#06287e">all_predictors</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_umap</span>(<span style="color:#06287e">all_predictors</span>())
+
+umap_prep <span style="color:#666">&lt;-</span> <span style="color:#06287e">prep</span>(umap_rec)
+
+umap_prep
+</code></pre></div><pre tabindex="0"><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          2
+##  predictor         40
+## 
+## Training data contained 937 data points and no missing data.
+## 
+## Operations:
+## 
+## Centering and scaling for light_rum, lemon_juice, ... [trained]
+## UMAP embedding for light_rum, lemon_juice, ... [trained]
+</code></pre><p>Now we can example how the cocktails are distributed in the plane of the first two UMAP components.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">juice</span>(umap_prep) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(umap_1, umap_2, label <span style="color:#666">=</span> name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(<span style="color:#06287e">aes</span>(color <span style="color:#666">=</span> category), alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, size <span style="color:#666">=</span> <span style="color:#40a070">2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_text</span>(check_overlap <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>, hjust <span style="color:#666">=</span> <span style="color:#4070a0">&#34;inward&#34;</span>, family <span style="color:#666">=</span> <span style="color:#4070a0">&#34;IBMPlexSans&#34;</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="/blog/cocktail-recipes-umap/index_files/figure-html/unnamed-chunk-10-1.png" width="3600" />
+<p>Really interesting, but also different! This is because UMAP is so different from PCA, although they are both approaching this question of how to project a set of features, like ingredients in cocktail recipes, into a smaller space.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">May 27, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1516 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/captive-africans-voyages/">&larr; Impute missing data for #TidyTuesday voyages of captive Africans with tidymodels</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/tidylo-cran/">tidylo is now on CRAN! 🎉 &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

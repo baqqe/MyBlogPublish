@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Getting started with k-means and #TidyTuesday employment status | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Getting started with k-means and #TidyTuesday employment status | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/kmeans-employment/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/kmeans-employment/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/kmeans-employment/featured.png" >
+    
+    
+  <meta itemprop="name" content="Getting started with k-means and #TidyTuesday employment status">
+<meta itemprop="description" content="Use tidy data principles to understand which kinds of occupations are most similar in terms of demographic characteristics."><meta itemprop="datePublished" content="2021-02-24T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-02-24T00:00:00+00:00" />
+<meta itemprop="wordCount" content="833"><meta itemprop="image" content="https://juliasilge.com/blog/kmeans-employment/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Getting started with k-means and #TidyTuesday employment status</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">February 24, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        
+<script src="https://juliasilge.com/blog/kmeans-employment/index_files/header-attrs/header-attrs.js"></script>
+<script src="https://juliasilge.com/blog/kmeans-employment/index_files/htmlwidgets/htmlwidgets.js"></script>
+<script src="https://juliasilge.com/blog/kmeans-employment/index_files/pymjs/pym.v1.js"></script>
+<script src="https://juliasilge.com/blog/kmeans-employment/index_files/widgetframe-binding/widgetframe.js"></script>
+
+
+<p>This is the latest in my series of <a href="https://juliasilge.com/category/tidymodels/">screencasts</a> demonstrating how to use the <a href="https://www.tidymodels.org/">tidymodels</a> packages, from starting out with first modeling steps to tuning more complex models. Today’s screencast uses the <a href="https://broom.tidymodels.org/">broom</a> package to tidy output from k-means clustering, with this week’s <a href="https://github.com/rfordatascience/tidytuesday"><code>#TidyTuesday</code> dataset</a> on employment and demographics.</p>
+<p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/opHDQzhO5Fw" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</p>
+<p></br></p>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+<div id="explore-the-data" class="section level2">
+<h2>Explore the data</h2>
+<p>Our modeling goal is to use k-means clustering to explore <a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-02-23/readme.md">employment by race and gender</a>. This is a good screencast for folks who are more new to k-means and want to understand how to apply it to a real-world data set.</p>
+<pre class="r"><code>library(tidyverse)
+
+employed &lt;- read_csv(&quot;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/employed.csv&quot;)</code></pre>
+<p>Let’s start by focusing on the <strong>industry</strong> and <strong>occupation</strong> combinations available in this data, and average over the years available. We aren’t looking at any time trends, but instead at the demographic relationships.</p>
+<pre class="r"><code>employed_tidy &lt;- employed %&gt;%
+  filter(!is.na(employ_n)) %&gt;%
+  group_by(occupation = paste(industry, minor_occupation), race_gender) %&gt;%
+  summarise(n = mean(employ_n)) %&gt;%
+  ungroup()</code></pre>
+<p>Let’s create a <code>dataframe</code> read for k-means. We need to center and scale the variables we are going to use, since they are on such different scales: the proportions of each category who are Asian, Black, or women and the total number of people in each category.</p>
+<pre class="r"><code>employment_demo &lt;- employed_tidy %&gt;%
+  filter(race_gender %in% c(&quot;Women&quot;, &quot;Black or African American&quot;, &quot;Asian&quot;)) %&gt;%
+  pivot_wider(names_from = race_gender, values_from = n, values_fill = 0) %&gt;%
+  janitor::clean_names() %&gt;%
+  left_join(employed_tidy %&gt;%
+    filter(race_gender == &quot;TOTAL&quot;) %&gt;%
+    select(-race_gender) %&gt;%
+    rename(total = n)) %&gt;%
+  filter(total &gt; 1e3) %&gt;%
+  mutate(across(c(asian, black_or_african_american, women), ~ . / (total)),
+    total = log(total),
+    across(where(is.numeric), ~ as.numeric(scale(.)))
+  ) %&gt;%
+  mutate(occupation = snakecase::to_snake_case(occupation))
+
+employment_demo</code></pre>
+<pre><code>## # A tibble: 230 x 5
+##    occupation                          asian black_or_african_a…    women  total
+##    &lt;chr&gt;                               &lt;dbl&gt;               &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;
+##  1 agriculture_and_related_construct… -0.553             -0.410  -1.31    -1.48
+##  2 agriculture_and_related_farming_f… -0.943             -1.22   -0.509    0.706
+##  3 agriculture_and_related_installat… -0.898             -1.28   -1.38    -0.992
+##  4 agriculture_and_related_manage_me… -1.06              -1.66   -0.291    0.733
+##  5 agriculture_and_related_managemen… -1.06              -1.65   -0.300    0.750
+##  6 agriculture_and_related_office_an… -0.671             -1.54    2.23    -0.503
+##  7 agriculture_and_related_productio… -0.385             -0.0372 -0.622   -0.950
+##  8 agriculture_and_related_professio… -0.364             -1.17    0.00410 -0.782
+##  9 agriculture_and_related_protectiv… -1.35              -0.647  -0.833   -1.39
+## 10 agriculture_and_related_sales_and… -1.35              -1.44    0.425   -1.36
+## # … with 220 more rows</code></pre>
+</div>
+<div id="implement-k-means-clustering" class="section level2">
+<h2>Implement k-means clustering</h2>
+<p>Now we can implement k-means clustering, starting out with three centers. What does the output look like?</p>
+<pre class="r"><code>employment_clust &lt;- kmeans(select(employment_demo, -occupation), centers = 3)
+summary(employment_clust)</code></pre>
+<pre><code>##              Length Class  Mode
+## cluster      230    -none- numeric
+## centers       12    -none- numeric
+## totss          1    -none- numeric
+## withinss       3    -none- numeric
+## tot.withinss   1    -none- numeric
+## betweenss      1    -none- numeric
+## size           3    -none- numeric
+## iter           1    -none- numeric
+## ifault         1    -none- numeric</code></pre>
+<p>The original format of the output isn’t as practical to deal with in many circumstances, so we can load the <a href="https://broom.tidymodels.org/">broom</a> package (part of <a href="https://www.tidymodels.org/">tidymodels</a>) and use verbs like <code>tidy()</code>. This will give us the centers of the clusters we found:</p>
+<pre class="r"><code>library(broom)
+tidy(employment_clust)</code></pre>
+<pre><code>## # A tibble: 3 x 7
+##      asian black_or_african_american  women  total  size withinss cluster
+##      &lt;dbl&gt;                     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;fct&gt;
+## 1  1.46                       -0.551  0.385  0.503    45     125. 1
+## 2 -0.732                      -0.454 -0.820 -0.655    91     189. 2
+## 3  0.00978                     0.704  0.610  0.393    94     211. 3</code></pre>
+<p>If we <code>augment()</code> the clustering results with our original data, we can plot any of the dimensions of our space, such as <strong>total employed</strong> vs. <strong>proportion who are Black</strong>. We can see here that there are really separable clusters but instead a smooth, continuous distribution from low to high along both dimensions. Switch out another dimension like <code>asian</code> to see that projection of the space.</p>
+<pre class="r"><code>augment(employment_clust, employment_demo) %&gt;%
+  ggplot(aes(total, black_or_african_american, color = .cluster)) +
+  geom_point()</code></pre>
+<p><img src="https://juliasilge.com/blog/kmeans-employment/index_files/figure-html/unnamed-chunk-7-1.png" width="2400" /></p>
+</div>
+<div id="choosing-k" class="section level2">
+<h2>Choosing k</h2>
+<p>We used <code>k = 3</code> but how do we know that’s right? There are lots of complicated or “more art than science” ways of choosing <code>k</code>. One way is to look at the total within-cluster sum of squares and see if it stops dropping off so quickly at some value for <code>k</code>. We can get that from another verb from broom, <code>glance()</code>; let’s try lots of values for <code>k</code> and see what happens to the total sum of squares.</p>
+<pre class="r"><code>kclusts &lt;-
+  tibble(k = 1:9) %&gt;%
+  mutate(
+    kclust = map(k, ~ kmeans(select(employment_demo, -occupation), .x)),
+    glanced = map(kclust, glance)
+  )
+
+kclusts %&gt;%
+  unnest(cols = c(glanced)) %&gt;%
+  ggplot(aes(k, tot.withinss)) +
+  geom_line(alpha = 0.5, size = 1.2, color = &quot;midnightblue&quot;) +
+  geom_point(size = 2, color = &quot;midnightblue&quot;)</code></pre>
+<p><img src="https://juliasilge.com/blog/kmeans-employment/index_files/figure-html/unnamed-chunk-8-1.png" width="2100" /></p>
+<p>I don’t see a major “elbow” 💪 but I’d say that <code>k = 5</code> looks pretty reasonable. Let’s fit k-means again.</p>
+<pre class="r"><code>final_clust &lt;- kmeans(select(employment_demo, -occupation), centers = 5)</code></pre>
+<p>To visualize this final result, let’s use <a href="https://plotly-r.com/">plotly</a> and add the <code>occupation</code> name to the hover so we can mouse around and see which occupations are more similar.</p>
+<pre class="r"><code>library(plotly)
+
+p &lt;- augment(final_clust, employment_demo) %&gt;%
+  ggplot(aes(total, women, color = .cluster, name = occupation)) +
+  geom_point()
+
+ggplotly(p, height = 500)</code></pre>
+<div id="htmlwidget-1" style="width:100%;height:500px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"https://juliasilge.com/widgets/employment_plotly.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>Remember that you can switch out the axes for <code>asian</code> or <code>black_or_african_american</code> to explore dimensions.</p>
+</div>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">February 24, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">4 minute read, 833 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/superbowl-conf-int/">&larr; Bootstrap confidence intervals for #TidyTuesday Super Bowl commercials</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/student-debt/">Understand your models with #TidyTuesday inequality in student debt &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

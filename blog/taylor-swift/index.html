@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Topic modeling for #TidyTuesday Taylor Swift lyrics | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Topic modeling for #TidyTuesday Taylor Swift lyrics | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/taylor-swift/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/taylor-swift/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/taylor-swift/featured.png" >
+    
+    
+  <meta itemprop="name" content="Topic modeling for #TidyTuesday Taylor Swift lyrics">
+<meta itemprop="description" content="Learn how to fit and interpret an unsupervised text model for all of Taylor Swift&rsquo;s ERAS."><meta itemprop="datePublished" content="2023-10-23T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-10-23T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2297"><meta itemprop="image" content="https://juliasilge.com/blog/taylor-swift/featured.png">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Topic modeling for #TidyTuesday Taylor Swift lyrics</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a> </p>
+        <p class="f7 db mv0 ttu">October 23, 2023</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://www.youtube.com/juliasilge" target="_blank" rel="noopener">screencasts</a>! I saw Taylor Swift’s Eras Tour movie over the weekend, and this screencast focuses on unsupervised modeling for text with this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on the songs of Taylor Swift. Today’s screencast walks through how to build a 
+<a href="https://www.structuraltopicmodel.com/" target="_blank" rel="noopener">structural topic model</a> and then how to understand and interpret it. 💖</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/rXDv0ZuX0Fc" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to “discover” topics in the 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-10-17/readme.md" target="_blank" rel="noopener">lyrics of Taylor Swift songs</a>. Instead of a supervised or predictive model where our observations have labels, this is an unsupervised approach.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+<span style="color:#06287e">library</span>(taylor)
+<span style="color:#06287e">glimpse</span>(taylor_album_songs)
+</code></pre></div><pre><code>## Rows: 194
+## Columns: 29
+## $ album_name          &lt;chr&gt; &quot;Taylor Swift&quot;, &quot;Taylor Swift&quot;, &quot;Taylor Swift&quot;, &quot;T…
+## $ ep                  &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
+## $ album_release       &lt;date&gt; 2006-10-24, 2006-10-24, 2006-10-24, 2006-10-24, 2…
+## $ track_number        &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,…
+## $ track_name          &lt;chr&gt; &quot;Tim McGraw&quot;, &quot;Picture To Burn&quot;, &quot;Teardrops On My …
+## $ artist              &lt;chr&gt; &quot;Taylor Swift&quot;, &quot;Taylor Swift&quot;, &quot;Taylor Swift&quot;, &quot;T…
+## $ featuring           &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ bonus_track         &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
+## $ promotional_release &lt;date&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+## $ single_release      &lt;date&gt; 2006-06-19, 2008-02-03, 2007-02-19, NA, NA, NA, N…
+## $ track_release       &lt;date&gt; 2006-06-19, 2006-10-24, 2006-10-24, 2006-10-24, 2…
+## $ danceability        &lt;dbl&gt; 0.580, 0.658, 0.621, 0.576, 0.418, 0.589, 0.479, 0…
+## $ energy              &lt;dbl&gt; 0.491, 0.877, 0.417, 0.777, 0.482, 0.805, 0.578, 0…
+## $ key                 &lt;int&gt; 0, 7, 10, 9, 5, 5, 2, 8, 4, 2, 2, 8, 7, 4, 10, 5, …
+## $ loudness            &lt;dbl&gt; -6.462, -2.098, -6.941, -2.881, -5.769, -4.055, -4…
+## $ mode                &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,…
+## $ speechiness         &lt;dbl&gt; 0.0251, 0.0323, 0.0231, 0.0324, 0.0266, 0.0293, 0.…
+## $ acousticness        &lt;dbl&gt; 0.57500, 0.17300, 0.28800, 0.05100, 0.21700, 0.004…
+## $ instrumentalness    &lt;dbl&gt; 0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, 0.00e+00, …
+## $ liveness            &lt;dbl&gt; 0.1210, 0.0962, 0.1190, 0.3200, 0.1230, 0.2400, 0.…
+## $ valence             &lt;dbl&gt; 0.425, 0.821, 0.289, 0.428, 0.261, 0.591, 0.192, 0…
+## $ tempo               &lt;dbl&gt; 76.009, 105.586, 99.953, 115.028, 175.558, 112.982…
+## $ time_signature      &lt;int&gt; 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,…
+## $ duration_ms         &lt;int&gt; 232107, 173067, 203040, 199200, 239013, 207107, 24…
+## $ explicit            &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
+## $ key_name            &lt;chr&gt; &quot;C&quot;, &quot;G&quot;, &quot;A#&quot;, &quot;A&quot;, &quot;F&quot;, &quot;F&quot;, &quot;D&quot;, &quot;G#&quot;, &quot;E&quot;, &quot;D&quot;…
+## $ mode_name           &lt;chr&gt; &quot;major&quot;, &quot;major&quot;, &quot;major&quot;, &quot;major&quot;, &quot;major&quot;, &quot;majo…
+## $ key_mode            &lt;chr&gt; &quot;C major&quot;, &quot;G major&quot;, &quot;A# major&quot;, &quot;A major&quot;, &quot;F ma…
+## $ lyrics              &lt;list&gt; [&lt;tbl_df[55 x 4]&gt;], [&lt;tbl_df[33 x 4]&gt;], [&lt;tbl_df[…
+</code></pre>
+<p>Notice that the <code>lyrics</code> variable contains nested tibbles with the texts of the songs; we’ll need to unnest these:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+tidy_taylor <span style="color:#666">&lt;-</span>
+    taylor_album_songs <span style="color:#666">|&gt;</span>
+    <span style="color:#06287e">unnest</span>(lyrics) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">unnest_tokens</span>(word, lyric)
+
+tidy_taylor
+</code></pre></div><pre><code>## # A tibble: 71,721 × 32
+##    album_name   ep    album_release track_number track_name artist     featuring
+##    &lt;chr&gt;        &lt;lgl&gt; &lt;date&gt;               &lt;int&gt; &lt;chr&gt;      &lt;chr&gt;      &lt;chr&gt;    
+##  1 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  2 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  3 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  4 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  5 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  6 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  7 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  8 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+##  9 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+## 10 Taylor Swift FALSE 2006-10-24               1 Tim McGraw Taylor Sw… &lt;NA&gt;     
+## # ℹ 71,711 more rows
+## # ℹ 25 more variables: bonus_track &lt;lgl&gt;, promotional_release &lt;date&gt;,
+## #   single_release &lt;date&gt;, track_release &lt;date&gt;, danceability &lt;dbl&gt;,
+## #   energy &lt;dbl&gt;, key &lt;int&gt;, loudness &lt;dbl&gt;, mode &lt;int&gt;, speechiness &lt;dbl&gt;,
+## #   acousticness &lt;dbl&gt;, instrumentalness &lt;dbl&gt;, liveness &lt;dbl&gt;, valence &lt;dbl&gt;,
+## #   tempo &lt;dbl&gt;, time_signature &lt;int&gt;, duration_ms &lt;int&gt;, explicit &lt;lgl&gt;,
+## #   key_name &lt;chr&gt;, mode_name &lt;chr&gt;, key_mode &lt;chr&gt;, line &lt;int&gt;, …
+</code></pre>
+<p>We can find the most common words, or see which words are used the most per song:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">tidy_taylor <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">anti_join</span>(<span style="color:#06287e">get_stopwords</span>()) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">count</span>(track_name, word, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code>## # A tibble: 15,892 × 3
+##    track_name                              word      n
+##    &lt;chr&gt;                                   &lt;chr&gt; &lt;int&gt;
+##  1 Red (Taylor's Version)                  red     107
+##  2 I Did Something Bad                     di       81
+##  3 Shake It Off                            shake    78
+##  4 Wonderland                              eh       72
+##  5 Out Of The Woods                        yet      63
+##  6 You Need To Calm Down                   oh       63
+##  7 I Wish You Would                        wish     62
+##  8 State Of Grace (Taylor's Version)       oh       59
+##  9 Clean                                   oh       56
+## 10 Run (Taylor's Version) [From The Vault] run      52
+## # ℹ 15,882 more rows
+</code></pre>
+
+
+
+
+<h2 id="train-a-topic-model">Train a topic model
+  <a href="#train-a-topic-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To train a topic model with the stm package, we need to create a sparse matrix from our tidy tibble of tokens. Let’s treat each Taylor Swift song as a document, and throw out words used three or fewer times in a song.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lyrics_sparse <span style="color:#666">&lt;-</span>
+    tidy_taylor <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">count</span>(track_name, word) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">3</span>) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">cast_sparse</span>(track_name, word, n)
+
+<span style="color:#06287e">dim</span>(lyrics_sparse)
+</code></pre></div><pre><code>## [1] 194 867
+</code></pre>
+<p>This means there are 191 song (i.e. documents) and different tokens (i.e. terms or words) in our dataset for modeling. Notice that I did <em>not</em> remove stop words here. You 
+<a href="http://dx.doi.org/10.1162/tacl_a_00099" target="_blank" rel="noopener">typically don’t want to remove stop words before building topic models</a> but we will need to keep in mind that the highest probability words will look mostly the same from each topic.</p>
+<p>A topic model like this one models:</p>
+<ul>
+<li>each <strong>document</strong> as a mixture of topics</li>
+<li>each <strong>topic</strong> as a mixture of words</li>
+</ul>
+<p>The most important parameter when training a topic modeling is <code>K</code>, the number of topics. This is like <code>k</code> in k-means in that it is a hyperparamter of the model and we must choose this value ahead of time. We could 
+<a href="https://juliasilge.com/blog/evaluating-stm/" target="_blank" rel="noopener">try multiple different values</a> to find the best value for <code>K</code>, but since this is Taylor Swift, let’s use <code>K = 13</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(stm)
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+topic_model <span style="color:#666">&lt;-</span> <span style="color:#06287e">stm</span>(lyrics_sparse, K <span style="color:#666">=</span> <span style="color:#40a070">13</span>, verbose <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>)
+</code></pre></div><p>To get a quick view of the results, we can use <code>summary()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">summary</span>(topic_model)
+</code></pre></div><pre><code>## A topic model with 13 topics, 194 documents and a 867 word dictionary.
+
+## Topic 1 Top Words:
+##  	 Highest Prob: was, you, i, it, the, red, all 
+##  	 FREX: red, was, there, too, remember, him, well 
+##  	 Lift: between, hair, prayer, rare, sacred, stairs, wind 
+##  	 Score: red, there, him, was, well, too, remember 
+## Topic 2 Top Words:
+##  	 Highest Prob: you, and, the, i, a, me, to 
+##  	 FREX: smile, not, jump, she, everybody, belong, la 
+##  	 Lift: road, taken, told, okay, ours, single, vow 
+##  	 Score: la, knows, she, smile, she's, jump, times 
+## Topic 3 Top Words:
+##  	 Highest Prob: i, the, you, and, know, me, my 
+##  	 FREX: daylight, trouble, know, bye, places, street, cornelia 
+##  	 Lift: lose, anything, daylight, shoulda, flew, places, shame 
+##  	 Score: places, daylight, trouble, he's, bye, street, cornelia 
+## Topic 4 Top Words:
+##  	 Highest Prob: the, we, in, and, of, a, are 
+##  	 FREX: woods, clear, car, getaway, starlight, run, are 
+##  	 Lift: ridin, bring, pretenders, screaming, careful, careless, daughter 
+##  	 Score: clear, yet, woods, run, are, out, starlight 
+## Topic 5 Top Words:
+##  	 Highest Prob: oh, you, this, the, and, is, to 
+##  	 FREX: oh, asking, grow, this, last, twenty, fallin 
+##  	 Lift: goin, how'd, plane, top, anymore, alright, promises 
+##  	 Score: oh, last, asking, grow, love, come, fallin 
+## Topic 6 Top Words:
+##  	 Highest Prob: a, you, the, i, and, it, if 
+##  	 FREX: beautiful, karma, blood, we've, man, if, fairytale 
+##  	 Lift: blood, cut, we've, boyfriend, fast, ruining, deep 
+##  	 Score: man, we've, blood, karma, beautiful, fairytale, today 
+## Topic 7 Top Words:
+##  	 Highest Prob: ooh, the, you, i, and, ah, to 
+##  	 FREX: ooh, ah, once, talk, e, whoa, ever 
+##  	 Lift: count, keeping, cruel, roll, high, infidelity, woo 
+##  	 Score: ooh, ah, dorothea, once, you'll, e, whoa 
+## Topic 8 Top Words:
+##  	 Highest Prob: di, eh, i, you, and, it, so 
+##  	 FREX: di, eh, da, wonderland, over, didn't, good 
+##  	 Lift: felt, wonderland, alive, dead, died, da, eh 
+##  	 Score: di, eh, da, wonderland, over, why's, alive 
+## Topic 9 Top Words:
+##  	 Highest Prob: you, to, the, it's, i, me, but 
+##  	 FREX: york, welcome, mr, snow, beach, new, i've 
+##  	 Lift: flying, both, quite, beat, bright, agrees, hi 
+##  	 Score: york, welcome, new, mr, snow, beach, hold 
+## Topic 10 Top Words:
+##  	 Highest Prob: you, i, and, the, be, don't, to 
+##  	 FREX: bet, big, wish, would, come, help, wanna 
+##  	 Lift: guiding, spend, wonderstruck, stephen, slope, learned, read 
+##  	 Score: wish, bet, come, wanna, would, mean, big 
+## Topic 11 Top Words:
+##  	 Highest Prob: i, it, you, what, me, the, want 
+##  	 FREX: shake, isn't, fake, want, call, off, gorgeous 
+##  	 Lift: turns, caught, crime, lettin, until, baby's, isn't 
+##  	 Score: shake, isn't, off, fake, call, look, hate 
+## Topic 12 Top Words:
+##  	 Highest Prob: and, i, when, you, the, oh, it 
+##  	 FREX: when, rains, that's, girl, said, back, finally 
+##  	 Lift: shimmer, after, behind, realized, bejeweled, polish, any 
+##  	 Score: when, rains, finally, that's, clean, oh, works 
+## Topic 13 Top Words:
+##  	 Highest Prob: my, you, the, i, me, to, in 
+##  	 FREX: my, left, take, ha, usin, rest, bought 
+##  	 Lift: lovin, betty, party, showed, goddamn, house, stone 
+##  	 Score: ha, other, take, left, usin, cuts, thousand
+</code></pre>
+<p>Notice that we do in fact have fairly uninteresting and common words as the most common for <em>all</em> the topics. This is because we did not remove stopwords.</p>
+
+
+
+
+<h2 id="explore-topic-model-results">Explore topic model results
+  <a href="#explore-topic-model-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>To explore more deeply, we can <code>tidy()</code> the topic model results to get a dataframe that we can compute on. If we did <code>tidy(topic_model)</code> that would give us the matrix of topic-word probabilities, i.e. the highest probability words from each topic. This is the boring one that is mostly common words like “you” and “me”.</p>
+<p>We can alternatively use other metrics for identifying important words, like FREX (high frequency <em>and</em> high exclusivity) or lift:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(topic_model, matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lift&#34;</span>)
+</code></pre></div><pre><code>## # A tibble: 11,271 × 2
+##    topic term   
+##    &lt;int&gt; &lt;chr&gt;  
+##  1     1 between
+##  2     1 hair   
+##  3     1 prayer 
+##  4     1 rare   
+##  5     1 sacred 
+##  6     1 stairs 
+##  7     1 wind   
+##  8     1 lock   
+##  9     1 palm   
+## 10     1 why'd  
+## # ℹ 11,261 more rows
+</code></pre>
+<p>This returns a ranked set of words (not the underlying metrics themselves) and gives us a much clearer idea of what makes each topic unique! Topic 1 looks to be more from the <em>Red</em> album.</p>
+<p>We also can use <code>tidy()</code> to get the matrix of document-topic probabilities. For this, we need to pass in the <code>document_names</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lyrics_gamma <span style="color:#666">&lt;-</span> <span style="color:#06287e">tidy</span>(
+  topic_model, 
+  matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gamma&#34;</span>,
+  document_names <span style="color:#666">=</span> <span style="color:#06287e">rownames</span>(lyrics_sparse)
+) 
+</code></pre></div><p>How are these topics related to Taylor Swift’s eras (i.e. albums)?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">lyrics_gamma <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">left_join</span>(
+        taylor_album_songs <span style="color:#666">|&gt;</span> 
+            <span style="color:#06287e">select</span>(album_name, document <span style="color:#666">=</span> track_name) <span style="color:#666">|&gt;</span> 
+            <span style="color:#06287e">mutate</span>(album_name <span style="color:#666">=</span> <span style="color:#06287e">fct_inorder</span>(album_name))
+    ) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">mutate</span>(topic <span style="color:#666">=</span> <span style="color:#06287e">factor</span>(topic)) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(gamma, topic, fill <span style="color:#666">=</span> topic)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>, show.legend <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">FALSE</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">facet_wrap</span>(<span style="color:#06287e">vars</span>(album_name)) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#06287e">expression</span>(gamma))
+</code></pre></div><img src="https://juliasilge.com/blog/taylor-swift/index_files/figure-html/unnamed-chunk-10-1.png" width="1800" />
+<p>Topics 2 and 3 look to be more prevalent in Taylor Swift’s early albums, Topic 1 does look to be mostly from <em>Red</em>, and topic 13 is uncommon except in <em>folklore</em> and <em>evermore</em>.</p>
+
+
+
+
+<h2 id="estimate-topic-effects">Estimate topic effects
+  <a href="#estimate-topic-effects"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>There is a TON more you can do with topic models. For example, we can take the trained topic model and, using some supplementary metadata on our documents, estimate regressions for the <strong>proportion</strong> of each document about a topic with the metadata as the predictors. For example, let’s estimate regressions for our topics with the album name as the predictor. This asks the statistical question, “Do the topics in Taylor Swift songs change across albums?” We looked at this question visually in the last section, but now we can build a model to look at it a different way.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+
+effects <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">estimateEffect</span>(
+    <span style="color:#40a070">1</span><span style="color:#666">:</span><span style="color:#40a070">13</span> <span style="color:#666">~</span> album_name,
+    topic_model,
+    taylor_album_songs <span style="color:#666">|&gt;</span> <span style="color:#06287e">distinct</span>(track_name, album_name) <span style="color:#666">|&gt;</span> <span style="color:#06287e">arrange</span>(track_name)
+  )
+</code></pre></div><p>You can use <code>summary(effects)</code> to see some results here, but you also can <code>tidy()</code> the output to be able to compute on it. Do we have evidence for any of the topics being related to album, in the sense of having a p-value less than 0.05?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(effects) <span style="color:#666">|&gt;</span> 
+    <span style="color:#06287e">filter</span>(term <span style="color:#666">!=</span> <span style="color:#4070a0">&#34;(Intercept)&#34;</span>, p.value <span style="color:#666">&lt;</span> <span style="color:#40a070">0.05</span>)
+</code></pre></div><pre><code>## # A tibble: 3 × 6
+##   topic term                 estimate std.error statistic p.value
+##   &lt;int&gt; &lt;chr&gt;                   &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+## 1    11 album_namereputation    0.175    0.0815      2.15 0.0329 
+## 2    13 album_nameevermore      0.184    0.0926      1.99 0.0479 
+## 3    13 album_namefolklore      0.245    0.0906      2.71 0.00745
+</code></pre>
+<p>Here we see evidence that there is more topic 11 from <em>reputation</em> and more topic 13 in both <em>folklore</em> and <em>evermore</em>. Certainly they are lyrically pretty distinct from her other work! What are some of the highest lift words for this topic?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">tidy</span>(topic_model, matrix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;lift&#34;</span>) <span style="color:#666">|&gt;</span> 
+  <span style="color:#06287e">filter</span>(topic <span style="color:#666">==</span> <span style="color:#40a070">13</span>)
+</code></pre></div><pre><code>## # A tibble: 867 × 2
+##    topic term   
+##    &lt;int&gt; &lt;chr&gt;  
+##  1    13 lovin  
+##  2    13 betty  
+##  3    13 party  
+##  4    13 showed 
+##  5    13 goddamn
+##  6    13 house  
+##  7    13 stone  
+##  8    13 peace  
+##  9    13 cuts   
+## 10    13 death  
+## # ℹ 857 more rows
+</code></pre>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">October 23, 2023</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">11 minute read, 2297 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/house-elections/">&larr; Logistic regression modeling for #TidyTuesday US House Elections</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/haunted-places/">Where are #TidyTuesday haunted cemeteries compared to haunted schools? &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

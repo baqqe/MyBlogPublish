@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Create a custom metric with tidymodels and NYC Airbnb prices | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Create a custom metric with tidymodels and NYC Airbnb prices | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/nyc-airbnb/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/nyc-airbnb/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/nyc-airbnb/featured.png" >
+    
+    
+  <meta itemprop="name" content="Create a custom metric with tidymodels and NYC Airbnb prices">
+<meta itemprop="description" content="Predict prices for Airbnb listings in NYC with a data set from a recent episode of SLICED, with a focus on two specific aspects of this model analysis: creating a custom metric to evaluate the model and combining both tabular and unstructured text data in one model."><meta itemprop="datePublished" content="2021-06-30T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2021-06-30T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1164"><meta itemprop="image" content="https://juliasilge.com/blog/nyc-airbnb/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Create a custom metric with tidymodels and NYC Airbnb prices</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">June 30, 2021</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from just getting started to tuning more complex models. This week’s episode of 
+<a href="https://www.notion.so/SLICED-Show-c7bd26356e3a42279e2dfbafb0480073" target="_blank" rel="noopener">SLICED</a>, a competitive data science prediction challenge, introduced a challenge for predicting the prices of Airbnb listings in NYC. In today’s screencast, I walk through how to build such a model combining tabular data with unstructured text data from the listing names, and how to create a custom metric in tidymodels. 🌆</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/VwZKK6kldqo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to predict 
+<a href="https://www.kaggle.com/c/sliced-s01e05-WXx7h8/data" target="_blank" rel="noopener">Airbnb prices in New York City</a> given other information about the listings. This challenge was being evaluated on 
+<a href="https://www.kaggle.com/carlolepelaars/understanding-the-metric-rmsle" target="_blank" rel="noopener">RMSLE</a>. The main data set provided is in a CSV file called <code>training.csv</code>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+train_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;train.csv&#34;</span>)
+</code></pre></div><p>The <code>price</code> variable is skewed a lot, as prices often are!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(price, fill <span style="color:#666">=</span> neighbourhood_group)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;identity&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">20</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;price per night&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/nyc-airbnb/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>We can make a map showing each individual listing.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(longitude, latitude, color <span style="color:#666">=</span> <span style="color:#06287e">log</span>(price))) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_color_viridis_c</span>()
+</code></pre></div><img src="https://juliasilge.com/blog/nyc-airbnb/index_files/figure-html/unnamed-chunk-4-1.png" width="2400" />
+<p>Or a map with hex bins showing the mean price in each area.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(longitude, latitude, z <span style="color:#666">=</span> <span style="color:#06287e">log</span>(price))) <span style="color:#666">+</span>
+  <span style="color:#06287e">stat_summary_hex</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>, bins <span style="color:#666">=</span> <span style="color:#40a070">70</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_fill_viridis_c</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Mean price (log)&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/nyc-airbnb/index_files/figure-html/unnamed-chunk-5-1.png" width="2250" />
+<p>Price is definitely tied to geography!</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let’s start by setting up our “data budget,” splitting into training and testing sets and creating resampling folds. I am going to use the testing set here to demonstrate how to use the custom metric.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+nyc_split <span style="color:#666">&lt;-</span> train_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(price <span style="color:#666">=</span> <span style="color:#06287e">log</span>(price <span style="color:#666">+</span> <span style="color:#40a070">1</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">initial_split</span>(strata <span style="color:#666">=</span> price)
+nyc_train <span style="color:#666">&lt;-</span> <span style="color:#06287e">training</span>(nyc_split)
+nyc_test <span style="color:#666">&lt;-</span> <span style="color:#06287e">testing</span>(nyc_split)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">234</span>)
+nyc_folds <span style="color:#666">&lt;-</span> <span style="color:#06287e">vfold_cv</span>(nyc_train, v <span style="color:#666">=</span> <span style="color:#40a070">5</span>, strata <span style="color:#666">=</span> price)
+nyc_folds
+</code></pre></div><pre><code>## #  5-fold cross-validation using stratification 
+## # A tibble: 5 x 2
+##   splits               id   
+##   &lt;list&gt;               &lt;chr&gt;
+## 1 &lt;split [20533/5135]&gt; Fold1
+## 2 &lt;split [20533/5135]&gt; Fold2
+## 3 &lt;split [20534/5134]&gt; Fold3
+## 4 &lt;split [20535/5133]&gt; Fold4
+## 5 &lt;split [20537/5131]&gt; Fold5
+</code></pre>
+<p>For feature engineering, let’s handle the many levels in <code>neighborhood</code>, and create features for machine learning from the text in the <code>name</code> variable. Read more about creating ML features from natural language 
+<a href="https://smltar.com/" target="_blank" rel="noopener">in my book with my coauthor Emil Hvitfeldt</a>. For this demonstration, let’s start out with only the top 30 tokens and see how well we do.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(textrecipes)
+
+nyc_rec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">recipe</span>(price <span style="color:#666">~</span> latitude <span style="color:#666">+</span> longitude <span style="color:#666">+</span> neighbourhood <span style="color:#666">+</span> room_type <span style="color:#666">+</span>
+    minimum_nights <span style="color:#666">+</span> number_of_reviews <span style="color:#666">+</span> availability_365 <span style="color:#666">+</span> name,
+  data <span style="color:#666">=</span> nyc_train
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_novel</span>(neighbourhood) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_other</span>(neighbourhood, threshold <span style="color:#666">=</span> <span style="color:#40a070">0.01</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tokenize</span>(name) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_stopwords</span>(name) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tokenfilter</span>(name, max_tokens <span style="color:#666">=</span> <span style="color:#40a070">30</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_tf</span>(name)
+
+nyc_rec
+</code></pre></div><pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##    outcome          1
+##  predictor          8
+## 
+## Operations:
+## 
+## Novel factor level assignment for neighbourhood
+## Collapsing factor levels for neighbourhood
+## Tokenization for name
+## Stop word removal for name
+## Text filtering for name
+## Term frequency with name
+</code></pre>
+<p>For this post, let’s use a 
+<a href="https://baguette.tidymodels.org/" target="_blank" rel="noopener">bagged tree model</a>. It’s similar to the kinds of models that perform well in SLICED-like situations but it is easy to set up and fast to fit.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(baguette)
+
+bag_spec <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">bag_tree</span>(min_n <span style="color:#666">=</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;rpart&#34;</span>, times <span style="color:#666">=</span> <span style="color:#40a070">25</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">set_mode</span>(<span style="color:#4070a0">&#34;regression&#34;</span>)
+
+bag_wf <span style="color:#666">&lt;-</span>
+  <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(nyc_rec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(bag_spec)
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+bag_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit</span>(bag_wf, data <span style="color:#666">=</span> nyc_train)
+bag_fit
+</code></pre></div><pre><code>## ══ Workflow [trained] ══════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: bag_tree()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 6 Recipe Steps
+## 
+## • step_novel()
+## • step_other()
+## • step_tokenize()
+## • step_stopwords()
+## • step_tokenfilter()
+## • step_tf()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Bagged CART (regression with 25 members)
+## 
+## Variable importance scores include:
+## 
+## # A tibble: 37 x 4
+##    term              value std.error  used
+##    &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt; &lt;int&gt;
+##  1 room_type         4800.     15.5     25
+##  2 longitude         3084.     13.0     25
+##  3 neighbourhood     2619.     13.0     25
+##  4 tf_name_room      2044.      9.17    25
+##  5 latitude          1822.     14.8     25
+##  6 minimum_nights    1642.      9.53    25
+##  7 availability_365  1114.     10.6     25
+##  8 tf_name_private    996.      7.74    25
+##  9 number_of_reviews  914.      9.33    25
+## 10 tf_name_studio     189.      2.99    25
+## # … with 27 more rows
+</code></pre>
+<p>It’s great to automatically get out some variable importance! We see that <code>room_type</code> and the geographical information are very important for this model.</p>
+
+
+
+
+<h2 id="evaluate-a-model-with-a-custom-metric">Evaluate a model with a custom metric
+  <a href="#evaluate-a-model-with-a-custom-metric"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now let’s evaluate 
+<a href="https://www.tmwr.org/resampling.html" target="_blank" rel="noopener">how this model performs using resampling</a>, first just with the default metrics for regression models.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">doParallel<span style="color:#666">::</span><span style="color:#06287e">registerDoParallel</span>()
+
+<span style="color:#06287e">set.seed</span>(<span style="color:#40a070">123</span>)
+bag_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">fit_resamples</span>(bag_wf, nyc_folds)
+<span style="color:#06287e">collect_metrics</span>(bag_rs)
+</code></pre></div><pre><code>## # A tibble: 2 x 6
+##   .metric .estimator  mean     n std_err .config             
+##   &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 rmse    standard   0.437     5 0.00237 Preprocessor1_Model1
+## 2 rsq     standard   0.603     5 0.00260 Preprocessor1_Model1
+</code></pre>
+<p>This might look like the 
+<a href="https://www.kaggle.com/c/sliced-s01e05-WXx7h8/leaderboard" target="_blank" rel="noopener">values on the SLICED leaderboard</a>, but it is RMSE on the log of price, not RMSLE on price. If I were on SLICED, I would honestly probably call this good enough TBH and not mess around with a custom metric during the competition, but it is not too difficult to extend yardstick to create a custom metric.</p>
+<p>Let’s start by making some predictions on the heldout test set I created, to evaluate.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">test_rs <span style="color:#666">&lt;-</span> <span style="color:#06287e">augment</span>(bag_fit, nyc_test)
+
+test_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(<span style="color:#06287e">exp</span>(price), <span style="color:#06287e">exp</span>(.pred), color <span style="color:#666">=</span> neighbourhood_group)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_abline</span>(slope <span style="color:#666">=</span> <span style="color:#40a070">1</span>, lty <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;gray50&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>()) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(color <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;True price&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Predicted price&#34;</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/nyc-airbnb/index_files/figure-html/unnamed-chunk-10-1.png" width="2400" />
+<p>We have an article about 
+<a href="https://www.tidymodels.org/learn/develop/metrics/" target="_blank" rel="noopener">how to create a custom metric on tidymodels.org</a> but the general idea is to first create a function that computes the metric for a <em>vector</em> and then make a method for a <em>dataframe</em>. Most of what’s needed for RMSLE can be taken from the functions for RMSE.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(rlang)
+
+rmsle_vec <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(truth, estimate, na_rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>, <span style="color:#007020;font-weight:bold">...</span>) {
+  rmsle_impl <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(truth, estimate) {
+    <span style="color:#06287e">sqrt</span>(<span style="color:#06287e">mean</span>((<span style="color:#06287e">log</span>(truth <span style="color:#666">+</span> <span style="color:#40a070">1</span>) <span style="color:#666">-</span> <span style="color:#06287e">log</span>(estimate <span style="color:#666">+</span> <span style="color:#40a070">1</span>))^2))
+  }
+
+  <span style="color:#06287e">metric_vec_template</span>(
+    metric_impl <span style="color:#666">=</span> rmsle_impl,
+    truth <span style="color:#666">=</span> truth,
+    estimate <span style="color:#666">=</span> estimate,
+    na_rm <span style="color:#666">=</span> na_rm,
+    cls <span style="color:#666">=</span> <span style="color:#4070a0">&#34;numeric&#34;</span>,
+    <span style="color:#007020;font-weight:bold">...</span>
+  )
+}
+
+rmsle <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(data, <span style="color:#007020;font-weight:bold">...</span>) {
+  <span style="color:#06287e">UseMethod</span>(<span style="color:#4070a0">&#34;rmsle&#34;</span>)
+}
+rmsle <span style="color:#666">&lt;-</span> <span style="color:#06287e">new_numeric_metric</span>(rmsle, direction <span style="color:#666">=</span> <span style="color:#4070a0">&#34;minimize&#34;</span>)
+
+rmsle.data.frame <span style="color:#666">&lt;-</span> <span style="color:#06287e">function</span>(data, truth, estimate, na_rm <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>, <span style="color:#007020;font-weight:bold">...</span>) {
+  <span style="color:#06287e">metric_summarizer</span>(
+    metric_nm <span style="color:#666">=</span> <span style="color:#4070a0">&#34;rmsle&#34;</span>,
+    metric_fn <span style="color:#666">=</span> rmsle_vec,
+    data <span style="color:#666">=</span> data,
+    truth <span style="color:#666">=</span> <span style="color:#666">!!</span><span style="color:#06287e">enquo</span>(truth),
+    estimate <span style="color:#666">=</span> <span style="color:#666">!!</span><span style="color:#06287e">enquo</span>(estimate),
+    na_rm <span style="color:#666">=</span> na_rm,
+    <span style="color:#007020;font-weight:bold">...</span>
+  )
+}
+</code></pre></div><p>Now we can apply this to our test data. In this context, we would want to use <code>rmse()</code> with the results on the log scale and <code>rmsle()</code> on the results back on the dollar scale.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">test_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">rmse</span>(price, .pred)
+</code></pre></div><pre><code>## # A tibble: 1 x 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 rmse    standard       0.435
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">test_rs <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(<span style="color:#06287e">across</span>(<span style="color:#06287e">c</span>(price, .pred), exp)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">rmsle</span>(price, .pred)
+</code></pre></div><pre><code>## # A tibble: 1 x 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 rmsle   standard       0.431
+</code></pre>
+<p>Not bad!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 30, 2021</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1164 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/scooby-doo/">&larr; Predict which #TidyTuesday Scooby Doo monsters are REAL with a tuned decision tree model</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/sliced-aircraft/">Class imbalance and classification metrics with aircraft wildlife strikes &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

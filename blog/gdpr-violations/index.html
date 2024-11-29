@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Modeling #TidyTuesday GDPR violations with tidymodels | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Modeling #TidyTuesday GDPR violations with tidymodels | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/gdpr-violations/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/gdpr-violations/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/gdpr-violations/featured.png" >
+    
+    
+  <meta itemprop="name" content="Modeling #TidyTuesday GDPR violations with tidymodels">
+<meta itemprop="description" content="This is an exciting week for us on the tidymodels team; we launched tidymodels.org, a new central location with resources and documentation for tidymodels packages. There is a TON to explore and learn there! 🚀 You can check out the official blog post for more details.
+Today, I&rsquo;m publishing here on my blog another screencast demonstrating how to use tidymodels. This is a good video for folks getting started with tidymodels, using this week&rsquo;s #TidyTuesday dataset on GDPR violations."><meta itemprop="datePublished" content="2020-04-22T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2020-04-22T00:00:00+00:00" />
+<meta itemprop="wordCount" content="2027"><meta itemprop="image" content="https://juliasilge.com/blog/gdpr-violations/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Modeling #TidyTuesday GDPR violations with tidymodels</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">April 22, 2020</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is an exciting week for us on the tidymodels team; we launched 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener"><code>tidymodels.org</code></a>, a new central location with resources and documentation for tidymodels packages. There is a TON to explore and learn there! 🚀 You can check out the 
+<a href="https://www.tidyverse.org/blog/2020/04/tidymodels-org/" target="_blank" rel="noopener">official blog post</a> for more details.</p>
+<p>Today, I&rsquo;m publishing here on my blog 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">another screencast demonstrating how to use tidymodels</a>. This is a good video for folks getting started with tidymodels, using this week&rsquo;s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on GDPR violations. SCARY!!! 😱</p>
+<!--html_preserve-->
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/HvODHnXHJf8" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+<!--/html_preserve-->
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-the-data">Explore the data
+  <a href="#explore-the-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal here is to understand what kind of GDPR violations are associated with higher fines in the 
+<a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-04-21/readme.md" target="_blank" rel="noopener">#TidyTuesday dataset</a> for this week. Before we start, what are the most common GDPR articles actually about? I am not a lawyer, but very roughly:</p>
+<ul>
+<li><strong>Article 5:</strong> principles for processing personal data (legitimate purpose, limited)</li>
+<li><strong>Article 6:</strong> lawful processing of personal data (i.e. consent, etc)</li>
+<li><strong>Article 13:</strong> inform subject when personal data is collected</li>
+<li><strong>Article 15:</strong> right of access by data subject</li>
+<li><strong>Article 32:</strong> security of processing (i.e. data breaches)</li>
+</ul>
+<p>Let&rsquo;s get started by looking at the data on violations.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+gdpr_raw <span style="color:#666">&lt;-</span> readr<span style="color:#666">::</span><span style="color:#06287e">read_tsv</span>(<span style="color:#4070a0">&#34;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-21/gdpr_violations.tsv&#34;</span>)
+
+gdpr_raw
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 250 x 11
+##       id picture name   price authority date  controller article_violated type 
+##    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;            &lt;chr&gt;
+##  1     1 https:… Pola…   9380 Polish N… 10/1… Polish Ma… Art. 28 GDPR     Non-…
+##  2     2 https:… Roma…   2500 Romanian… 10/1… UTTIS IND… Art. 12 GDPR|Ar… Info…
+##  3     3 https:… Spain  60000 Spanish … 10/1… Xfera Mov… Art. 5 GDPR|Art… Non-…
+##  4     4 https:… Spain   8000 Spanish … 10/1… Iberdrola… Art. 31 GDPR     Fail…
+##  5     5 https:… Roma… 150000 Romanian… 10/0… Raiffeise… Art. 32 GDPR     Fail…
+##  6     6 https:… Roma…  20000 Romanian… 10/0… Vreau Cre… Art. 32 GDPR|Ar… Fail…
+##  7     7 https:… Gree… 200000 Hellenic… 10/0… Telecommu… Art. 5 (1) c) G… Fail…
+##  8     8 https:… Gree… 200000 Hellenic… 10/0… Telecommu… Art. 21 (3) GDP… Fail…
+##  9     9 https:… Spain  30000 Spanish … 10/0… Vueling A… Art. 5 GDPR|Art… Non-…
+## 10    10 https:… Roma…   9000 Romanian… 09/2… Inteligo … Art. 5 (1) a) G… Non-…
+## # … with 240 more rows, and 2 more variables: source &lt;chr&gt;, summary &lt;chr&gt;
+</code></pre><p>How are the fines distributed?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(price <span style="color:#666">+</span> <span style="color:#40a070">1</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(fill <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>(prefix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;€&#34;</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;GDPR fine (EUR)&#34;</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;GDPR violations&#34;</span>)
+</code></pre></div><img src="/blog/gdpr-violations/index_files/figure-html/unnamed-chunk-3-1.png" width="2400" />
+<p>Some of the violations were fined zero EUR. Let&rsquo;s make a one-article-per-row version of this dataset.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_tidy <span style="color:#666">&lt;-</span> gdpr_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">transmute</span>(id,
+    price,
+    country <span style="color:#666">=</span> name,
+    article_violated,
+    articles <span style="color:#666">=</span> <span style="color:#06287e">str_extract_all</span>(article_violated, <span style="color:#4070a0">&#34;Art.[:digit:]+|Art. [:digit:]+&#34;</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(total_articles <span style="color:#666">=</span> <span style="color:#06287e">map_int</span>(articles, length)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest</span>(articles) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_count</span>(articles) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(n <span style="color:#666">&gt;</span> <span style="color:#40a070">10</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>n)
+
+gdpr_tidy
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 304 x 6
+##       id  price country article_violated                 articles total_articles
+##    &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;                            &lt;chr&gt;             &lt;int&gt;
+##  1     2   2500 Romania Art. 12 GDPR|Art. 13 GDPR|Art. … Art. 13               4
+##  2     2   2500 Romania Art. 12 GDPR|Art. 13 GDPR|Art. … Art. 5                4
+##  3     2   2500 Romania Art. 12 GDPR|Art. 13 GDPR|Art. … Art. 6                4
+##  4     3  60000 Spain   Art. 5 GDPR|Art. 6 GDPR          Art. 5                2
+##  5     3  60000 Spain   Art. 5 GDPR|Art. 6 GDPR          Art. 6                2
+##  6     5 150000 Romania Art. 32 GDPR                     Art. 32               1
+##  7     6  20000 Romania Art. 32 GDPR|Art. 33 GDPR        Art. 32               2
+##  8     7 200000 Greece  Art. 5 (1) c) GDPR|Art. 25 GDPR  Art. 5                2
+##  9     9  30000 Spain   Art. 5 GDPR|Art. 6 GDPR          Art. 5                2
+## 10     9  30000 Spain   Art. 5 GDPR|Art. 6 GDPR          Art. 6                2
+## # … with 294 more rows
+</code></pre><p>How are the fines distributed by article?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(ggbeeswarm)
+
+gdpr_tidy <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    articles <span style="color:#666">=</span> <span style="color:#06287e">str_replace_all</span>(articles, <span style="color:#4070a0">&#34;Art. &#34;</span>, <span style="color:#4070a0">&#34;Article &#34;</span>),
+    articles <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(articles, price)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(articles, price <span style="color:#666">+</span> <span style="color:#40a070">1</span>, color <span style="color:#666">=</span> articles, fill <span style="color:#666">=</span> articles)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_boxplot</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>, outlier.colour <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NA</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_quasirandom</span>() <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>(prefix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;€&#34;</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;GDPR fine (EUR)&#34;</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;GDPR fines levied by article&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;For 250 violations in 25 countries&#34;</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;none&#34;</span>)
+</code></pre></div><img src="/blog/gdpr-violations/index_files/figure-html/unnamed-chunk-5-1.png" width="2400" />
+<p>Now let&rsquo;s create a dataset for modeling.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_violations <span style="color:#666">&lt;-</span> gdpr_tidy <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(value <span style="color:#666">=</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(<span style="color:#666">-</span>article_violated) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_wider</span>(
+    names_from <span style="color:#666">=</span> articles, values_from <span style="color:#666">=</span> value,
+    values_fn <span style="color:#666">=</span> <span style="color:#06287e">list</span>(value <span style="color:#666">=</span> max), values_fill <span style="color:#666">=</span> <span style="color:#06287e">list</span>(value <span style="color:#666">=</span> <span style="color:#40a070">0</span>)
+  ) <span style="color:#666">%&gt;%</span>
+  janitor<span style="color:#666">::</span><span style="color:#06287e">clean_names</span>()
+
+gdpr_violations
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 219 x 9
+##       id  price country total_articles art_13 art_5 art_6 art_32 art_15
+##    &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;            &lt;int&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+##  1     2   2500 Romania              4      1     1     1      0      0
+##  2     3  60000 Spain                2      0     1     1      0      0
+##  3     5 150000 Romania              1      0     0     0      1      0
+##  4     6  20000 Romania              2      0     0     0      1      0
+##  5     7 200000 Greece               2      0     1     0      0      0
+##  6     9  30000 Spain                2      0     1     1      0      0
+##  7    10   9000 Romania              2      0     1     1      0      0
+##  8    11 195407 Germany              3      0     0     0      0      1
+##  9    12  10000 Belgium              1      0     1     0      0      0
+## 10    13 644780 Poland               1      0     0     0      1      0
+## # … with 209 more rows
+</code></pre><p>We are ready to go!</p>
+
+
+
+
+<h2 id="build-a-model">Build a model
+  <a href="#build-a-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Let&rsquo;s preprocess our data to get it ready for modeling.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidymodels)
+
+gdpr_rec <span style="color:#666">&lt;-</span> <span style="color:#06287e">recipe</span>(price <span style="color:#666">~</span> ., data <span style="color:#666">=</span> gdpr_violations) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">update_role</span>(id, new_role <span style="color:#666">=</span> <span style="color:#4070a0">&#34;id&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_log</span>(price, base <span style="color:#666">=</span> <span style="color:#40a070">10</span>, offset <span style="color:#666">=</span> <span style="color:#40a070">1</span>, skip <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_other</span>(country, other <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Other&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_dummy</span>(<span style="color:#06287e">all_nominal</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">step_zv</span>(<span style="color:#06287e">all_predictors</span>())
+
+gdpr_prep <span style="color:#666">&lt;-</span> <span style="color:#06287e">prep</span>(gdpr_rec)
+
+gdpr_prep
+</code></pre></div><pre tabindex="0"><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          1
+##    outcome          1
+##  predictor          7
+## 
+## Training data contained 219 data points and no missing data.
+## 
+## Operations:
+## 
+## Log transformation on price [trained]
+## Collapsing factor levels for country [trained]
+## Dummy variables from country [trained]
+## Zero variance filter removed no terms [trained]
+</code></pre><p>Let&rsquo;s walk through the steps in this recipe.</p>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what our model is going to be (using a formula here) and what data we are using.</li>
+<li>Next, we update the role for <code>id</code>, since this variable is not a predictor or outcome but I would like to keep it in the data for convenience.</li>
+<li>Next, we take the log of the outcome (<code>price</code>, the amount of the fine).</li>
+<li>There are a lot of countries in this dataset, so let&rsquo;s collapse some of the less frequently occurring countries into another <code>&quot;Other&quot;</code> category.</li>
+<li>Finally, we can create indicator variables and remove varibles with zero variance.</li>
+</ul>
+<p>Before using <code>prep()</code> these steps have been defined but not actually run or implemented. The <code>prep()</code> function is where everything gets evaluated.</p>
+<p>Now it&rsquo;s time to specify our model. I am using a 
+<a href="https://tidymodels.github.io/workflows/" target="_blank" rel="noopener"><code>workflow()</code></a> in this example for convenience; these are objects that can help you manage modeling pipelines more easily, with pieces that fit together like Lego blocks. This <code>workflow()</code> contains both the recipe and the model (a straightforward OLS linear regression).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_wf <span style="color:#666">&lt;-</span> <span style="color:#06287e">workflow</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_recipe</span>(gdpr_rec) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">add_model</span>(<span style="color:#06287e">linear_reg</span>() <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">set_engine</span>(<span style="color:#4070a0">&#34;lm&#34;</span>))
+
+gdpr_wf
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow ═══════════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## ── Preprocessor ───────────────────────────────────────────────────────────────────────
+## 4 Recipe Steps
+## 
+## ● step_log()
+## ● step_other()
+## ● step_dummy()
+## ● step_zv()
+## 
+## ── Model ──────────────────────────────────────────────────────────────────────────────
+## Linear Regression Model Specification (regression)
+## 
+## Computational engine: lm
+</code></pre><p>You can <code>fit()</code> a workflow, much like you can fit a model, and then you can pull out the fit object and <code>tidy()</code> it!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_fit <span style="color:#666">&lt;-</span> gdpr_wf <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">fit</span>(data <span style="color:#666">=</span> gdpr_violations)
+
+gdpr_fit
+</code></pre></div><pre tabindex="0"><code>## ══ Workflow [trained] ═════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## ── Preprocessor ───────────────────────────────────────────────────────────────────────
+## 4 Recipe Steps
+## 
+## ● step_log()
+## ● step_other()
+## ● step_dummy()
+## ● step_zv()
+## 
+## ── Model ──────────────────────────────────────────────────────────────────────────────
+## 
+## Call:
+## stats::lm(formula = formula, data = data)
+## 
+## Coefficients:
+##            (Intercept)          total_articles                  art_13  
+##                3.76607                 0.47957                -0.76251  
+##                  art_5                   art_6                  art_32  
+##               -0.41869                -0.55988                -0.15317  
+##                 art_15  country_Czech.Republic         country_Germany  
+##               -1.56765                -0.64953                 0.05974  
+##        country_Hungary         country_Romania           country_Spain  
+##               -0.15532                -0.34580                 0.42968  
+##          country_Other  
+##                0.23438
+</code></pre><div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_fit <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull_workflow_fit</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">tidy</span>() <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">arrange</span>(estimate) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">kable</span>()
+</code></pre></div><table>
+<thead>
+<tr>
+<th style="text-align:left">term</th>
+<th style="text-align:right">estimate</th>
+<th style="text-align:right">std.error</th>
+<th style="text-align:right">statistic</th>
+<th style="text-align:right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">art_15</td>
+<td style="text-align:right">-1.5676538</td>
+<td style="text-align:right">0.4651576</td>
+<td style="text-align:right">-3.3701564</td>
+<td style="text-align:right">0.0008969</td>
+</tr>
+<tr>
+<td style="text-align:left">art_13</td>
+<td style="text-align:right">-0.7625069</td>
+<td style="text-align:right">0.4074302</td>
+<td style="text-align:right">-1.8715031</td>
+<td style="text-align:right">0.0626929</td>
+</tr>
+<tr>
+<td style="text-align:left">country_Czech.Republic</td>
+<td style="text-align:right">-0.6495339</td>
+<td style="text-align:right">0.4667470</td>
+<td style="text-align:right">-1.3916188</td>
+<td style="text-align:right">0.1655387</td>
+</tr>
+<tr>
+<td style="text-align:left">art_6</td>
+<td style="text-align:right">-0.5598765</td>
+<td style="text-align:right">0.2950382</td>
+<td style="text-align:right">-1.8976404</td>
+<td style="text-align:right">0.0591419</td>
+</tr>
+<tr>
+<td style="text-align:left">art_5</td>
+<td style="text-align:right">-0.4186949</td>
+<td style="text-align:right">0.2828869</td>
+<td style="text-align:right">-1.4800789</td>
+<td style="text-align:right">0.1403799</td>
+</tr>
+<tr>
+<td style="text-align:left">country_Romania</td>
+<td style="text-align:right">-0.3457980</td>
+<td style="text-align:right">0.4325560</td>
+<td style="text-align:right">-0.7994295</td>
+<td style="text-align:right">0.4249622</td>
+</tr>
+<tr>
+<td style="text-align:left">country_Hungary</td>
+<td style="text-align:right">-0.1553232</td>
+<td style="text-align:right">0.4790037</td>
+<td style="text-align:right">-0.3242631</td>
+<td style="text-align:right">0.7460679</td>
+</tr>
+<tr>
+<td style="text-align:left">art_32</td>
+<td style="text-align:right">-0.1531725</td>
+<td style="text-align:right">0.3146769</td>
+<td style="text-align:right">-0.4867613</td>
+<td style="text-align:right">0.6269450</td>
+</tr>
+<tr>
+<td style="text-align:left">country_Germany</td>
+<td style="text-align:right">0.0597408</td>
+<td style="text-align:right">0.4189434</td>
+<td style="text-align:right">0.1425986</td>
+<td style="text-align:right">0.8867465</td>
+</tr>
+<tr>
+<td style="text-align:left">country_Other</td>
+<td style="text-align:right">0.2343787</td>
+<td style="text-align:right">0.3551225</td>
+<td style="text-align:right">0.6599939</td>
+<td style="text-align:right">0.5099950</td>
+</tr>
+<tr>
+<td style="text-align:left">country_Spain</td>
+<td style="text-align:right">0.4296805</td>
+<td style="text-align:right">0.3643060</td>
+<td style="text-align:right">1.1794494</td>
+<td style="text-align:right">0.2395796</td>
+</tr>
+<tr>
+<td style="text-align:left">total_articles</td>
+<td style="text-align:right">0.4795667</td>
+<td style="text-align:right">0.1656494</td>
+<td style="text-align:right">2.8950705</td>
+<td style="text-align:right">0.0041993</td>
+</tr>
+<tr>
+<td style="text-align:left">(Intercept)</td>
+<td style="text-align:right">3.7660677</td>
+<td style="text-align:right">0.4089156</td>
+<td style="text-align:right">9.2098904</td>
+<td style="text-align:right">0.0000000</td>
+</tr>
+</tbody>
+</table>
+<p>GDPR violations of more than one article have higher fines.</p>
+
+
+
+
+<h2 id="explore-results">Explore results
+  <a href="#explore-results"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Lots of those coefficients have big p-values (for example, all the countries) but I think the best way to understand these results will be to visualize some predictions. You can predict on new data in tidymodels with either a model or a <code>workflow()</code>.</p>
+<p>Let&rsquo;s create some example new data that we are interested in.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">new_gdpr <span style="color:#666">&lt;-</span> <span style="color:#06287e">crossing</span>(
+  country <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Other&#34;</span>,
+  art_5 <span style="color:#666">=</span> <span style="color:#40a070">0</span><span style="color:#666">:</span><span style="color:#40a070">1</span>,
+  art_6 <span style="color:#666">=</span> <span style="color:#40a070">0</span><span style="color:#666">:</span><span style="color:#40a070">1</span>,
+  art_13 <span style="color:#666">=</span> <span style="color:#40a070">0</span><span style="color:#666">:</span><span style="color:#40a070">1</span>,
+  art_15 <span style="color:#666">=</span> <span style="color:#40a070">0</span><span style="color:#666">:</span><span style="color:#40a070">1</span>,
+  art_32 <span style="color:#666">=</span> <span style="color:#40a070">0</span><span style="color:#666">:</span><span style="color:#40a070">1</span>
+) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    id <span style="color:#666">=</span> <span style="color:#06287e">row_number</span>(),
+    total_articles <span style="color:#666">=</span> art_5 <span style="color:#666">+</span> art_6 <span style="color:#666">+</span> art_13 <span style="color:#666">+</span> art_15 <span style="color:#666">+</span> art_32
+  )
+
+new_gdpr
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 32 x 8
+##    country art_5 art_6 art_13 art_15 art_32    id total_articles
+##    &lt;chr&gt;   &lt;int&gt; &lt;int&gt;  &lt;int&gt;  &lt;int&gt;  &lt;int&gt; &lt;int&gt;          &lt;int&gt;
+##  1 Other       0     0      0      0      0     1              0
+##  2 Other       0     0      0      0      1     2              1
+##  3 Other       0     0      0      1      0     3              1
+##  4 Other       0     0      0      1      1     4              2
+##  5 Other       0     0      1      0      0     5              1
+##  6 Other       0     0      1      0      1     6              2
+##  7 Other       0     0      1      1      0     7              2
+##  8 Other       0     0      1      1      1     8              3
+##  9 Other       0     1      0      0      0     9              1
+## 10 Other       0     1      0      0      1    10              2
+## # … with 22 more rows
+</code></pre><p>Let&rsquo;s find both the mean predictions and the confidence intervals.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">mean_pred <span style="color:#666">&lt;-</span> <span style="color:#06287e">predict</span>(gdpr_fit,
+  new_data <span style="color:#666">=</span> new_gdpr
+)
+
+conf_int_pred <span style="color:#666">&lt;-</span> <span style="color:#06287e">predict</span>(gdpr_fit,
+  new_data <span style="color:#666">=</span> new_gdpr,
+  type <span style="color:#666">=</span> <span style="color:#4070a0">&#34;conf_int&#34;</span>
+)
+
+gdpr_res <span style="color:#666">&lt;-</span> new_gdpr <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_cols</span>(mean_pred) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">bind_cols</span>(conf_int_pred)
+
+gdpr_res
+</code></pre></div><pre tabindex="0"><code>## # A tibble: 32 x 11
+##    country art_5 art_6 art_13 art_15 art_32    id total_articles .pred
+##    &lt;chr&gt;   &lt;int&gt; &lt;int&gt;  &lt;int&gt;  &lt;int&gt;  &lt;int&gt; &lt;int&gt;          &lt;int&gt; &lt;dbl&gt;
+##  1 Other       0     0      0      0      0     1              0  4.00
+##  2 Other       0     0      0      0      1     2              1  4.33
+##  3 Other       0     0      0      1      0     3              1  2.91
+##  4 Other       0     0      0      1      1     4              2  3.24
+##  5 Other       0     0      1      0      0     5              1  3.72
+##  6 Other       0     0      1      0      1     6              2  4.04
+##  7 Other       0     0      1      1      0     7              2  2.63
+##  8 Other       0     0      1      1      1     8              3  2.96
+##  9 Other       0     1      0      0      0     9              1  3.92
+## 10 Other       0     1      0      0      1    10              2  4.25
+## # … with 22 more rows, and 2 more variables: .pred_lower &lt;dbl&gt;,
+## #   .pred_upper &lt;dbl&gt;
+</code></pre><p>There are lots of things we can do wtih these results! For example, what are the predicted GDPR fines for violations of each article type (violating only one article)?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">gdpr_res <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(total_articles <span style="color:#666">==</span> <span style="color:#40a070">1</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pivot_longer</span>(art_5<span style="color:#666">:</span>art_32) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(value <span style="color:#666">&gt;</span> <span style="color:#40a070">0</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">mutate</span>(
+    name <span style="color:#666">=</span> <span style="color:#06287e">str_replace_all</span>(name, <span style="color:#4070a0">&#34;art_&#34;</span>, <span style="color:#4070a0">&#34;Article &#34;</span>),
+    name <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(name, .pred)
+  ) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(name, <span style="color:#40a070">10</span>^.pred, color <span style="color:#666">=</span> name)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_point</span>(size <span style="color:#666">=</span> <span style="color:#40a070">3.5</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_errorbar</span>(<span style="color:#06287e">aes</span>(
+    ymin <span style="color:#666">=</span> <span style="color:#40a070">10</span>^.pred_lower,
+    ymax <span style="color:#666">=</span> <span style="color:#40a070">10</span>^.pred_upper
+  ),
+  width <span style="color:#666">=</span> <span style="color:#40a070">0.2</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.7</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">labs</span>(
+    x <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>, y <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Increase in fine (EUR)&#34;</span>,
+    title <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Predicted fine for each type of GDPR article violation&#34;</span>,
+    subtitle <span style="color:#666">=</span> <span style="color:#4070a0">&#34;Modeling based on 250 violations in 25 countries&#34;</span>
+  ) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_y_log10</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span><span style="color:#06287e">dollar_format</span>(prefix <span style="color:#666">=</span> <span style="color:#4070a0">&#34;€&#34;</span>, accuracy <span style="color:#666">=</span> <span style="color:#40a070">1</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">theme</span>(legend.position <span style="color:#666">=</span> <span style="color:#4070a0">&#34;none&#34;</span>)
+</code></pre></div><img src="/blog/gdpr-violations/index_files/figure-html/unnamed-chunk-12-1.png" width="2100" />
+<p>We can see here that violations such as data breaches have higher fines on average than violations about rights of access.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">April 22, 2020</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">10 minute read, 2027 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/animal-crossing/">&larr; Sentiment analysis with tidymodels and #TidyTuesday Animal Crossing reviews</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/best-hip-hop/">PCA and the #TidyTuesday best hip hop songs ever &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

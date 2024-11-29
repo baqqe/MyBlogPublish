@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Three ways to look at #TidyTuesday UK pay gap data | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A data science blog">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Three ways to look at #TidyTuesday UK pay gap data | Julia Silge">
+<meta property="og:description" content="A data science blog" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/pay-gap-uk/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/blog/pay-gap-uk/featured.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/blog/pay-gap-uk/featured.png" >
+    
+    
+  <meta itemprop="name" content="Three ways to look at #TidyTuesday UK pay gap data">
+<meta itemprop="description" content="Use summarization, a single linear model, and bootstrapping to understand what economic activities involve a larger pay gap for women."><meta itemprop="datePublished" content="2022-06-30T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-06-30T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1708"><meta itemprop="image" content="https://juliasilge.com/blog/pay-gap-uk/featured.png">
+<meta itemprop="keywords" content="rstats,tidymodels," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Three ways to look at #TidyTuesday UK pay gap data</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge in <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </p>
+        <p class="f7 db mv0 ttu">June 30, 2022</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>This is the latest in my series of 
+<a href="https://juliasilge.com/category/tidymodels/" target="_blank" rel="noopener">screencasts</a> demonstrating how to use the 
+<a href="https://www.tidymodels.org/" target="_blank" rel="noopener">tidymodels</a> packages, from starting out to more complex topics.
+This screencast walks through three ways to understand this week’s 
+<a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener"><code>#TidyTuesday</code> dataset</a> on the pay gap between women and men in the UK.
+💸</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube-nocookie.com/embed/qu2wsbIeedY" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+</br>
+<p>Here is the code I used in the video, for those who prefer reading instead of or in addition to video.</p>
+
+
+
+
+<h2 id="explore-data">Explore data
+  <a href="#explore-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our modeling goal is to understand how 
+<a href="https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-06-28" target="_blank" rel="noopener">the pay gap between women and men</a> in the UK is related to the types of economic activities workers are involved in.
+Let’s take three different ways to look at this relationship, walking up in complexity and robustness. The different sectors of work are stored in the <code>sic_codes</code> variable, and each company can be involved in multiple. We can use <code>separate_rows()</code> from tidyr to, well, separate this into rows!</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidyverse)
+
+paygap_raw <span style="color:#666">&lt;-</span> <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-28/paygap.csv&#39;</span>)
+
+paygap_raw <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">select</span>(sic_codes) <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">separate_rows</span>(sic_codes, sep <span style="color:#666">=</span> <span style="color:#4070a0">&#34;:&#34;</span>) <span style="color:#666">%&gt;%</span> 
+  <span style="color:#06287e">count</span>(sic_codes, sort <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">TRUE</span>)
+</code></pre></div><pre><code>## # A tibble: 639 × 2
+##    sic_codes     n
+##    &lt;chr&gt;     &lt;int&gt;
+##  1 1          6584
+##  2 85310      3020
+##  3 &lt;NA&gt;       2894
+##  4 82990      2588
+##  5 85200      2219
+##  6 84110      1886
+##  7 70100      1541
+##  8 86900      1246
+##  9 78200      1149
+## 10 86210      1074
+## # … with 629 more rows
+</code></pre>
+<p>How is the median difference in hourly pay distibuted?</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">paygap_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(diff_median_hourly_percent <span style="color:#666">/</span> <span style="color:#40a070">100</span>)) <span style="color:#666">+</span>
+  <span style="color:#06287e">geom_histogram</span>(bins <span style="color:#666">=</span> <span style="color:#40a070">25</span>) <span style="color:#666">+</span>
+  <span style="color:#06287e">scale_x_continuous</span>(limits <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#40a070">-0.5</span>, <span style="color:#40a070">0.5</span>))
+</code></pre></div><img src="https://juliasilge.com/blog/pay-gap-uk/index_files/figure-html/unnamed-chunk-3-1.png" width="1260" />
+<p>Notice that more companies are on the positive side (women earn less) than the negative side (women earn more) but there are plenty of examples where women in more at the individual observation level.</p>
+<p>I’d like to understand more about those SIC codes, so I looked them up 
+<a href="https://www.gov.uk/government/publications/standard-industrial-classification-of-economic-activities-sic" target="_blank" rel="noopener">from the UK government and downloaded their CSV</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">uk_sic_codes <span style="color:#666">&lt;-</span> 
+  <span style="color:#06287e">read_csv</span>(<span style="color:#4070a0">&#34;SIC07_CH_condensed_list_en.csv&#34;</span>) <span style="color:#666">%&gt;%</span> 
+  janitor<span style="color:#666">::</span><span style="color:#06287e">clean_names</span>()
+
+uk_sic_codes
+</code></pre></div><pre><code>## # A tibble: 731 × 2
+##    sic_code description                                                     
+##    &lt;chr&gt;    &lt;chr&gt;                                                           
+##  1 01110    Growing of cereals (except rice), leguminous crops and oil seeds
+##  2 01120    Growing of rice                                                 
+##  3 01130    Growing of vegetables and melons, roots and tubers              
+##  4 01140    Growing of sugar cane                                           
+##  5 01150    Growing of tobacco                                              
+##  6 01160    Growing of fibre crops                                          
+##  7 01190    Growing of other non-perennial crops                            
+##  8 01210    Growing of grapes                                               
+##  9 01220    Growing of tropical and subtropical fruits                      
+## 10 01230    Growing of citrus fruits                                        
+## # … with 721 more rows
+</code></pre>
+<p>Let’s join this together with the original data, and use <code>separate_rows()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">paygap_joined <span style="color:#666">&lt;-</span>
+  paygap_raw <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">select</span>(employer_name, diff_median_hourly_percent, sic_codes) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">separate_rows</span>(sic_codes, sep <span style="color:#666">=</span> <span style="color:#4070a0">&#34;:&#34;</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">left_join</span>(uk_sic_codes, by <span style="color:#666">=</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;sic_codes&#34;</span> <span style="color:#666">=</span> <span style="color:#4070a0">&#34;sic_code&#34;</span>))
+
+paygap_joined
+</code></pre></div><pre><code>## # A tibble: 71,943 × 4
+##    employer_name                      diff_median_hourly_… sic_codes description
+##    &lt;chr&gt;                                             &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;      
+##  1 Bryanston School, Incorporated                     28.2 85310     General se…
+##  2 RED BAND CHEMICAL COMPANY, LIMITED                 -2.7 47730     Dispensing…
+##  3 123 EMPLOYEES LTD                                  36   78300     Human reso…
+##  4 1610 LIMITED                                      -34   93110     Operation …
+##  5 1879 EVENTS MANAGEMENT LIMITED                      8.1 56210     Event cate…
+##  6 1879 EVENTS MANAGEMENT LIMITED                      8.1 70229     Management…
+##  7 1LIFE MANAGEMENT SOLUTIONS LIMITED                  2.8 93110     Operation …
+##  8 1LIFE MANAGEMENT SOLUTIONS LIMITED                  2.8 93130     Fitness fa…
+##  9 1LIFE MANAGEMENT SOLUTIONS LIMITED                  2.8 93290     Other amus…
+## 10 1ST HOME CARE LTD.                                  0   86900     Other huma…
+## # … with 71,933 more rows
+</code></pre>
+<p>There are a lot of different codes there! Let’s treat these codes like text and tokenize them:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(tidytext)
+
+paygap_tokenized <span style="color:#666">&lt;-</span>
+  paygap_joined <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">unnest_tokens</span>(word, description) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">anti_join</span>(<span style="color:#06287e">get_stopwords</span>()) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">na.omit</span>()
+
+paygap_tokenized
+</code></pre></div><pre><code>## # A tibble: 249,545 × 4
+##    employer_name                      diff_median_hourly_percent sic_codes word 
+##    &lt;chr&gt;                                                   &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;
+##  1 Bryanston School, Incorporated                           28.2 85310     gene…
+##  2 Bryanston School, Incorporated                           28.2 85310     seco…
+##  3 Bryanston School, Incorporated                           28.2 85310     educ…
+##  4 RED BAND CHEMICAL COMPANY, LIMITED                       -2.7 47730     disp…
+##  5 RED BAND CHEMICAL COMPANY, LIMITED                       -2.7 47730     chem…
+##  6 RED BAND CHEMICAL COMPANY, LIMITED                       -2.7 47730     spec…
+##  7 RED BAND CHEMICAL COMPANY, LIMITED                       -2.7 47730     stor…
+##  8 123 EMPLOYEES LTD                                        36   78300     human
+##  9 123 EMPLOYEES LTD                                        36   78300     reso…
+## 10 123 EMPLOYEES LTD                                        36   78300     prov…
+## # … with 249,535 more rows
+</code></pre>
+<p>This is going to be too many words for us to analyze altogether, so let’s filter down to only the most-used words, as well as making that <code>diff_median_hourly_percent</code> variable a percent out of 100.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">top_words <span style="color:#666">&lt;-</span> 
+  paygap_tokenized <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">count</span>(word) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">filter</span>(<span style="color:#666">!</span>word <span style="color:#666">%in%</span> <span style="color:#06287e">c</span>(<span style="color:#4070a0">&#34;activities&#34;</span>, <span style="color:#4070a0">&#34;n.e.c&#34;</span>, <span style="color:#4070a0">&#34;general&#34;</span>, <span style="color:#4070a0">&#34;non&#34;</span>)) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">slice_max</span>(n, n <span style="color:#666">=</span> <span style="color:#40a070">40</span>) <span style="color:#666">%&gt;%</span>
+  <span style="color:#06287e">pull</span>(word)
+
+paygap <span style="color:#666">&lt;-</span>
+    paygap_tokenized <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">filter</span>(word <span style="color:#666">%in%</span> top_words) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">transmute</span>(
+        diff_wage <span style="color:#666">=</span> diff_median_hourly_percent <span style="color:#666">/</span> <span style="color:#40a070">100</span>, 
+        word
+    )
+
+paygap
+</code></pre></div><pre><code>## # A tibble: 94,381 × 2
+##    diff_wage word       
+##        &lt;dbl&gt; &lt;chr&gt;      
+##  1     0.282 secondary  
+##  2     0.282 education  
+##  3    -0.027 specialised
+##  4    -0.027 stores     
+##  5     0.36  human      
+##  6     0.36  management 
+##  7     0.36  human      
+##  8    -0.34  facilities 
+##  9     0.081 management 
+## 10     0.081 management 
+## # … with 94,371 more rows
+</code></pre>
+<p>This format is now ready for us to take three different approaches to understanding how economic activities (as described by these words) are related to the gender pay gap.</p>
+
+
+
+
+<h2 id="summarize-and-visualize">Summarize and visualize
+  <a href="#summarize-and-visualize"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our first approach is to summarize and visualize. This gives a first, baseline understanding of how these quantities are related.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">paygap <span style="color:#666">%&gt;%</span> 
+    <span style="color:#06287e">group_by</span>(word) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">summarise</span>(diff_wage <span style="color:#666">=</span> <span style="color:#06287e">mean</span>(diff_wage)) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(word <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(word, diff_wage)) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(diff_wage, word)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_point</span>(alpha <span style="color:#666">=</span> <span style="color:#40a070">0.9</span>, size <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% increase in men&#39;s hourly wages compared to women&#39;s&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/pay-gap-uk/index_files/figure-html/unnamed-chunk-8-1.png" width="1260" />
+
+
+
+
+<h2 id="fit-a-single-linear-model">Fit a single linear model
+  <a href="#fit-a-single-linear-model"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our second approach is to fit a linear model one time to all the data. This is a pretty big dataset, so there is plenty of data for fitting a simple model. We can force a model with no intercept by using the formula <code>diff_wage ~ 0 + word</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">paygap_fit <span style="color:#666">&lt;-</span> <span style="color:#06287e">lm</span>(diff_wage <span style="color:#666">~</span> <span style="color:#40a070">0</span> <span style="color:#666">+</span> word, data <span style="color:#666">=</span> paygap)
+<span style="color:#06287e">summary</span>(paygap_fit)
+</code></pre></div><pre><code>## 
+## Call:
+## lm(formula = diff_wage ~ 0 + word, data = paygap)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.1440 -0.0779 -0.0152  0.0795  0.9756 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## wordaccommodation  0.024434   0.003448   7.085 1.40e-12 ***
+## wordadministration 0.052506   0.003464  15.158  &lt; 2e-16 ***
+## wordagency         0.059185   0.004235  13.977  &lt; 2e-16 ***
+## wordbusiness       0.144573   0.002790  51.817  &lt; 2e-16 ***
+## wordcare           0.018434   0.003356   5.493 3.97e-08 ***
+## wordconstruction   0.197840   0.003507  56.421  &lt; 2e-16 ***
+## wordeducation      0.238300   0.001628 146.395  &lt; 2e-16 ***
+## wordemployment     0.050004   0.003816  13.103  &lt; 2e-16 ***
+## wordequipment      0.150330   0.003797  39.591  &lt; 2e-16 ***
+## wordfacilities     0.048925   0.003446  14.199  &lt; 2e-16 ***
+## wordfood           0.050617   0.003745  13.515  &lt; 2e-16 ***
+## wordhead           0.164015   0.003847  42.632  &lt; 2e-16 ***
+## wordhealth         0.025214   0.003645   6.918 4.61e-12 ***
+## wordhuman          0.059449   0.003492  17.022  &lt; 2e-16 ***
+## wordinformation    0.189164   0.004147  45.610  &lt; 2e-16 ***
+## wordmanagement     0.149047   0.003940  37.826  &lt; 2e-16 ***
+## wordmanufacture    0.097550   0.001951  49.995  &lt; 2e-16 ***
+## wordmedical        0.097000   0.004018  24.143  &lt; 2e-16 ***
+## wordmotor          0.141194   0.002954  47.790  &lt; 2e-16 ***
+## wordoffices        0.164015   0.003847  42.632  &lt; 2e-16 ***
+## wordpractice       0.108073   0.004272  25.300  &lt; 2e-16 ***
+## wordprimary        0.283471   0.002756 102.858  &lt; 2e-16 ***
+## wordproducts       0.080025   0.003595  22.261  &lt; 2e-16 ***
+## wordpublic         0.066055   0.003055  21.623  &lt; 2e-16 ***
+## wordresidential    0.015922   0.003455   4.609 4.06e-06 ***
+## wordretail         0.084276   0.002790  30.206  &lt; 2e-16 ***
+## wordsale           0.101374   0.002421  41.871  &lt; 2e-16 ***
+## wordsecondary      0.249427   0.002415 103.272  &lt; 2e-16 ***
+## wordservice        0.138568   0.002153  64.357  &lt; 2e-16 ***
+## wordservices       0.127363   0.004278  29.768  &lt; 2e-16 ***
+## wordsimilar        0.041119   0.004270   9.630  &lt; 2e-16 ***
+## wordsocial         0.026792   0.004235   6.327 2.51e-10 ***
+## wordspecialised    0.076876   0.002709  28.383  &lt; 2e-16 ***
+## wordstores         0.071536   0.003200  22.353  &lt; 2e-16 ***
+## wordsupport        0.140395   0.002548  55.099  &lt; 2e-16 ***
+## wordtechnical      0.161487   0.003970  40.674  &lt; 2e-16 ***
+## wordtechnology     0.193201   0.004335  44.573  &lt; 2e-16 ***
+## wordtransport      0.098722   0.003362  29.365  &lt; 2e-16 ***
+## wordvehicles       0.143445   0.003265  43.928  &lt; 2e-16 ***
+## wordwholesale      0.076943   0.003194  24.091  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.151 on 94341 degrees of freedom
+## Multiple R-squared:  0.4735, Adjusted R-squared:  0.4732 
+## F-statistic:  2121 on 40 and 94341 DF,  p-value: &lt; 2.2e-16
+</code></pre>
+<p>We can visualize these results in a number of ways. One nice option is the 
+<a href="https://cran.r-project.org/package=dotwhisker" target="_blank" rel="noopener">dotwhisker</a> package:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(dotwhisker)
+
+<span style="color:#06287e">tidy</span>(paygap_fit) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(
+        term <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(term, <span style="color:#4070a0">&#34;word&#34;</span>),
+        term <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(term, <span style="color:#666">-</span>estimate)
+    ) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">dwplot</span>(vars_order <span style="color:#666">=</span> <span style="color:#06287e">levels</span>(.$term),
+           dot_args <span style="color:#666">=</span> <span style="color:#06287e">list</span>(size <span style="color:#666">=</span> <span style="color:#40a070">2</span>, color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>),
+           whisker_args <span style="color:#666">=</span> <span style="color:#06287e">list</span>(color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>)) <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_x_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% increase in men&#39;s hourly wages compared to women&#39;s&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/pay-gap-uk/index_files/figure-html/unnamed-chunk-10-1.png" width="1260" />
+
+
+
+
+<h2 id="fit-many-models">Fit many models
+  <a href="#fit-many-models"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Our third and final approach is to fit the same linear model not one time, but many times. This can give us a more robust estimate of the errors, especially. We can use the <code>reg_intervals()</code> function from rsample for this:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#06287e">library</span>(rsample)
+
+paygap_intervals <span style="color:#666">&lt;-</span> 
+    <span style="color:#06287e">reg_intervals</span>(diff_wage <span style="color:#666">~</span> <span style="color:#40a070">0</span> <span style="color:#666">+</span> word, data <span style="color:#666">=</span> paygap)
+
+paygap_intervals
+</code></pre></div><pre><code>## # A tibble: 40 × 6
+##    term               .lower .estimate .upper .alpha .method  
+##    &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+##  1 wordaccommodation  0.0198    0.0245 0.0287   0.05 student-t
+##  2 wordadministration 0.0475    0.0525 0.0576   0.05 student-t
+##  3 wordagency         0.0517    0.0592 0.0671   0.05 student-t
+##  4 wordbusiness       0.139     0.144  0.150    0.05 student-t
+##  5 wordcare           0.0155    0.0185 0.0212   0.05 student-t
+##  6 wordconstruction   0.190     0.198  0.206    0.05 student-t
+##  7 wordeducation      0.235     0.238  0.242    0.05 student-t
+##  8 wordemployment     0.0438    0.0499 0.0570   0.05 student-t
+##  9 wordequipment      0.143     0.150  0.158    0.05 student-t
+## 10 wordfacilities     0.0437    0.0488 0.0542   0.05 student-t
+## # … with 30 more rows
+</code></pre>
+<p>We could visualize this in a number of ways. Let’s use <code>geom_crossbar()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">paygap_intervals <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">mutate</span>(
+        term <span style="color:#666">=</span> <span style="color:#06287e">str_remove</span>(term, <span style="color:#4070a0">&#34;word&#34;</span>),
+        term <span style="color:#666">=</span> <span style="color:#06287e">fct_reorder</span>(term, .estimate)
+    ) <span style="color:#666">%&gt;%</span>
+    <span style="color:#06287e">ggplot</span>(<span style="color:#06287e">aes</span>(.estimate, term)) <span style="color:#666">+</span>
+    <span style="color:#06287e">geom_crossbar</span>(<span style="color:#06287e">aes</span>(xmin <span style="color:#666">=</span> .lower, xmax <span style="color:#666">=</span> .upper),
+                  color <span style="color:#666">=</span> <span style="color:#4070a0">&#34;midnightblue&#34;</span>, alpha <span style="color:#666">=</span> <span style="color:#40a070">0.8</span>) <span style="color:#666">+</span>
+    <span style="color:#06287e">scale_x_continuous</span>(labels <span style="color:#666">=</span> scales<span style="color:#666">::</span>percent) <span style="color:#666">+</span>
+    <span style="color:#06287e">labs</span>(x <span style="color:#666">=</span> <span style="color:#4070a0">&#34;% increase in men&#39;s hourly wages compared to women&#39;s&#34;</span>, y <span style="color:#666">=</span> <span style="color:#007020;font-weight:bold">NULL</span>)
+</code></pre></div><img src="https://juliasilge.com/blog/pay-gap-uk/index_files/figure-html/unnamed-chunk-12-1.png" width="1260" />
+<p>For this dataset, there aren’t huge differences between our three approaches. We would expect the errors from the bootstrap resampling to be most realistic, but often a simple summarization can be the best choice.</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">June 30, 2022</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">9 minute read, 1708 words</dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Categories:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/categories/rstats">rstats</a>  <a href="https://juliasilge.com/categories/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a>  <a href="https://juliasilge.com/tags/tidymodels">tidymodels</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/sf-rent/">&larr; Sliding windows for #TidyTuesday rents in San Francisco</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/drought-in-tx/">Use resampling to understand #TidyTuesday drought in TX &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>We Are Not Very Evenly Distributed | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="A Shiny App for Visualizing the U.S. Population">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="We Are Not Very Evenly Distributed | Julia Silge">
+<meta property="og:description" content="A Shiny App for Visualizing the U.S. Population" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/evenly-distributed/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="We Are Not Very Evenly Distributed">
+<meta itemprop="description" content="I saw this tweet making the rounds this past week.
+Half of all Americans live in the red counties, half live in the orange counties pic.twitter.com/ptBXNbzSFQ
+&mdash; Conrad Hackett (@conradhackett) August 8, 2016Interesting! I saw people using this map to make the argument that the Electoral College was super important, or a terrible idea, or any of a number of other sociopolitical thoughts. This map certainly caught my attention and made me want to know more about this kind of population density distribution."><meta itemprop="datePublished" content="2016-08-19T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-08-19T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1093">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">We Are Not Very Evenly Distributed</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">August 19, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>I saw this tweet making the rounds this past week.</p>
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Half of all Americans live in the red counties, half live in the orange counties <a href="https://t.co/ptBXNbzSFQ">pic.twitter.com/ptBXNbzSFQ</a></p>&mdash; Conrad Hackett (@conradhackett) <a href="https://twitter.com/conradhackett/status/762520577202499586">August 8, 2016</a></blockquote>
+<script async src="http://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>Interesting! I saw people using this map to make the argument that the Electoral College was super important, or a terrible idea, or any of a number of other sociopolitical thoughts. This map certainly caught my attention and made me want to know more about this kind of population density distribution.</p>
+
+
+
+
+<h2 id="census-population-data">Census Population Data
+  <a href="#census-population-data"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>I use Census data from the 
+<a href="https://www.census.gov/programs-surveys/acs/" target="_blank" rel="noopener">American Community Survey</a> a lot for my work, so let&rsquo;s get the ACS population estimates for all the counties in the United States. I&rsquo;m going to use the most recent 5-year estimates, and let&rsquo;s do some munging so we have FIPS codes for the mapping. (If you haven’t used the acs package before, you will need to get an API key and run <code>api.key.install()</code> one time to install your key on your system.)</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(acs)
+library(dplyr)
+library(reshape2)
+library(stringr)
+countygeo &lt;- geo.make(state = &quot;*&quot;, county = &quot;*&quot;)
+popfetch &lt;- acs.fetch(geography = countygeo, 
+                      endyear = 2014,
+                      span = 5, 
+                      table.number = &quot;B01003&quot;,
+                      col.names = &quot;pretty&quot;)
+myfips &lt;- geography(popfetch) %&gt;%  
+        mutate(fips = str_c(str_pad(state, 2, &quot;left&quot;, &quot;0&quot;),
+                            str_pad(county, 3, &quot;left&quot;, &quot;0&quot;))) %&gt;%
+        select(fips)
+geography(popfetch)=cbind(myfips, geography(popfetch))
+popDF &lt;- melt(estimate(popfetch)) %&gt;%
+        mutate(fips = str_sub(str_c(&quot;00&quot;, Var1), -5),
+               pop2014 = value) %&gt;%
+        select(fips, pop2014)
+head(popDF)
+</code></pre><pre tabindex="0"><code>##    fips pop2014
+## 1 01001   55136
+## 2 01003  191205
+## 3 01005   27119
+## 4 01007   22653
+## 5 01009   57645
+## 6 01011   10693
+</code></pre><p>There! Now we have the population in each county.</p>
+
+
+
+
+<h2 id="making-some-maps">Making Some Maps
+  <a href="#making-some-maps"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>For the mapping, I&rsquo;m going to use Bob Rudis' 
+<a href="https://github.com/hrbrmstr/albersusa" target="_blank" rel="noopener">albersusa</a> package. It has some really nice map projections for the United States and was great to work with. It turns out that Bob did package up some population numbers with the maps, but we&rsquo;ll use our ACS data here instead.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(ggplot2)
+library(ggthemes)
+library(ggalt)
+library(scales)
+library(rgeos)
+library(maptools)
+library(albersusa)
+counties &lt;- counties_composite()
+counties@data &lt;- left_join(counties@data, popDF, by = &quot;fips&quot;)
+cmap &lt;- fortify(counties_composite(), region=&quot;fips&quot;)
+ggplot() +
+        geom_map(data = cmap, map = cmap,
+                    aes(x = long, y = lat, map_id = id),
+                    color = &quot;#2b2b2b&quot;, size = 0.05, fill = NA) +
+        geom_map(data = counties@data, map = cmap,
+                 aes(fill = pop2014, map_id = fips),
+                 color = NA) +
+        theme_map(base_family = &quot;RobotoCondensed-Regular&quot;, base_size = 12) +
+        theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;, size = 16, margin=margin(b=10))) +
+        theme(plot.subtitle=element_text(size = 14, margin=margin(b=-20))) +
+        theme(plot.caption=element_text(size = 9, margin=margin(t=-15))) +
+        coord_proj(us_laea_proj) +
+        labs(title=&quot;Population in U.S. Counties&quot;,
+             subtitle=&quot;Most counties in the United States are sparsely populated&quot;,
+             caption=&quot;ACS Five-Year Estimate 2010-2014&quot;) +
+        scale_fill_gradient(name = &quot;Population&quot;, labels = comma,
+                            low = &quot;lavenderblush3&quot;, high = &quot;#132B43&quot;) +
+        theme(legend.position = c(0.8, 0.25))
+</code></pre><p><img src="/figs/2016-08-19-Evenly-Distributed/unnamed-chunk-3-1.png" alt="center"></p>
+<p>Here we already see how unevenly the U.S. population is distributed. There are almost 10 million people in Los Angeles County, while other large cities like Dallas, Houston, Chicago, and New York are just barely visible with this linear color mapping.</p>
+<p>Now we want to find the most populous counties where the top half of the U.S. population lives. Let&rsquo;s make a copy of the data frame that we&rsquo;ve used for the mapping, find the total population (and check it, just for sanity&rsquo;s sake), sort the data frame by population, and then calculate a cumulative sum for the population.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">sortingDF &lt;- counties@data %&gt;% select(fips, name, state, pop2014)
+totalpop &lt;- sum(sortingDF$pop2014, na.rm = TRUE)
+totalpop
+</code></pre><pre tabindex="0"><code>## [1] 314107084
+</code></pre><pre tabindex="0"><code class="language-{r}" data-lang="{r}">sortingDF &lt;- sortingDF %&gt;% arrange(pop2014) %&gt;% 
+        mutate(cumsum = cumsum(pop2014))
+head(sortingDF, 15)
+</code></pre><pre tabindex="0"><code>##     fips      name      state pop2014 cumsum
+## 1  15005   Kalawao     Hawaii      73     73
+## 2  48301    Loving      Texas      89    162
+## 3  48269      King      Texas     290    452
+## 4  31117 McPherson   Nebraska     426    878
+## 5  31005    Arthur   Nebraska     476   1354
+## 6  30069 Petroleum    Montana     489   1843
+## 7  48261    Kenedy      Texas     528   2371
+## 8  31115      Loup   Nebraska     559   2930
+## 9  31009    Blaine   Nebraska     594   3524
+## 10 02282   Yakutat     Alaska     635   4159
+## 11 48311  McMullen      Texas     646   4805
+## 12 31075     Grant   Nebraska     649   5454
+## 13 08111  San Juan   Colorado     653   6107
+## 14 35021   Harding New Mexico     655   6762
+## 15 48033    Borden      Texas     676   7438
+</code></pre><p>Those are some SMALL counties. WOW. Where is the halfway point, i.e., the point where the cumulative sum goes from being less than half of the total population to more than half?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">sortingDF &lt;- sortingDF %&gt;% 
+        mutate(lowhigh = ifelse(cumsum &lt; totalpop * 0.5, &quot;low&quot;, &quot;high&quot;)) %&gt;%
+        select(fips, lowhigh)
+counties@data &lt;- left_join(counties@data, sortingDF, by = &quot;fips&quot;)
+</code></pre><p>Now let&rsquo;s map it.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot() +
+        geom_map(data = cmap, map = cmap,
+                    aes(x = long, y = lat, map_id = id),
+                    color = NA, size = 0.05, fill = NA) +
+        geom_map(data = counties@data, map = cmap,
+                 aes(fill = lowhigh, map_id = fips),
+                 color = NA) +
+        theme_map(base_family = &quot;RobotoCondensed-Regular&quot;, base_size = 12) +
+        theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;, size = 16, margin=margin(b=10))) +
+        theme(plot.subtitle=element_text(size = 14, margin=margin(b=-20))) +
+        theme(plot.caption=element_text(size = 9, margin=margin(t=-15))) +
+        coord_proj(us_laea_proj) +
+        labs(title=&quot;Population in U.S. Counties&quot;,
+             subtitle=&quot;Half of the population lives in the dark counties, and half in the light&quot;,
+             caption=&quot;ACS Five-Year Estimate 2010-2014&quot;) +
+        scale_fill_manual(values = c(&quot;#003A54&quot;, &quot;#B5DDC9&quot;), name=&quot;Population&quot;) +
+        theme(legend.position=c(0.75, 0.25)) +
+        theme(legend.key = element_rect(colour = NA))
+</code></pre><p><img src="/figs/2016-08-19-Evenly-Distributed/unnamed-chunk-6-1.png" alt="center"></p>
+<p>First off, we have exactly reproduced the map in the tweet. This is maybe not entirely surprising because I am pretty sure that the people who made the map in the tweet also used ACS population estimates.</p>
+<p>I&rsquo;ve lived in half a dozen places over the course of my life and I&rsquo;ve only lived in the darker, high population counties, with the exception of my four years in undergrad that I spent in a pretty small college town. Other than that, I have only lived in the top half of more populous counties. Probably a lot of you have too! That&rsquo;s what makes them more populous, I suppose.</p>
+<p>What really motivated me to work on this is that I wanted to be able to learn a bit more about how this population density distribution changes. I made 
+<a href="https://juliasilge.shinyapps.io/population_app/" target="_blank" rel="noopener">a Shiny app</a> where the user chooses (via a slider) what percentage of the population to use as a break between high and low population counties.</p>
+<p>
+<a href="https://juliasilge.shinyapps.io/population_app/" target="_blank" rel="noopener"><img src="/figs/2016-08-19-Evenly-Distributed/populationshiny.png" alt="center"></a></p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The app is most interesting with the slider between the range of about 30% and 70%, I think; the United States is remarkably urban, at least to me. I would never have argued with someone who told me that the population is concentrated in cities, of course, but the population is more unevenly distributed than I would have predicted. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-08-19-Evenly-Distributed.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">August 19, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">6 minute read, 1093 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/song-lyrics-across/">&larr; Song Lyrics Across the United States</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/something-strange/">Something Strange in the Neighborhood &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>

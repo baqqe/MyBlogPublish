@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head>
+  
+                           
+     
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<title>Singing the Bayesian Beginner Blues | Julia Silge</title>
+
+
+<meta property="twitter:site" content="@juliasilge">
+<meta property="twitter:creator" content="@juliasilge">
+
+
+
+
+
+
+
+  
+    
+  
+<meta name="description" content="Song Lyrics Frequency and Empirical Bayes Estimation">
+
+
+<meta property="og:site_name" content="Julia Silge">
+<meta property="og:title" content="Singing the Bayesian Beginner Blues | Julia Silge">
+<meta property="og:description" content="Song Lyrics Frequency and Empirical Bayes Estimation" />
+<meta property="og:type" content="page" />
+<meta property="og:url" content="https://juliasilge.com/blog/bayesian-blues/" />
+<meta property="og:locale" content="en">
+
+
+
+
+    
+        <meta property="og:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+        <meta property="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://juliasilge.com/img/illustrated_blog_avatar.png" >
+    
+  <meta itemprop="name" content="Singing the Bayesian Beginner Blues">
+<meta itemprop="description" content="Earlier this week, I published a post about song lyrics and how different U.S. states are mentioned at different rates, and at different rates relative to their populations. That was a very fun post to work on, but you can tell from that paragraph near the end that I am a little bothered by the uncertainty involved in calculating the rates by just dividing two numbers. David Robinson suggested on Twitter that I might try using empirical Bayes methods to estimate the rates."><meta itemprop="datePublished" content="2016-09-28T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2016-09-28T00:00:00+00:00" />
+<meta itemprop="wordCount" content="1595">
+<meta itemprop="keywords" content="rstats," />
+  
+  
+  <!--[if IE]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
+  <link rel="icon" href="/img/icon.png" type="image/x-icon">
+  
+  
+  <link rel="stylesheet" href="/style.main.min.34750661ca065ca7ddb87b2b28cab82abf493a21c1e3852e0755fba776b031b7.css" integrity="sha256-NHUGYcoGXKfduHsrKMq4Kr9JOiHB44UuB1X7p3awMbc=" media="screen">
+  
+  
+  <script src="/panelset.min.078a92db9bd3228df502db3d9e0453c3cf3d910abe3f8deca0ad196c7071ad41.js" type="text/javascript"></script>
+  
+  
+  <script src="/main.min.bb67dea4a2ee41aab688effd180f2d02662e47280f0021495f2c0ce24c461f65.js" type="text/javascript"></script>
+</head>
+<body>
+      <div class="grid-container">
+<header class="site-header pt4 pb2 mb4 bb b--transparent ph5 headroom z-max" role="banner">
+  <nav class="site-nav db dt-l w-100" role="navigation">
+    <a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href="https://juliasilge.com/" title="Home">
+      <span class="f4 fw7">Julia Silge</span>
+    </a>
+    <div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l ttu tracked">
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 " href="/about/" title="About me">About</a>
+      
+        
+        
+        
+      <a class="link f6 f5-l dib pv1 ph2 active" href="/blog/" title="Blog">Blog</a>
+      
+      
+    </div>
+  </nav>
+</header>
+
+<main class="page-main pa4" role="main">
+  <section class="page-content mw7 center">
+    <article class="post-content pa0 ph4-l">
+      <header class="post-header">
+        <h1 class="f1 lh-solid measure-narrow mb3 fw4">Singing the Bayesian Beginner Blues</h1>
+        
+        <p class="f6 measure lh-copy mv1">By Julia Silge</p>
+        <p class="f7 db mv0 ttu">September 28, 2016</p>
+
+      
+
+      </header>
+      <section class="post-body pt5 pb4">
+        <p>Earlier this week, I published a post about 
+<a href="http://juliasilge.com/blog/Song-Lyrics-Across/" target="_blank" rel="noopener">song lyrics and how different U.S. states are mentioned at different rates, and at different rates relative to their populations</a>. That was a very fun post to work on, but you can tell from that paragraph near the end that I am a little bothered by the uncertainty involved in calculating the rates by just dividing two numbers. 
+<a href="https://twitter.com/drob/status/780400407239680000" target="_blank" rel="noopener">David Robinson suggested on Twitter</a> that I might try using empirical Bayes methods to estimate the rates. I am a newcomer to Bayesian methods but this idea makes a lot of sense in this context, so let&rsquo;s see what we can do!</p>
+
+
+
+
+<h2 id="getting-started">Getting Started
+  <a href="#getting-started"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The analysis here borrows very heavily from 
+<a href="http://varianceexplained.org/r/credible_intervals_baseball/" target="_blank" rel="noopener">two</a> of Dave&rsquo;s 
+<a href="http://varianceexplained.org/r/empirical_bayes_baseball/" target="_blank" rel="noopener">posts</a> from last year. To start out, what are the values that we are dealing with? (I have hidden the code that downloads/calculates these values, but you can see the entire R Markdown file 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-09-28-Bayesian-Blues.Rmd" target="_blank" rel="noopener">here</a>.)</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">state_counts %&gt;%
+    arrange(desc(rate)) %&gt;%
+    top_n(10)
+</code></pre><pre tabindex="0"><code>## # A tibble: 10 × 4
+##      state_name  pop2014     n         rate
+##          &lt;fctr&gt;    &lt;dbl&gt; &lt;dbl&gt;        &lt;dbl&gt;
+## 1        Hawaii  1392704     6 4.308166e-06
+## 2   Mississippi  2984345    10 3.350819e-06
+## 3      New York 19594330    64 3.266251e-06
+## 4       Alabama  4817678    12 2.490826e-06
+## 5       Georgia  9907756    22 2.220483e-06
+## 6     Tennessee  6451365    14 2.170083e-06
+## 7       Montana  1006370     2 1.987341e-06
+## 8      Nebraska  1855617     3 1.616713e-06
+## 9      Kentucky  4383272     7 1.596981e-06
+## 10 North Dakota   704925     1 1.418591e-06
+</code></pre><p>We have, for each state here, the population in the state, the number of times it was mentioned in a song, and the rate of mentions per population (just the previous two numbers divided by each other). The reason I was uncomfortable here is that some states were mentioned so few times (like Hawaii and Montana!) and it is surely true that the rates calculated here have very different uncertainty intervals from state to state.</p>
+
+
+
+
+<h2 id="bayesian-who">Bayesian Who?!
+  <a href="#bayesian-who"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>This is where Bayesian methods come in. We can use Bayesian methods to a) estimate the rate itself and b) estimate credible intervals. For a really wonderful explanation of how Bayesian models work, I will point you to 
+<a href="http://www.sumsar.net/blog/2015/11/a-bayesian-model-to-calculate-whether-my-wife-is-pregnant/" target="_blank" rel="noopener">Rasmus Bååth&rsquo;s post</a> about whether his wife is pregnant or not. He posted that last year not too long after Dave posted some of his baseball/Bayes posts, at which time I started to think, &ldquo;Maybe this Bayes stuff does actually make sense.&rdquo; To use a Bayesian method, we need to choose a prior probability distribution for what we want to estimate; this is what we believe about the quantity before evidence is taken into account. What makes empirical Bayes &ldquo;empirical&rdquo; is that the prior probability distribution is taken from the data itself; we will plot the actual distribution of rates (mentions per population) and use that distribution as our prior.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(state_counts, aes(rate)) +
+    geom_histogram(binwidth = 2e-7, alpha = 0.8, fill = &quot;midnightblue&quot;) +
+    labs(x = &quot;rate of mentions per population&quot;) +
+    theme_minimal(base_family = &quot;RobotoCondensed-Regular&quot;)
+</code></pre><p><img src="/figs/2016-09-28-Bayesian-Blues/unnamed-chunk-3-1.png" alt="center"></p>
+<p>Hmmmmm, that&rsquo;s not so great, is it? There are only 50 states and not all of them were mentioned in this lyrics data set at all. But we will merrily push forward and calculate a prior probability distribution from this. Let&rsquo;s fit a beta distribution to this to use as our prior. I&rsquo;m going to use the 
+<a href="http://stats.stackexchange.com/questions/12232/calculating-the-parameters-of-a-beta-distribution-using-the-mean-and-variance" target="_blank" rel="noopener">method of moments</a> to fit a beta distribution.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">x &lt;- state_counts$n / state_counts$pop2014
+mu &lt;- mean(x)
+sigma2 &lt;- var(x)
+alpha0 &lt;- ((1 - mu) / sigma2 - 1 / mu) * mu^2
+beta0 &lt;- alpha0 * (1 / mu - 1)
+</code></pre><p>Now let&rsquo;s plot this.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">ggplot(state_counts) +
+    geom_histogram(aes(rate, y = ..density..), binwidth = 2e-7, alpha = 0.8, fill = &quot;midnightblue&quot;) +
+    stat_function(fun = function(x) dbeta(x, alpha0, beta0), 
+                  color = &quot;red&quot;, size = 1) +
+    labs(x = &quot;rate of mentions per population&quot;) +
+    theme_minimal(base_family = &quot;RobotoCondensed-Regular&quot;)
+</code></pre><p><img src="/figs/2016-09-28-Bayesian-Blues/unnamed-chunk-5-1.png" alt="center"></p>
+<p>That&rsquo;s not&hellip; too awful, I hope. Remember, what this is supposed to be is our belief about the distribution of rates before evidence from individual states is taken into account. I would buy this in a general sense; there a few states that are mentioned many times and many states that are mentioned a few times.</p>
+<p>And that&rsquo;s it! We have a prior.</p>
+
+
+
+
+<h2 id="calculating-the-empirical-bayes-estimate">Calculating the Empirical Bayes Estimate
+  <a href="#calculating-the-empirical-bayes-estimate"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>Now that we have a prior probability distribution, we use Bayes' theorem to calculate a posterior estimate for each state&rsquo;s rate. It&rsquo;s not very difficult math.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">state_counts &lt;- state_counts %&gt;%
+    mutate(rate_estimate = 1e6*(n + alpha0) / (pop2014 + alpha0 + beta0),
+           rate = 1e6*rate)
+
+state_counts
+</code></pre><pre tabindex="0"><code>## # A tibble: 33 × 5
+##    state_name  pop2014     n      rate rate_estimate
+##        &lt;fctr&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;
+## 1     Alabama  4817678    12 2.4908265     2.2473115
+## 2     Arizona  6561516     4 0.6096152     0.6838013
+## 3    Arkansas  2947036     1 0.3393240     0.5519852
+## 4  California 38066920    34 0.8931639     0.8999236
+## 5    Colorado  5197580     3 0.5771917     0.6730431
+## 6     Florida 19361792     4 0.2065924     0.2552334
+## 7     Georgia  9907756    22 2.2204826     2.1161297
+## 8      Hawaii  1392704     6 4.3081660     2.9387203
+## 9       Idaho  1599464     1 0.6252094     0.8315038
+## 10   Illinois 12868747     6 0.4662459     0.5177696
+## # ... with 23 more rows
+</code></pre><p>How do the two values compare?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(ggrepel)
+ggplot(state_counts, aes(rate, rate_estimate, color = n)) +
+    geom_abline(intercept = 0, slope = 1, color = &quot;gray70&quot;, linetype = 2) +
+    geom_text_repel(aes(label = state_name), color = &quot;black&quot;,
+                    box.padding = unit(0.5, 'lines'),
+                    family = &quot;RobotoCondensed-Regular&quot;) +
+    geom_point(size = 4) +
+    scale_color_gradient(low = &quot;midnightblue&quot;, high = &quot;pink&quot;,
+                         name=&quot;Number\nof songs&quot;) +
+    labs(title = &quot;States in Song Lyrics with Empirical Bayes&quot;,
+         subtitle = &quot;States like Montana and Hawaii (high rates, few mentions) are shifted the most&quot;,
+         x = &quot;Measured rate of mentions per million population&quot;,
+         y = &quot;Empirical Bayes estimate of rate per million population&quot;) +
+    theme_minimal(base_family = &quot;RobotoCondensed-Regular&quot;) +
+    theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;))
+</code></pre><p><img src="/figs/2016-09-28-Bayesian-Blues/unnamed-chunk-7-1.png" alt="center"></p>
+<p>Notice that the states that were mentioned the highest number of times are closest to the line, i.e., the empirical Bayes method here did not change the value that much. It is only for states that were mentioned in a few songs that the two values are quite different. Notice that the high rates were shifted to lower values and the low rates were shifted to (slightly) higher values.</p>
+
+
+
+
+<h2 id="what-is-the-posterior-distribution-for-each-state">What Is the Posterior Distribution for Each State?
+  <a href="#what-is-the-posterior-distribution-for-each-state"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>We calculated an empirical Bayes estimate for each rate above, but we can actually calculate the full posterior probability distribution for each state. What are $\alpha$ and $\beta$ for each state?</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">state_counts &lt;- state_counts %&gt;%
+    mutate(alpha1 = n + alpha0,
+           beta1 = pop2014 - n + beta0)
+
+state_counts
+</code></pre><pre tabindex="0"><code>## # A tibble: 33 × 7
+##    state_name  pop2014     n      rate rate_estimate    alpha1    beta1
+##        &lt;fctr&gt;    &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1     Alabama  4817678    12 2.4908265     2.2473115 13.212753  5879346
+## 2     Arizona  6561516     4 0.6096152     0.6838013  5.212753  7623192
+## 3    Arkansas  2947036     1 0.3393240     0.5519852  2.212753  4008715
+## 4  California 38066920    34 0.8931639     0.8999236 35.212753 39128566
+## 5    Colorado  5197580     3 0.5771917     0.6730431  4.212753  6259257
+## 6     Florida 19361792     4 0.2065924     0.2552334  5.212753 20423468
+## 7     Georgia  9907756    22 2.2204826     2.1161297 23.212753 10969414
+## 8      Hawaii  1392704     6 4.3081660     2.9387203  7.212753  2454378
+## 9       Idaho  1599464     1 0.6252094     0.8315038  2.212753  2661143
+## 10   Illinois 12868747     6 0.4662459     0.5177696  7.212753 13930421
+## # ... with 23 more rows
+</code></pre><p>Let&rsquo;s plot a few of these to see what they look like.</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(broom)
+counts_beta &lt;- state_counts %&gt;% 
+    arrange(desc(rate_estimate)) %&gt;% 
+    top_n(5, rate_estimate) %&gt;%
+    inflate(x = seq(1e-7, 5e-6, 2e-8)) %&gt;%
+    ungroup() %&gt;%
+    mutate(density = dbeta(x, alpha1, beta1))
+
+ggplot(counts_beta, aes(x, density, color = state_name)) +
+    geom_line(size = 1.2, alpha = 0.8) +
+    stat_function(fun = function(x) dbeta(x, alpha0, beta0),
+                  lty = 2, color = &quot;black&quot;) +
+    labs(x = &quot;Rate of mentions per population&quot;,
+         y = &quot;Density&quot;,
+         title = &quot;Prior and Posterior Distributions&quot;,
+         subtitle = &quot;The posterior distribution for a few example states are shown\nThe prior distribution is shown as a dashed line&quot;) +
+    theme_minimal(base_family = &quot;RobotoCondensed-Regular&quot;) +
+    theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;)) +
+    theme(legend.title=element_blank())
+</code></pre><p><img src="/figs/2016-09-28-Bayesian-Blues/unnamed-chunk-9-1.png" alt="center"></p>
+<p>Notice that New York, which was mentioned in many songs, has a narrow posterior probability distribution; we have more precise knowledge about the rate for New York. Hawaii, by contrast, has a broad probability distribution; we have less precise knowledge about the rate for Hawaii, because Hawaii was only mentioned in a few songs!</p>
+<p>We can use these posterior probability distributions to calculate credible intervals, an estimate of how uncertain each of these measurements is, analogous to a confidence interval. (BUT SO DIFFERENT, everyone tells me. ON A PHILOSOPHICAL LEVEL.)</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">state_counts &lt;- state_counts %&gt;%
+    mutate(low  = 1e6*qbeta(.025, alpha1, beta1),
+           high = 1e6*qbeta(.975, alpha1, beta1))
+</code></pre><p>These are 95% credible intervals. Let&rsquo;s check them out!</p>
+<pre tabindex="0"><code class="language-{r}" data-lang="{r}">library(tidyr)
+state_counts %&gt;% 
+    arrange(desc(rate_estimate)) %&gt;% 
+    mutate(state_name = factor(state_name, levels = rev(unique(state_name)))) %&gt;%
+    select(state_name, 'Measured rate' = rate, 'Empirical Bayes estimate' = rate_estimate, low, high) %&gt;% 
+    gather(type, rate, `Measured rate`, `Empirical Bayes estimate`) %&gt;%
+    ggplot(aes(rate, state_name, color = type)) +
+    geom_errorbarh(aes(xmin = low, xmax = high), color = &quot;gray50&quot;) +
+    geom_point(size = 3) +
+    xlim(0, NA) +
+    labs(x = &quot;Rate of mentions per million population&quot;,
+         y = NULL, title = &quot;Measured Rates, Empirical Bayesian Estimates, and Credible Intervals&quot;,
+         subtitle = &quot;The 95% credible intervals are shown for these states&quot;) +
+    theme_minimal(base_family = &quot;RobotoCondensed-Regular&quot;) +
+    theme(plot.title=element_text(family=&quot;Roboto-Bold&quot;)) +
+    theme(legend.title=element_blank())
+</code></pre><p><img src="/figs/2016-09-28-Bayesian-Blues/unnamed-chunk-11-1.png" alt="center"></p>
+
+
+
+
+<h2 id="the-end">The End
+  <a href="#the-end"><svg class="anchor-symbol" aria-hidden="true" height="26" width="26" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="currentColor"></path>
+      <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76.0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71.0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71.0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76.0 5-2.24 5-5s-2.24-5-5-5z"></path>
+    </svg></a>
+</h2>
+<p>The part of this that was the most satisfying was the credible intervals, how big/small they are, and how the plain vanilla rates and empirical Bayes rate estimates are distributed in the credible intervals. It definitely gave me the data intuition warm fuzzies and made a lot of sense. This method is not that hard to implement or understand and was a gratifyingly productive first foray into Bayesian methods. The R Markdown file used to make this blog post is available 
+<a href="https://github.com/juliasilge/juliasilge.github.io/blob/master/_R/2016-09-28-Bayesian-Blues.Rmd" target="_blank" rel="noopener">here</a>. I am very happy to hear feedback or questions!</p>
+
+        
+        <details closed class="f6 fw7 input-reset">
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Posted on:</dt>
+    <dd class="fw5 ml0">September 28, 2016</dd>
+  </dl>
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Length:</dt>
+    <dd class="fw5 ml0">8 minute read, 1595 words</dd>
+  </dl>
+  
+  
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">Tags:</dt>
+    <dd class="fw5 ml0"> <a href="https://juliasilge.com/tags/rstats">rstats</a> </dd>
+  </dl>
+  
+  <dl class="f6 lh-copy">
+    <dt class="fw7">See Also:</dt>
+    
+    <dd class="fw5 ml0"><a href="/blog/educational-attainment/">Educational attainment in #TidyTuesday UK towns</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/polling-places/">Changes in #TidyTuesday US polling places</a></dd>
+    
+    <dd class="fw5 ml0"><a href="/blog/doctor-who-bayes/">Empirical Bayes for #TidyTuesday Doctor Who episodes</a></dd>
+    
+  </dl>
+</details>
+
+      </section>
+      <footer class="post-footer">
+        <div class="post-pagination dt w-100 mt4 mb2">
+  
+  
+    <a class="prev dtc pr2 tl v-top fw6"
+    href="https://juliasilge.com/blog/non-academic-careers/">&larr; Non-Academic Careers for Astronomers and Physicists</a>
+  
+  
+  
+    <a class="next dtc pl2 tr v-top fw6"
+    href="https://juliasilge.com/blog/song-lyrics-across/">Song Lyrics Across the United States &rarr;</a>
+  
+</div>
+
+      </footer>
+    </article>
+    
+      
+<div class="post-comments pa0 pa4-l mt4">
+  
+  <script src="https://utteranc.es/client.js"
+          repo="juliasilge/juliasilge.com"
+          issue-term="title"
+          theme="github-light"
+          label="comments :speech_balloon:"
+          crossorigin="anonymous"
+          async
+          type="text/javascript">
+  </script>
+  
+</div>
+
+    
+  </section>
+</main>
+<footer class="site-footer pv4 bt b--transparent ph5" role="contentinfo">
+  <nav class="db dt-l w-100">
+    <p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">
+      &copy; 2024 Julia Silge
+      <span class="middot-divider"></span>
+      Made with <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/hugo-apero/" rel="dct:source">Hugo Apéro</a></span>.
+      <br />
+      
+Based on <span xmlns:dct="http://purl.org/dc/terms/" property="dct:title"><a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/formspree/blogophonic-hugo" rel="dct:source">Blogophonic</a></span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://formspree.io" property="cc:attributionName" rel="cc:attributionURL">Formspree</a>.
+    </p>
+    
+    <div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0">
+      
+      <a class="dib pv1 ph2 link" href="/license/" title="License">License</a>
+      
+    </div>
+  </nav>
+  
+    <script>
+
+    var i, text, code, codes = document.getElementsByTagName('code');
+    for (let i = 0; i < codes.length;) {
+      code = codes[i];
+      if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+        text = code.textContent;
+        if (/^\$[^$]/.test(text) && /[^$]\$$/.test(text)) {
+          text = text.replace(/^\$/, '\\(').replace(/\$$/, '\\)');
+          code.textContent = text;
+        }
+        if (/^\\\((.|\s)+\\\)$/.test(text) ||
+            /^\\\[(.|\s)+\\\]$/.test(text) ||
+            /^\$(.|\s)+\$$/.test(text) ||
+            /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+          code.outerHTML = code.innerHTML;  
+          continue;
+        }
+      }
+      i++;
+    }
+</script>
+
+  
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css" integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js" integrity="sha384-pK1WpvzWVBQiP0/GjnvRxV4mOb0oxFuyRxJlk6vVw146n3egcN5C925NCP7a7BY8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+
+
+
+    
+  
+  
+</footer>
+
+      </div>
+    </body>
+</html>
